@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Triplanner</title>
+<meta name="description" content="Gezi planlayıcı: günler, ulaşım, hazırlık, harcamalar ve fotoğraflar.">
+<meta name="theme-color" content="#0b1030">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Triplanner">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="bundle.css">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="web.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="vendor/Sortable.min.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="backend.js"></script>
+<script src="bundle.js"></script>
+<script src="data.js"></script>
+<script src="app-core.js"></script>
+<script src="app-tarihler.js"></script>
+<script src="app-ulasim.js"></script>
+<script src="app-hazirlik.js"></script>
+<script src="app-harcama.js"></script>
+<script src="app-dialogs.js"></script>
+<script>
+(function(){
+  var A = window.TPA, B = window.TPB, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById("root")).render(h(B.Gate, null, h(A.Root)));
+  A.route();
+  B.start(function(){ A.sync.connect(); });
+  if("serviceWorker" in navigator && location.protocol === "https:"){
+    window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+  }
+})();
+</script>
+</body>
+</html>

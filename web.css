@@ -1,0 +1,16 @@
+/* Bağımsız sürüme özel: giriş ekranı, hesap, paylaşım */
+html,body{height:100%;margin:0;background:var(--lacivert-950,#0b1030)}
+#root{height:100%}
+.tpb-login{min-height:100%;display:grid;place-items:center;padding:calc(var(--space-6) + env(safe-area-inset-top,0px)) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom,0px));box-sizing:border-box}
+.tpb-login__card{position:relative;z-index:1;width:min(420px,100%);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:var(--space-3);padding:var(--space-7,40px) var(--space-6);border-radius:var(--radius-dialog);background:var(--background-raised);color:var(--foreground);text-align:center;box-shadow:var(--shadow-overlay);animation:tpb-in var(--duration-slow,420ms) var(--ease-standard,ease) both}
+.tpb-login__title{margin:var(--space-2) 0 0}
+.tpb-login__text{margin:0 0 var(--space-3)}
+.tpb-login__fine{margin:var(--space-2) 0 0}
+.tpb-login__warn{margin:0;color:var(--foreground-danger,#b42318)}
+@keyframes tpb-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tpb-login__card{animation:none}}
+.tpb-account{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-2);width:100%}
+.tpb-members__list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--space-1);width:100%}
+.tpb-members__row{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-tile);background:var(--background-sunken)}
+.tpb-members__add{display:flex;align-items:flex-end;gap:var(--space-2);width:100%}
+.app-empty{gap:var(--space-4)}

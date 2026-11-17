@@ -1,0 +1,270 @@
+/* Triplanner arayüzü: durum, yönlendirme, kabuk. Bileşenler design system'den (window.Triplanner). */
+(function(){
+"use strict";
+var D = window.TPD, T = window.Triplanner, h = React.createElement, F = React.Fragment;
+var A = window.TPA = {};
+A.D = D; A.T = T; A.h = h; A.F = F;
+
+/* ================= Durum ================= */
+var S = A.S = {
+  app: D.loadLocal() || (window.TPB ? {order:[], trips:{}} : {order:["gurcistan"], trips:{gurcistan:D.seedGeorgia()}}),
+  views: D.loadViews(),
+  cur: null, page: "tarihler", sub: "",
+  status: "connecting", toast: null, dialog: null, busy: {}, assets: null, assetsTried: false
+};
+S.cur = S.app.order[0] || null;
+var listeners = [];
+A.subscribe = function(fn){ listeners.push(fn); return function(){ listeners = listeners.filter(function(x){ return x !== fn; }); }; };
+A.render = function(){ listeners.forEach(function(fn){ fn(); }); };
+
+A.trip = function(){ return S.cur ? S.app.trips[S.cur] : null; };
+A.view = function(){
+  var t = A.trip(); if(!t) return {};
+  var v = S.views[t.id] || (S.views[t.id] = {});
+  if(!t.days.some(function(d){ return d.id === v.day; })) v.day = A.defaultDay(t);
+  if(!v.mode) v.mode = "Kartlar";
+  if(v.panel === undefined) v.panel = true;
+  return v;
+};
+A.saveViews = function(){ D.saveViews(S.views); };
+A.todayISO = function(){ var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+A.todayDayId = function(t){ var iso = A.todayISO(); var d = t.days.find(function(x){ return x.date === iso; }); return d ? d.id : null; };
+A.defaultDay = function(t){ return A.todayDayId(t) || (t.days[0] && t.days[0].id) || null; };
+A.dayById = function(t, id){ return t.days.find(function(d){ return d.id === id; }); };
+A.dayIndex = function(t, id){ return t.days.findIndex(function(d){ return d.id === id; }); };
+A.dayLabel = function(t, id, long){
+  if(id === "pre") return "Yola çıkmadan";
+  var d = A.dayById(t, id); if(!d) return "";
+  var f = D.fmtDay(d.date);
+  return (A.todayDayId(t) === id ? "Bugün · " : "") + f.short + " " + (long ? f.wd : D.WDS[D.parseISO(d.date).getUTCDay()]);
+};
+A.dayTitle = function(t, d){ return d.title || (A.dayIndex(t, d.id) + 1) + ". gün"; };
+A.whereIs = function(t, id){
+  for(var i = 0; i < t.days.length; i++) if(t.days[i].items.indexOf(id) > -1) return t.days[i].id;
+  if(t.removed.indexOf(id) > -1) return "removed";
+  if(t.ideas.indexOf(id) > -1) return "ideas";
+  return null;
+};
+A.listOf = function(t, key){ var d = A.dayById(t, key); return d ? d.items : t[key]; };
+A.timeKey = function(s){ var m = /(\d{1,2})[:.](\d{2})/.exec(s || ""); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+A.moveItem = function(t, id, target, index){
+  var from = A.whereIs(t, id);
+  if(from){ var a = A.listOf(t, from); a.splice(a.indexOf(id), 1); }
+  var arr = A.listOf(t, target), it = t.items[id];
+  if(index === "time"){
+    var k = A.timeKey(it.time), pos = arr.length;
+    if(k !== null) for(var i = 0; i < arr.length; i++){ var o = A.timeKey(t.items[arr[i]] && t.items[arr[i]].time); if(o !== null && o > k){ pos = i; break; } }
+    arr.splice(pos, 0, id);
+  } else if(index == null || index > arr.length) arr.push(id); else arr.splice(index, 0, id);
+  if(A.dayById(t, target)) delete it.from; else if(from && A.dayById(t, from)) it.from = from;
+};
+
+/* ================= Kaydetme ================= */
+var sync = A.sync = D.Sync({
+  getApp: function(){ return S.app; },
+  setApp: function(next){ S.app = next; if(!S.app.trips[S.cur]) S.cur = S.app.order[0] || null; A.render(); },
+  isBusy: function(id){ return id === S.cur && !!S.dialog; },
+  onStatus: function(k){ S.status = k; A.render(); }
+});
+A.commit = function(tripId){
+  var t = S.app.trips[tripId || S.cur];
+  if(t) D.syncTransportExpenses(t);
+  sync.schedule(tripId || S.cur); A.render();
+};
+A.flash = function(text, undo){
+  clearTimeout(A._toastTimer);
+  S.toast = {text: text, undo: undo, at: Date.now()};
+  A._toastTimer = setTimeout(function(){ S.toast = null; A.render(); }, undo ? 6000 : 3200);
+  A.render();
+};
+A.snapshot = function(){ var t = A.trip(); return t ? JSON.stringify(t) : null; };
+A.restore = function(json){ var t = D.normalizeTrip(JSON.parse(json), S.cur); if(t){ S.app.trips[S.cur] = t; A.commit(); } };
+
+/* ================= Yönlendirme ================= */
+var PAGES = A.PAGES = ["hazirlik","tarihler","ulasim","harcamalar","galeri"];
+A.PAGE_INFO = {
+  hazirlik: {label:"Hazırlık", icon:"checklist"}, tarihler: {label:"Tarihler", icon:"calendar"}, ulasim: {label:"Ulaşım", icon:"route"},
+  harcamalar: {label:"Harcamalar", icon:"wallet"}, galeri: {label:"Galeri", icon:"gallery"}
+};
+A.href = function(page, sub, tripId){ return "#" + (tripId || S.cur) + "-" + page + (sub ? "-" + sub : ""); };
+function route(){
+  var hsh = (location.hash || "").slice(1), m = /^([A-Za-z0-9]+)-(hazirlik|tarihler|ulasim|harcamalar|galeri)(?:-([a-z]+))?$/.exec(hsh);
+  if(m && S.app.trips[m[1]]){ S.cur = m[1]; S.page = m[2]; S.sub = m[3] || ""; }
+  else if(S.cur){ S.page = S.page || "tarihler"; }
+  if(S.page === "harcamalar" && S.sub && S.sub !== "ozet" && !D.EXP_CATS[S.sub]) S.sub = "";
+  S.dialog = null;
+  var t = A.trip();
+  document.title = t ? "Triplanner · " + t.name : "Triplanner";
+  A.render();
+  var body = document.querySelector("[data-scroll]"); if(body) body.scrollTop = 0;
+}
+A.go = function(page, sub, tripId){ var target = A.href(page, sub, tripId); if(location.hash === target) route(); else location.hash = target; };
+window.addEventListener("hashchange", route);
+A.route = route;
+
+/* ================= Ekran boyu ================= */
+A.useMedia = function(q){
+  var mq = React.useMemo(function(){ return window.matchMedia ? window.matchMedia(q) : null; }, [q]);
+  var st = React.useState(mq ? mq.matches : false);
+  React.useEffect(function(){ if(!mq) return; var f = function(){ st[1](mq.matches); }; if(mq.addEventListener) mq.addEventListener("change", f); else mq.addListener(f); return function(){ if(mq.removeEventListener) mq.removeEventListener("change", f); else mq.removeListener(f); }; }, [mq]);
+  return st[0];
+};
+
+/* ================= Küçük yardımcılar ================= */
+A.cx = function(){ return Array.prototype.filter.call(arguments, Boolean).join(" "); };
+A.Section = function(p){
+  return h("section", {className: A.cx("app-card", p.className), "aria-labelledby": p.id, style: p.style},
+    p.title ? h("div", {className: "app-card__head"},
+      h("div", {style:{flex:"1 1 auto", minWidth:0}}, h(p.level === 3 ? "h3" : "h2", {id: p.id, className: p.small ? "heading" : "section-title", style:{margin:0}}, p.title),
+        p.desc ? h("p", {className: "body-sm app-muted", style:{margin:0}}, p.desc) : null),
+      p.right || null) : null,
+    p.children);
+};
+A.PageHead = function(p){
+  return h("header", {className: "app-pagehead"},
+    h("div", {style:{flex:"1 1 320px", minWidth:0}},
+      h("h1", {className: A.isPhone ? "heading" : "page-title", style:{margin:0}}, p.title),
+      p.desc ? h("p", {className: "body app-muted", style:{margin:"var(--space-1) 0 0"}}, p.desc) : null),
+    p.right ? h("div", {className: "app-pagehead__right"}, p.right) : null);
+};
+A.Field = function(p){ /* tarih ve sayı gibi yerel girişler, design system görünümüyle */
+  var id = React.useMemo(function(){ return "f" + Math.random().toString(36).slice(2, 9); }, []);
+  return h("div", {className: "tp-field"},
+    h("label", {htmlFor: id, className: "label tp-field__label"}, p.label, p.optional ? h("span", {className: "tp-muted"}, " · isteğe bağlı") : null),
+    h("input", {id: id, className: "tp-input body", type: p.type || "text", value: p.value == null ? "" : p.value, min: p.min, max: p.max, placeholder: p.placeholder, required: p.required, onChange: function(e){ p.onChange(e.target.value); }}),
+    p.hint ? h("p", {className: "body-sm tp-muted"}, p.hint) : null);
+};
+A.Confirm = function(p){
+  return h("div", {className: "app-confirm", role: "group", "aria-label": p.text},
+    h("span", {className: "body-sm"}, p.text),
+    h(T.Button, {size: "sm", variant: "danger", onClick: p.onYes}, p.yes || "Sil"),
+    h(T.Button, {size: "sm", variant: "ghost", onClick: p.onNo}, "Vazgeç"));
+};
+A.money = function(t, amount, cur){ return D.fmtMoney(amount, cur || "TL"); };
+A.tl = function(t, amount, cur){ var v = D.toTL(t, amount, cur); return v === null ? null : v; };
+
+/* ================= Kabuk ================= */
+var STATUS = {
+  connecting:["Bağlanıyor", "neutral", "refresh"], saved:["Kaydedildi", "success", "check"], saving:["Kaydediliyor", "neutral", "refresh"],
+  local:["Bu tarayıcıda", "neutral", "info"], offline:["Sunucuya ulaşılamadı", "warning", "warning"], readonly:["Salt okunur", "warning", "lock"],
+  error:["Kaydedilemedi", "danger", "warning"], quota:["Depolama dolu", "danger", "warning"]
+};
+A.StatusChip = function(){
+  var s = STATUS[S.status] || STATUS.local;
+  var sub = S.status === "saved" ? "tüm cihazlarda" : (["local","offline","error","quota"].indexOf(S.status) > -1 ? (window.TPB ? "bu cihazda; bağlanınca gönderilir" : "bu tarayıcıda tutuluyor") : "");
+  return h("div", {className: "app-status"}, h(T.Chip, {tone: s[1], icon: s[2]}, s[0]), sub ? h("span", {className: "body-sm"}, sub) : null);
+};
+var COLORS = ["wine","blue","green","amber","teal","violet"];
+A.COLORS = COLORS;
+
+function navCounts(t){
+  var done = t.checklist.filter(function(c){ return c.done; }).length;
+  var transit = Object.keys(t.items).filter(function(k){ return t.items[k].cat === "ulasim" && A.whereIs(t, k) && A.dayById(t, A.whereIs(t, k)); }).length;
+  return {hazirlik: done + "/" + t.checklist.length, tarihler: t.days.filter(function(d){ return d.items.length; }).length, ulasim: transit, harcamalar: t.expenses.length || "", galeri: t.photos.length || ""};
+}
+A.navCounts = navCounts;
+
+function Rail(){
+  return h("nav", {className: "tp-onshell app-rail", "aria-label": "Geziler"},
+    h(T.Logo, {variant: "plain", href: S.cur ? A.href("tarihler") : "#", label: "Triplanner"}),
+    h("span", {className: "app-rail__sep", "aria-hidden": "true"}),
+    S.app.order.map(function(id){
+      var t = S.app.trips[id]; if(!t) return null;
+      return h(T.TripAvatar, {key: id, initials: t.short, label: t.name, color: COLORS[t.color % 6], active: id === S.cur, href: A.href(S.page, S.page === "harcamalar" ? "" : "", id)});
+    }),
+    h(T.IconButton, {icon: "plus", label: "Yeni gezi", variant: "rail", size: "lg", round: true, onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}));
+}
+function Sidebar(){
+  var t = A.trip();
+  if(!t) return h("nav", {className: "tp-onshell app-side", "aria-label": "Sayfalar"});
+  var c = navCounts(t);
+  var sub = A.pages[S.page] && A.pages[S.page].submenu ? A.pages[S.page].submenu(t) : null;
+  return h("nav", {className: "tp-onshell app-side", "aria-label": t.name + " sayfaları"},
+    h("div", {className: "app-side__trip"},
+      h("div", {style:{flex:1, minWidth:0}},
+        h("div", {className: "heading app-ellipsis"}, t.name),
+        h("div", {className: "body-sm app-weak"}, D.fmtRange(t.start, t.end) + " · " + t.days.length + " gün")),
+      h(T.IconButton, {icon: "settings", label: "Gezi ayarları", size: "sm", onClick: function(){ S.dialog = {kind: "trip-settings"}; A.render(); }})),
+    h("div", {className: "app-side__nav"}, PAGES.map(function(p){
+      return h(T.NavItem, {key: p, icon: A.PAGE_INFO[p].icon, label: A.PAGE_INFO[p].label, count: c[p], href: A.href(p), active: S.page === p});
+    })),
+    sub,
+    h("div", {className: "app-side__foot"}, h(A.StatusChip), h("span", {style:{flex:1}}),
+      h(T.IconButton, {icon: A.dark ? "sun" : "eye", label: A.dark ? "Açık tema" : "Koyu tema", size: "sm", onClick: A.toggleTheme})));
+}
+A.Submenu = function(p){
+  return h("div", {className: "app-side__sub"}, (p.sections || [{title: p.title, items: p.children}]).map(function(s, i){
+    return h(F, {key: i}, h("h2", {className: "label app-side__subhead", style: i ? {marginTop: "var(--space-5)"} : null}, s.title), s.items);
+  }));
+};
+
+function PhoneHeader(){
+  var t = A.trip();
+  return h("header", {className: "tp-onshell app-phonehead"},
+    h("button", {type: "button", className: "app-phonehead__trip", onClick: function(){ S.dialog = {kind: "trip-menu"}; A.render(); }, "aria-label": "Gezi değiştir" + (t ? ": " + t.name : "")},
+      h(T.Logo, {variant: "plain", size: "sm"}),
+      h("span", {style:{minWidth:0, textAlign:"left"}},
+        h("span", {className: "body-strong app-ellipsis", style:{display:"block"}}, t ? t.name : "Triplanner"),
+        t ? h("span", {className: "body-sm app-weak", style:{display:"block"}}, D.fmtRange(t.start, t.end) + " · " + t.days.length + " gün") : null),
+      h("span", {className: "app-weak"}, h(T.Icon, {name: "chevron-down", size: 20}))),
+    h(T.IconButton, {icon: A.dark ? "sun" : "eye", label: A.dark ? "Açık tema" : "Koyu tema", size: "lg", onClick: A.toggleTheme}));
+}
+function PhoneNav(){
+  var t = A.trip(); if(!t) return null;
+  var c = navCounts(t);
+  return h("div", {className: "tp-onshell app-phonenav"}, h(T.BottomNav, {label: "Sayfalar", items: PAGES.map(function(p){
+    return {label: A.PAGE_INFO[p].label, icon: A.PAGE_INFO[p].icon, href: A.href(p), active: S.page === p, badge: p === "hazirlik" ? (t.checklist.length - t.checklist.filter(function(x){ return x.done; }).length) || undefined : undefined};
+  })}));
+}
+
+/* tema */
+A.dark = false;
+A.toggleTheme = function(){ S.views._theme = A.dark ? "light" : "dark"; A.saveViews(); A.render(); };
+
+A.pages = {};
+function Root(){
+  var st = React.useState(0);
+  React.useEffect(function(){ return A.subscribe(function(){ st[1](function(n){ return n + 1; }); }); }, []);
+  var phone = A.useMedia("(max-width: 899px)");
+  var sysDark = A.useMedia("(prefers-color-scheme: dark)");
+  A.isPhone = phone;
+  A.dark = S.views._theme ? S.views._theme === "dark" : sysDark;
+  var t = A.trip();
+  var Page = t && A.pages[S.page] ? A.pages[S.page].view : null;
+  var content = t ? (Page ? h(Page, {t: t, v: A.view()}) : null) : h(A.EmptyApp);
+  var overlay = A.Dialogs ? h(A.Dialogs) : null;
+  var toast = S.toast ? h("div", {className: "app-toastwrap"}, h(T.Toast, {key: S.toast.at, text: S.toast.text, actionLabel: S.toast.undo ? "Geri al" : undefined, onAction: S.toast.undo ? function(){ var u = S.toast.undo; S.toast = null; u(); } : undefined})) : null;
+  if(phone){
+    return h("div", {"data-theme": A.dark ? "dark" : "light", className: "app-root"},
+      h("div", {className: "tp-shell app-phone"}, h(PhoneHeader),
+        h("div", {className: "tp-phonecard app-phonecard"}, h("div", {className: "app-phonebody", "data-scroll": true}, content)),
+        h(PhoneNav)), overlay, toast);
+  }
+  return h("div", {"data-theme": A.dark ? "dark" : "light", className: "app-root"},
+    h("div", {className: "tp-shell app-desk"}, h(Rail), h(Sidebar),
+      h("main", {className: "tp-shellcard app-main"}, content)), overlay, toast);
+}
+A.Root = Root;
+
+A.EmptyApp = function(){
+  if(window.TPB && !window.TPB.loaded) return h("div", {className: "app-empty"}, h("p", {className: "body app-muted"}, "Geziler yükleniyor…"));
+  return h("div", {className: "app-empty"}, h(T.EmptyState, {illustration: "trip", title: "Henüz gezi yok", text: "Adını ve tarihlerini gir; her gün için bir sayfa açılır."},
+    h(T.Button, {variant: "primary", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi"),
+    window.TPB ? h(T.Button, {variant: "secondary", icon: "calendar", onClick: function(){
+      var n = D.seedGeorgia(); n.id = D.uid("t"); S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); A.go("tarihler", "", n.id);
+    }}, "Gürcistan Yılbaşı planıyla başla") : null),
+    window.TPB ? h("div", {style:{marginTop:"var(--space-5)", textAlign:"center"}}, h(window.TPB.Account)) : null);
+};
+
+/* Ana içerik iskeleti: başlık, kayan gövde, sağ kart */
+A.Layout = function(p){
+  var aside = p.aside ? h("aside", {className: "tp-panel-surface app-aside", "aria-label": p.asideLabel || "Kenar"}, p.aside) : null;
+  if(A.isPhone){
+    return h(F, null, p.head, h("div", {className: "app-phonepage"}, p.children, p.phoneAside === false ? null : (p.aside ? h("div", {className: "app-phoneaside"}, p.aside) : null)));
+  }
+  return h(F, null, p.head,
+    h("div", {className: "tp-shellbody app-body", "data-scroll": true},
+      p.top || null,
+      h("div", {className: "app-cols"}, h("div", {className: "app-colmain"}, p.children), aside)));
+};
+})();
