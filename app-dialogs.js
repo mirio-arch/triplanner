@@ -269,7 +269,7 @@ A.Dialogs = function(){
   if(d.kind === "keyinfo") return h(KeyInfoDialog);
   if(d.kind === "expense") return h(T.Sheet, {title: d.id ? "Harcamayı düzenle" : "Harcama ekle", placement: A.isPhone ? "bottom" : "right", onClose: close, direction: "none"},
     h(A.ExpenseForm, {t: t, id: d.id, preset: d.preset, title: false, onDone: close}));
-  if(d.kind === "photo") return h(T.Sheet, {title: "Fotoğraf", placement: "bottom", onClose: function(){ A.view().photo = null; close(); }, direction: "none"}, h(A.GaleriAside, {t: t, v: A.view()}));
+  if(d.kind === "photo") return h(T.Sheet, {title: "Fotoğraf", placement: "bottom", onClose: function(){ A.view().photo = null; close(); }, direction: "none"}, h(A.GaleriAside, {t: t, v: A.view(), noAdd: true}));
   return null;
 };
 })();

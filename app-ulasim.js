@@ -31,6 +31,12 @@ function durMin(s){
   var t = String(s || "").replace(",", "."), m = t.match(/(\d+(?:\.\d+)?)\s*(saat|sa)\b/), n = t.match(/(\d+)\s*(dk|dakika)/);
   var v = (m ? parseFloat(m[1]) * 60 : 0) + (n ? +n[1] : 0); return v || 0;
 }
+/* eski kayıtlarda varış saati notta yazıyor: "21:20'de iniş" */
+function endOf(it){
+  if(it.end) return it.end;
+  var m = String(it.note || "").match(/(\d{1,2}[:.]\d{2})\s*['’]?\s*(?:d[ae]|t[ae])?\s+(?:iniş|varış)/i);
+  return m ? m[1] + (zoneOf(it.time) ? " " + zoneOf(it.time) : "") : "";
+}
 function clock(s){ var x = hm(s); return x ? String(x[0]).padStart(2, "0") + ":" + String(x[1]).padStart(2, "0") : ""; }
 A.timeAt = at; A.durMin = durMin; A.clockOf = clock;
 function entries(t){
@@ -39,7 +45,7 @@ function entries(t){
     transitOf(t, d).forEach(function(id, j){
       var it = t.items[id], start = at(d.date, it.time), end = null;
       if(start !== null){
-        var e = it.end ? at(d.date, it.end + (zoneOf(it.end) ? "" : (zoneOf(it.time) ? " " + zoneOf(it.time) : ""))) : null;
+        var en = endOf(it), e = en ? at(d.date, en + (zoneOf(en) ? "" : (zoneOf(it.time) ? " " + zoneOf(it.time) : ""))) : null;
         if(e !== null && e < start) e += 864e5;
         end = e !== null ? e : start + (durMin(it.duration) || 60) * 6e4;
       }
@@ -149,9 +155,24 @@ function MapBox(p){
   }, []);
   return h("div", {ref: ref, className: p.className, style: p.style}, sz[0].w ? h(RouteMap, Object.assign({}, p.map, {w: sz[0].w, h: sz[0].h})) : null);
 }
+var PLACE_QUERY = {rzv: "Rize-Artvin Havalimanı", hopa: "Hopa", sarp: "Sarp Sınır Kapısı", gonio: "Gonio-Apsaros Kalesi", batum: "Batum", botanik: "Batum Botanik Bahçesi", kobuleti: "Kobuleti",
+  kutaisi: "Kutaisi", gelati: "Gelati Manastırı", motsameta: "Motsameta Manastırı", sataplia: "Sataplia", prometheus: "Prometheus Mağarası"};
+function q(s, geo){ var k = geo ? placeKey(s) : null; return k ? PLACE_QUERY[k] : s; }
+function km(t, it){
+  if(!hasMap(t)) return 0;
+  var lg = legOf(t, it); if(!lg || lg.single) return 0;
+  var sum = 0;
+  for(var i = 1; i < lg.keys.length; i++){
+    var a = G.PLACES[lg.keys[i - 1]], b = G.PLACES[lg.keys[i]], R = 6371, rad = Math.PI / 180;
+    var dLat = (b[0] - a[0]) * rad, dLon = (b[1] - a[1]) * rad;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    sum += 2 * R * Math.asin(Math.sqrt(x));
+  }
+  return Math.round(sum * 1.2);
+}
 function gmaps(it){
-  var r = routeOf(it);
-  if(r[0] && r[1]) return "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(r[0]) + "&destination=" + encodeURIComponent(r[1]);
+  var r = routeOf(it), geo = hasMap(A.trip());
+  if(r[0] && r[1]) return "https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=" + encodeURIComponent(q(r[0], geo)) + "&destination=" + encodeURIComponent(q(r[1], geo));
   return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent((it.title || "").replace(/[→]/g, " "));
 }
 function within24h(t){
@@ -179,12 +200,15 @@ function Ends(p){
     sub ? h("span", {className: "body-sm app-muted app-ellipsis"}, sub) : null,
     p.time ? h("span", {className: "app-ticket__time"}, p.time, p.zone ? h("small", null, " " + p.zone) : null) : null);
 }
+function openUrl(u){ window.open(u, "_blank", "noopener"); }
 function Actions(p){
   var it = p.it;
-  return h("div", {className: "app-row app-row--wrap app-ticket__acts"},
-    h(T.Button, {size: "sm", icon: "edit", onClick: function(e){ e.stopPropagation(); S.dialog = {kind: "transit", id: p.id}; A.render(); }}, "Düzenle"),
-    h(T.Button, {size: "sm", variant: "ghost", icon: "calendar", onClick: function(e){ e.stopPropagation(); A.view().day = p.day; A.saveViews(); A.go("tarihler"); }}, "Plandaki karta git"),
-    h(T.Button, {size: "sm", variant: "ghost", iconEnd: "external", href: it.link || gmaps(it), target: "_blank", onClick: function(e){ e.stopPropagation(); }}, it.link ? "Bilgi" : "Yol tarifi"));
+  var items = [{label: "Yol tarifi", icon: "route", description: "Google Haritalar'da mesafe ve süre", onClick: function(){ openUrl(gmaps(it)); }},
+    it.link ? {label: "Bilgi", icon: "external", onClick: function(){ openUrl(it.link); }} : null,
+    {label: "Plandaki karta git", icon: "calendar", onClick: function(){ A.view().day = p.day; A.saveViews(); A.go("tarihler"); }}].filter(Boolean);
+  return h("div", {className: "app-ticket__acts", onClick: function(e){ e.stopPropagation(); }},
+    h(T.Button, {size: "sm", icon: "edit", onClick: function(){ S.dialog = {kind: "transit", id: p.id}; A.render(); }}, "Düzenle"),
+    h(T.Dropdown, {icon: "more", ariaLabel: "Diğer seçenekler: " + (it.title || ""), size: "sm", variant: "outline", menuWidth: "240px", items: items}));
 }
 function TicketCard(p){
   var t = p.t, e = p.e, it = e.it, r = routeOf(it), mode = modeOf(it), sel = p.selected;
@@ -203,10 +227,10 @@ function TicketCard(p){
       h(Ends, {code: it.fromCode, city: r[0], time: clock(it.time), zone: zoneOf(it.time)}),
       h("div", {className: "app-ticket__line", "aria-hidden": "true"}, h("span", {className: "app-ticket__mode"}, h(T.Icon, {name: MODE_ICON[mode] || "route", size: 18})),
         it.duration ? h("span", {className: "app-ticket__dur body-sm app-muted"}, it.duration) : null),
-      h(Ends, {code: it.toCode, city: r[1], time: clock(it.end), zone: zoneOf(it.end) || (it.end ? zoneOf(it.time) : ""), right: true}))
+      h(Ends, {code: it.toCode, city: r[1], time: clock(endOf(it)), zone: zoneOf(endOf(it)) || (endOf(it) ? zoneOf(it.time) : ""), right: true}))
     : h("div", {className: "app-ticket__route is-plain"},
       h("div", {style: {minWidth: 0, flex: 1}}, h("span", {className: "app-ticket__title heading"}, it.title || "Yolculuk"),
-        h("span", {className: "app-ticket__time"}, clock(it.time) || it.time, zoneOf(it.time) ? h("small", null, " " + zoneOf(it.time)) : null, it.end ? " → " + clock(it.end) : "")),
+        h("span", {className: "app-ticket__time"}, clock(it.time) || it.time, zoneOf(it.time) ? h("small", null, " " + zoneOf(it.time)) : null, endOf(it) ? " → " + clock(endOf(it)) : "")),
       h("span", {className: "app-ticket__mode"}, h(T.Icon, {name: MODE_ICON[mode] || "route", size: 18}))),
     h("div", {className: "app-ticket__cut", "aria-hidden": "true"}),
     h("div", {className: "app-ticket__foot"},
@@ -217,11 +241,10 @@ function TicketCard(p){
       it.critical ? h(T.Chip, {tone: "warning", icon: "warning"}, "Kesin saat") : null,
       !(r[0] || r[1]) && !e.past ? h("button", {type: "button", className: "app-ticket__file is-ghost", onClick: function(ev){ ev.stopPropagation(); S.dialog = {kind: "transit", id: e.id, step: 1}; A.render(); }},
         h(T.Icon, {name: "plus", size: 14}), h("span", null, "Güzergâh ekle")) : null),
-    expanded && it.note ? h("p", {className: "body-sm", style: {margin: 0}}, it.note) : null,
     expanded ? h(Actions, {it: it, id: e.id, day: e.day.id}) : null);
 }
 function FlexRow(p){
-  var e = p.e, it = e.it, r = routeOf(it), mode = modeOf(it), sel = p.selected;
+  var e = p.e, it = e.it, r = routeOf(it), mode = modeOf(it), sel = p.selected, dist = km(p.t, it);
   var label = r[0] && r[1] ? r[0] + " → " + r[1] : (it.title || "Yolculuk");
   return h("div", {id: "tk-" + e.id, role: "button", tabIndex: 0, "aria-pressed": sel ? "true" : "false",
       className: "app-flexrow" + (sel ? " is-selected" : "") + (e.past ? " is-past" : ""),
@@ -230,8 +253,9 @@ function FlexRow(p){
       h(T.Icon, {name: MODE_ICON[mode] || "route", size: 16}),
       h("span", {className: "app-flexrow__time"}, clock(it.time) || (it.time || "")),
       h("span", {className: "body-sm app-ellipsis", style: {flex: 1, minWidth: 0}}, label),
-      h("span", {className: "label app-muted"}, p.showDate ? dateText(p.t, e) : D.MODES[mode])),
-    sel && A.isPhone ? h("div", {className: "app-flexrow__more"}, it.note ? h("p", {className: "body-sm app-muted", style: {margin: 0}}, it.note) : null, h(Actions, {it: it, id: e.id, day: e.day.id})) : null);
+      dist ? h("span", {className: "label app-muted app-nowrap"}, "≈ " + dist + " km") : h("span", {className: "label app-muted app-nowrap"}, p.showDate ? dateText(p.t, e) : D.MODES[mode]),
+      h("a", {href: gmaps(it), target: "_blank", rel: "noopener", className: "app-flexrow__go", "aria-label": "Yol tarifi: " + label, title: "Yol tarifi", onClick: function(ev){ ev.stopPropagation(); }}, h(T.Icon, {name: "route", size: 18}))),
+    sel && A.isPhone ? h("div", {className: "app-flexrow__more"}, h(Actions, {it: it, id: e.id, day: e.day.id})) : null);
 }
 function TicketList(p){
   var t = p.t, v = p.v, es = p.entries;
@@ -270,6 +294,18 @@ function KeyInfos(p){
     h("div", {className: "app-row"}, h("h2", {className: "heading", style: {margin: 0, flex: 1}}, "Önemli bilgiler"),
       h(T.IconButton, {icon: "edit", label: "Önemli bilgileri düzenle", size: "sm", onClick: function(){ S.dialog = {kind: "keyinfo"}; A.render(); }})),
     t.keyinfo.map(function(k){ return h(T.KeyInfo, {key: k.id, label: k.label, value: k.value, sub: k.sub, icon: /gidiş|dönüş|uçuş/i.test(k.label) ? "plane" : (/sınır/i.test(k.label) ? "id" : "clock"), tone: k.warn && hot ? "warning" : "neutral"}); }));
+}
+function KeyStrip(p){
+  var t = p.t, hot = within24h(t);
+  if(!t.keyinfo.length) return null;
+  return h("div", {className: "app-keystrip", role: "list", "aria-label": "Önemli bilgiler"},
+    t.keyinfo.map(function(k){
+      return h("div", {key: k.id, role: "listitem", className: "app-keytile" + (k.warn && hot ? " is-warn" : "")},
+        h("span", {className: "label app-muted"}, h(T.Icon, {name: /gidiş|dönüş|uçuş/i.test(k.label) ? "plane" : (/sınır/i.test(k.label) ? "id" : "clock"), size: 14}), " " + k.label),
+        h("span", {className: "app-keytile__v"}, k.value),
+        k.sub ? h("span", {className: "body-sm app-muted app-keytile__s"}, k.sub) : null);
+    }),
+    h("button", {type: "button", className: "app-keytile app-keytile--edit", "aria-label": "Önemli bilgileri düzenle", onClick: function(){ S.dialog = {kind: "keyinfo"}; A.render(); }}, h(T.Icon, {name: "edit", size: 18})));
 }
 function Aside(p){
   var t = p.t, v = p.v, sel = v.transit && t.items[v.transit] ? v.transit : null;
@@ -340,8 +376,8 @@ function Ulasim(p){
   if(A.isPhone){
     var listBody = h(F, null,
       h(A.PageHead, {title: "Ulaşım"}),
-      h("div", {className: "app-phonepage"}, h(TicketList, {t: t, v: v, entries: es}),
-        h("div", {className: "app-phoneaside"}, h(KeyInfos, {t: t}))));
+      h("div", {className: "app-phonepage"}, t.keyinfo.length ? h(KeyStrip, {t: t}) : null, h(TicketList, {t: t, v: v, entries: es}),
+        t.keyinfo.length ? null : h(KeyInfos, {t: t})));
     return h("div", {className: "app-tphone"},
       h("div", {className: "app-tphone__list", "data-scroll": true}, listBody),
       hasMap(t) ? h(MapPane, {t: t, v: v, entries: es}) : h("div", {className: "app-tphone__addbar"}, h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ addTransit(); }}, "Ulaşım ekle")));

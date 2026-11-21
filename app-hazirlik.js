@@ -33,7 +33,7 @@ A.CheckForm = CheckForm;
 
 /* Telefonda alt bölmenin küçük hali: tek satırda madde ekle */
 function QuickCheck(p){
-  var t = p.t, st = React.useState(""), g = React.useState(S.quickGroup || "belge");
+  var t = p.t, st = React.useState(""), g = React.useState(p.group || S.quickGroup || "belge");
   function add(e){
     e.preventDefault(); var title = st[0].trim(); if(!title) return;
     var n = {id: D.uid("k"), group: g[0], title: D.str(title, 160), note: "", link: "", done: false, due: ""};
@@ -47,6 +47,42 @@ function QuickCheck(p){
     h("div", {className: "app-quickchips", role: "group", "aria-label": "Grup"}, D.GROUPS.map(function(x){
       return h("button", {key: x[0], type: "button", className: "app-quickchip", "aria-pressed": g[0] === x[0] ? "true" : "false", onClick: function(){ g[1](x[0]); }}, x[1]);
     })));
+}
+
+function noteOf(c){ var due = c.due ? D.fmtDay(c.due).short : ""; return [due ? "Son gün " + due : "", c.note].filter(Boolean).join(" · "); }
+function removeItem(t, c){ var snap = A.snapshot(); t.checklist.splice(t.checklist.indexOf(c), 1); A.commit(); A.flash("“" + c.title + "” silindi.", function(){ A.restore(snap); }); }
+/* Telefonda madde satırı: düzenleme seçenekleri üç nokta menüsünde, içerik sıkışmasın */
+function CheckRow(p){
+  var t = p.t, c = p.c, id = "ci-" + c.id, note = noteOf(c);
+  var items = [c.link ? {label: "Bilgi", icon: "external", onClick: function(){ window.open(c.link, "_blank", "noopener"); }} : null,
+    {label: "Düzenle", icon: "edit", onClick: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); }},
+    {label: "Sil", icon: "trash", danger: true, onClick: function(){ removeItem(t, c); }}].filter(Boolean);
+  return h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
+    h("input", {id: id, type: "checkbox", className: "tp-check__input", checked: !!c.done, onChange: function(e){ c.done = e.target.checked; A.commit(); }}),
+    h("label", {htmlFor: id, className: "tp-checkitem__main"},
+      h("span", {className: "tp-check__box", "aria-hidden": "true"}, h(T.Icon, {name: "check", size: 14, strokeWidth: 2.5})),
+      h("span", {className: "tp-check__text"}, h("span", {className: "body-strong tp-checkitem__title"}, c.title || "Adsız madde"), note ? h("span", {className: "body-sm tp-muted"}, note) : null)),
+    h("div", {className: "tp-checkitem__actions"}, h(T.Dropdown, {icon: "more", ariaLabel: "Seçenekler: " + (c.title || ""), size: "sm", align: "right", menuWidth: "180px", items: items})));
+}
+/* Telefonda grup kartı: dokununca grubun sayfası açılır */
+function GroupCard(p){
+  var g = p.g, items = p.items, gd = items.filter(function(c){ return c.done; }).length, next = items.find(function(c){ return !c.done; });
+  return h("a", {href: A.href("hazirlik", g[0]), className: "app-gcard", style: {"--sc-bg": "var(--category-" + ART[g[0]][1] + "-weak)", "--sc-solid": "var(--category-" + ART[g[0]][1] + ")"}},
+    h("span", {className: "app-gcard__art", "aria-hidden": "true"}, h(T.Illustration, {name: ART[g[0]][0], animated: false})),
+    h("span", {className: "app-gcard__body"},
+      h("span", {className: "heading app-gcard__title"}, g[1]),
+      h("span", {className: "app-gcard__meta"}, h("span", {className: "time"}, gd + "/" + items.length),
+        h("span", {className: "tp-scard__track"}, h("span", {className: "tp-scard__fill", style: {transform: "scaleX(" + (items.length ? gd / items.length : 0) + ")"}}))),
+      h("span", {className: "body-sm app-muted app-ellipsis"}, next ? "Sıradaki: " + next.title : "Hepsi tamam")),
+    h(T.Icon, {name: "chevron-right", size: 20, className: "app-gcard__chev"}));
+}
+function PhoneGroup(p){
+  var t = p.t, g = p.g, items = t.checklist.filter(function(c){ return c.group === g[0]; }), gd = items.filter(function(c){ return c.done; }).length;
+  return h(F, null,
+    h("p", {className: "body-sm app-muted", style: {margin: "0 var(--space-1)"}}, DESC[g[0]]),
+    items.length ? h("div", {className: "app-checklist"}, items.map(function(c){ return h(CheckRow, {key: c.id, t: t, c: c}); }))
+      : h("div", {className: "app-card"}, h(T.EmptyState, {illustration: ART[g[0]][0], size: "sm", title: "Bu grup boş", text: "Alttaki düğmeden ilk maddeyi ekle."})),
+    gd && gd === items.length ? h("p", {className: "body-sm app-muted", style: {margin: "0 var(--space-1)", textAlign: "center"}}, "Bu gruptaki her şey tamam.") : null);
 }
 
 function Hazirlik(p){
@@ -69,13 +105,24 @@ function Hazirlik(p){
           onRemove: function(){ var snap = A.snapshot(); t.checklist.splice(t.checklist.indexOf(c), 1); A.commit(); A.flash("“" + c.title + "” silindi.", function(){ A.restore(snap); }); }});
       }));
   });
-  var body = total ? h("div", {className: "app-groups"}, groups)
+  var gsel = A.isPhone ? D.GROUPS.find(function(g){ return g[0] === S.sub; }) : null;
+  if(A.isPhone){
+    groups = D.GROUPS.map(function(g){ var items = t.checklist.filter(function(c){ return c.group === g[0]; }); return items.length || !total ? h(GroupCard, {key: g[0], g: g, items: items}) : null; });
+    if(gsel){
+      var gi = t.checklist.filter(function(c){ return c.group === gsel[0]; });
+      head = h(A.PageHead, {title: gsel[1], phoneRight: h(F, null,
+        h("a", {href: A.href("hazirlik"), className: "app-back"}, h(T.Icon, {name: "chevron-left", size: 20}), h("span", null, "Hazırlık")),
+        h("span", {className: "heading app-ellipsis", style: {flex: 1, minWidth: 0}}, gsel[1]),
+        h(T.Chip, {tone: gi.length && gi.every(function(c){ return c.done; }) ? "success" : "outline", icon: "check"}, gi.filter(function(c){ return c.done; }).length + " / " + gi.length))});
+    }
+  }
+  var body = gsel ? h(PhoneGroup, {t: t, g: gsel}) : total ? h("div", {className: A.isPhone ? "app-gcards" : "app-groups"}, groups)
     : h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "packing", title: "Hazırlık listen boş", text: "Sağdaki karttan ilk maddeyi ekle."}));
   var aside = h(F, null,
     h("div", null, h("h2", {className: "heading", style:{margin:0}}, "Madde ekle"), h("p", {className: "body-sm app-muted", style:{margin:0}}, "Belge, rezervasyon ya da çantaya girecek bir şey.")),
     h(CheckForm, {t: t, key: "new"}));
   return h(A.Layout, {head: head, aside: aside, asideLabel: "Madde ekle", phoneAside: false,
-    pane: A.isPhone ? {id: "hazirlik", label: "Madde ekle", fab: {icon: "plus", label: "Madde"}, peek: h(QuickCheck, {t: t}), full: aside} : null}, body);
+    pane: A.isPhone ? {id: "hazirlik", label: "Madde ekle", fab: {icon: "plus", label: "Madde"}, peek: h(QuickCheck, {t: t, group: gsel ? gsel[0] : null, key: gsel ? gsel[0] : "all"}), full: aside} : null}, body);
 }
 
 function Submenu(t){
