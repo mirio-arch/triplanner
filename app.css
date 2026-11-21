@@ -841,3 +841,20 @@ a{color:var(--foreground-secondary)}
 .app-timefield{align-items:start}
 .app-timefield__side{padding-top:14px}
 .app-tzpick .app-curseg button{height:38px}
+.app-rate__val small.app-rate__src{color:var(--foreground-weak)}
+.app-rates__src a{font-weight:600}
+/* Kaydırarak silme */
+.app-swipe{position:relative;touch-action:pan-y;transition:height var(--duration-base) var(--ease-standard),opacity var(--duration-base) var(--ease-standard),margin var(--duration-base) var(--ease-standard)}
+.app-swipe__body{position:relative;z-index:1;will-change:transform}
+.app-swipe__act{position:absolute;top:0;bottom:0;right:0;width:100%;z-index:0;display:flex;align-items:center;justify-content:flex-end;padding:0;border:0;border-radius:var(--sw-radius,var(--radius-card));
+  background:var(--background-danger,#dc2626);color:#fff;font:600 12px var(--font-sans);opacity:0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity 120ms linear}
+.app-swipe__lbl{width:var(--sw,84px);display:flex;flex-direction:column;align-items:center;gap:2px;transition:width 120ms var(--ease-standard)}
+.app-swipe__act .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor;color:#fff}
+.app-swipe.is-active .app-swipe__act{opacity:1}
+.app-swipe.is-full .app-swipe__act{justify-content:flex-start}
+.app-swipe.is-full .app-swipe__lbl{width:84px}
+.app-swipe.is-leaving{opacity:0;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.app-swipe,.app-swipe__act,.app-swipe__lbl{transition:none}}
+.app-swipe__body>.tp-exp{background:var(--background-raised)}
+.app-swipe__body>.app-flexrow{background:var(--background)}
+.app-swipe .app-swipe__body>.app-pcard,.app-swipe .app-swipe__body>.app-ticket,.app-swipe .app-swipe__body>.tp-checkitem{margin:0}

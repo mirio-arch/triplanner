@@ -257,7 +257,13 @@ function num(v){ var n = typeof v === "number" ? v : parseFloat(String(v || "").
 function parseAmount(s){ if(typeof s === "number") return s; s = String(s || "").trim(); if(!s) return 0; if(/,\d{1,2}$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); else s = s.replace(/[.,](?=\d{3}(\D|$))/g, ""); var n = parseFloat(s); return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; }
 function fmtNum(n, dec){ var v = Math.round((Number(n) || 0) * (dec ? 100 : 1)) / (dec ? 100 : 1); var parts = (dec ? v.toFixed(2) : String(Math.round(v))).split("."); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); return parts.length > 1 && parts[1] !== "00" ? parts[0] + "," + parts[1] : parts[0]; }
 function fmtMoney(n, cur){ return fmtNum(n, n % 1 !== 0) + " " + (cur || "TL"); }
-function toTL(t, amount, cur){ if(!cur || cur === "TL") return amount; var r = t.rate && t.rate[cur]; return r ? amount * r : null; }
+/* Otomatik kurlar (günde bir, ücretsiz kur servisi): bu cihazda saklanır. Elle girilen kur her zaman önce gelir. */
+var FX_KEY = "triplanner-fx", FX = {rates: {}, at: "", fetched: 0};
+try{ var fxs = JSON.parse(localStorage.getItem(FX_KEY) || "null"); if(fxs && fxs.rates) FX = fxs; }catch(e){}
+function setFx(o){ FX = o; try{ localStorage.setItem(FX_KEY, JSON.stringify(o)); }catch(e){} }
+function autoRate(cur){ var r = FX.rates && FX.rates[cur]; return r > 0 ? r : null; }
+function rateOf(t, cur){ if(!cur || cur === "TL") return 1; var m = t && t.rate && t.rate[cur]; return m || autoRate(cur); }
+function toTL(t, amount, cur){ if(!cur || cur === "TL") return amount; var r = rateOf(t, cur); return r ? amount * r : null; }
 
 /* kim ekledi: kullanıcı kimliği ve o anki görünen adı */
 function byOf(r, o){
@@ -478,7 +484,7 @@ window.TPD = {CATS:CATS, GROUPS:GROUPS, MONTHS:MONTHS, WD:WD, WDS:WDS, MAX_DAYS:
   EXP_CATS:EXP_CATS, EXP_ORDER:EXP_ORDER, EXP_ICON:EXP_ICON, CURRENCIES:CURRENCIES, COUNTRIES:COUNTRIES, COUNTRY:COUNTRY, ALLCUR:ALLCUR, isCur:isCur, curList:curList, MODES:MODES, CAT_TO_EXP:CAT_TO_EXP, CAT_TO_DS:CAT_TO_DS,
   parseISO:parseISO, isoOf:isoOf, fmtDay:fmtDay, fmtRange:fmtRange, datesBetween:datesBetween, dayIdOf:dayIdOf, str:str, safeLink:safeLink, uid:uid, initials:initials,
   seedGeorgia:seedGeorgia, newTrip:newTrip, normalizeTrip:normalizeTrip, syncTransportExpenses:syncTransportExpenses, guessMode:guessMode,
-  parseAmount:parseAmount, fmtNum:fmtNum, fmtMoney:fmtMoney, toTL:toTL, photoUrl:photoUrl,
+  parseAmount:parseAmount, fmtNum:fmtNum, fmtMoney:fmtMoney, toTL:toTL, rateOf:rateOf, autoRate:autoRate, fx:function(){ return FX; }, setFx:setFx, photoUrl:photoUrl,
   loadLocal:loadLocal, saveLocal:saveLocal, loadViews:loadViews, saveViews:saveViews, Sync:Sync,
   GEO:{PLACES:PLACES, STOPS:STOPS, COAST:COAST, BORDER:BORDER, RIONI:RIONI, ROUTES:ROUTES, LEGS:LEGS, proj:proj, gk:gk}};
 })();

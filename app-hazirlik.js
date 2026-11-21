@@ -69,12 +69,12 @@ function CheckRow(p){
     {label: "Düzenle", icon: "edit", onClick: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); }},
     A.chatApi && A.chatApi() ? {label: "Sohbette bahset", icon: "share", onClick: function(){ A.openChat({k: "check", id: c.id, l: D.str(c.title, 80)}); }} : null,
     {label: "Sil", icon: "trash", danger: true, onClick: function(){ removeItem(t, c); }}].filter(Boolean);
-  return h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
+  return h(A.Swipe, {onAction: function(){ removeItem(t, c); }}, h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
     h("input", {id: id, type: "checkbox", className: "tp-check__input", checked: !!c.done, onChange: function(e){ setDone(t, c, e.target.checked); }}),
     h("label", {htmlFor: id, className: "tp-checkitem__main"},
       h("span", {className: "tp-check__box", "aria-hidden": "true"}, h(T.Icon, {name: "check", size: 14, strokeWidth: 2.5})),
       h("span", {className: "tp-check__text"}, h("span", {className: "body-strong tp-checkitem__title"}, c.title || "Adsız madde"), note ? h("span", {className: "body-sm tp-muted"}, note) : null)),
-    h("div", {className: "tp-checkitem__actions"}, h(A.MoreMenu, {ariaLabel: "Seçenekler: " + (c.title || ""), size: "sm", menuWidth: "240px", items: items})));
+    h("div", {className: "tp-checkitem__actions"}, h(A.MoreMenu, {ariaLabel: "Seçenekler: " + (c.title || ""), size: "sm", menuWidth: "240px", items: items}))));
 }
 /* Telefonda grup kartı: dokununca grubun sayfası açılır */
 function GroupCard(p){

@@ -187,6 +187,13 @@ function select(id, opts){
   A.saveViews(); A.render();
   if(opts && opts.scroll) setTimeout(function(){ var el = document.getElementById("tk-" + id); if(el) el.scrollIntoView({block: "nearest", behavior: "smooth"}); }, 60);
 }
+/* yolculuğu sil (kaydırarak); geri alınabilir */
+function removeTransit(t, id){
+  var it = t.items[id]; if(!it) return;
+  var snap = A.snapshot(), arr = A.listOf(t, A.whereIs(t, id)); if(arr && arr.indexOf(id) > -1) arr.splice(arr.indexOf(id), 1);
+  delete t.items[id]; var v = A.view(); if(v.transit === id) v.transit = null;
+  A.commit(); A.flash("“" + (it.title || "Yolculuk") + "” silindi.", function(){ A.restore(snap); });
+}
 function openTicket(id, e){ if(e){ e.stopPropagation(); e.preventDefault(); } S.dialog = {kind: "ticket", id: id}; A.render(); }
 function addTransit(day){ var v = A.view(); S.dialog = {kind: "transit", day: day && A.dayById(A.trip(), day) ? day : v.day}; A.render(); }
 
@@ -267,7 +274,10 @@ function TicketList(p){
   var t = p.t, v = p.v, es = p.entries;
   var up = es.filter(function(e){ return !e.past; }), past = es.filter(function(e){ return e.past; }).reverse();
   var next = up.find(function(e){ return !e.flex && e.start !== null; });
-  function row(e, showDate){ return e.flex ? h(FlexRow, {key: e.id, t: t, e: e, selected: v.transit === e.id, showDate: showDate}) : h(TicketCard, {key: e.id, t: t, e: e, selected: v.transit === e.id, next: next === e}); }
+  function row(e, showDate){
+    var card = e.flex ? h(FlexRow, {t: t, e: e, selected: v.transit === e.id, showDate: showDate}) : h(TicketCard, {t: t, e: e, selected: v.transit === e.id, next: next === e});
+    return h(A.Swipe, {key: e.id, radius: e.flex ? "var(--radius-control)" : "var(--radius-tile)", onAction: function(){ removeTransit(t, e.id); }}, card);
+  }
   if(!es.length) return h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "trip", title: "Henüz yolculuk yok", text: "Uçak, otobüs ya da tren biletini " + (A.isPhone ? "sağ alttaki + ile" : "sağdaki karttan") + " ekle; burada tarih sırasıyla bilet kartı olarak durur."}));
   return h("div", {className: "app-tlist"},
     up.length ? h("h2", {className: "label app-muted app-tlist__sec"}, "Yaklaşan") : null,

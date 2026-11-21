@@ -527,6 +527,80 @@ A.PhotoField = function(p){
     }}, h(T.PhotoInput, p));
 };
 
+/* Otomatik kur: günde en fazla iki kez, TL karşılıkları; başarısız olursa sessizce elle girilen kurla devam */
+var fxBusy = false;
+A.ensureFx = function(force){
+  var fx = D.fx(); if(fxBusy || (!force && fx.fetched && Date.now() - fx.fetched < 12 * 3600e3)) return;
+  if(!window.fetch) return; fxBusy = true;
+  fetch("https://open.er-api.com/v6/latest/TRY").then(function(r){ return r.json(); }).then(function(j){
+    fxBusy = false;
+    if(!j || j.result !== "success" || !j.rates) return;
+    var rates = {};
+    D.ALLCUR.forEach(function(c){ var code = c === "TL" ? "TRY" : c, v = j.rates[code]; if(c !== "TL" && v > 0) rates[c] = Math.round(1 / v * 10000) / 10000; });
+    D.setFx({rates: rates, at: j.time_last_update_unix ? new Date(j.time_last_update_unix * 1000).toISOString() : new Date().toISOString(), fetched: Date.now()});
+    A.render();
+  }, function(){ fxBusy = false; });
+};
+document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") A.ensureFx(); });
+
+/* Kaydırarak silme (Apple tarzı): sola kaydırınca kırmızı alan ve simge çıkar; dokununca ya da
+   kaydırmaya devam edince işlem yapılır. Yalnızca dokunmatikte; dikey kaydırmayı engellemez. */
+var SW_ACT = 84, swOpen = null;
+A.Swipe = function(p){
+  var wrap = React.useRef(null), body = React.useRef(null), st = React.useRef(null), x = React.useRef(0), leaving = React.useState(false);
+  function set(nx, anim){
+    x.current = nx; var b = body.current, w = wrap.current; if(!b || !w) return;
+    b.style.transition = anim ? "transform var(--duration-base) var(--ease-standard)" : "none";
+    b.style.transform = nx ? "translate3d(" + nx + "px,0,0)" : "";
+    w.classList.toggle("is-active", nx < 0);
+    w.classList.toggle("is-full", -nx > w.offsetWidth * .55);
+    w.style.setProperty("--sw", Math.max(SW_ACT, -nx) + "px");
+  }
+  function close(){ set(0, true); if(swOpen === close) swOpen = null; }
+  function run(){
+    var w = wrap.current; if(!w) return;
+    set(-w.offsetWidth, true);
+    w.style.height = w.offsetHeight + "px";
+    requestAnimationFrame(function(){ w.classList.add("is-leaving"); w.style.height = "0px"; });
+    setTimeout(function(){ if(swOpen === close) swOpen = null; p.onAction(); }, 260);
+  }
+  function down(e){
+    if(e.pointerType !== "touch" || leaving[0]) return;
+    if(e.target.closest && e.target.closest(".tp-card__handle,input,textarea,select,.app-swipe__act")) return;
+    if(swOpen && swOpen !== close) swOpen();
+    st.current = {x0: e.clientX, y0: e.clientY, base: x.current, dir: null, id: e.pointerId};
+  }
+  function move(e){
+    var s = st.current; if(!s || e.pointerId !== s.id) return;
+    var dx = e.clientX - s.x0, dy = e.clientY - s.y0;
+    if(!s.dir){ if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? "h" : "v"; if(s.dir === "h"){ try{ wrap.current.setPointerCapture(e.pointerId); }catch(er){} } }
+    if(s.dir !== "h") return;
+    var nx = Math.min(0, s.base + dx); if(nx > 0) nx = 0;
+    set(nx, false);
+  }
+  function up(e){
+    var s = st.current; st.current = null; if(!s || s.dir !== "h") return;
+    s.swiped = true; wrap.current._swiped = Date.now();
+    var w = wrap.current.offsetWidth, nx = x.current;
+    if(-nx > w * .55) run();
+    else if(-nx > SW_ACT * .5){ set(-SW_ACT, true); swOpen = close; }
+    else close();
+  }
+  function clickCap(e){
+    var w = wrap.current;
+    if(e.target.closest && e.target.closest(".app-swipe__act")) return;
+    if(w && w._swiped && Date.now() - w._swiped < 400){ e.stopPropagation(); e.preventDefault(); return; }
+    if(x.current < 0 && !(e.target.closest && e.target.closest(".app-swipe__act"))){ e.stopPropagation(); e.preventDefault(); close(); }
+  }
+  React.useEffect(function(){ return function(){ if(swOpen === close) swOpen = null; }; }, []);
+  if(!A.isPhone || p.disabled) return p.children;
+  return h("div", {ref: wrap, className: "app-swipe" + (p.className ? " " + p.className : ""), style: p.radius ? {"--sw-radius": p.radius} : null,
+      onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up, onClickCapture: clickCap},
+    h("button", {type: "button", className: "app-swipe__act", tabIndex: -1, "aria-hidden": "true", onClick: function(e){ e.stopPropagation(); run(); }},
+      h("span", {className: "app-swipe__lbl"}, h(T.Icon, {name: p.icon || "trash", size: 20}), h("span", null, p.label || "Sil"))),
+    h("div", {ref: body, className: "app-swipe__body"}, p.children));
+};
+
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
 A.markDirty = function(){ S.dirty = true; };
 
@@ -598,6 +672,7 @@ A.pages = {};
 function Root(){
   var st = React.useState(0);
   React.useEffect(function(){ return A.subscribe(function(){ st[1](function(n){ return n + 1; }); }); }, []);
+  React.useEffect(function(){ A.ensureFx(); }, []);
   var phone = A.useMedia("(max-width: 899px)");
   var sysDark = A.useMedia("(prefers-color-scheme: dark)");
   A.isPhone = phone;

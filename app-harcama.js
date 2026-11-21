@@ -27,7 +27,7 @@ function shares(st){
   raw.map(function(r, i){ return [r - fl[i], i]; }).sort(function(a, b){ return b[0] - a[0]; }).slice(0, rest).forEach(function(x){ fl[x[1]]++; });
   return items.map(function(x, i){ return Object.assign(x, {share: fl[i], display: D.fmtMoney(x.value, "TL")}); });
 }
-function rateHint(t, cur){ var r = t.rate[cur]; return r ? "1 " + cur + " = " + D.fmtNum(r, true) + " TL" : null; }
+function rateHint(t, cur){ var r = D.rateOf(t, cur); return r ? "1 " + cur + " = " + D.fmtNum(r, true) + " TL" : null; }
 function convText(t, e){ if(e.currency === "TL") return undefined; var v = eTL(t, e); return v === null ? "kur girilmedi" : "≈ " + D.fmtMoney(Math.round(v), "TL"); }
 function sortedDays(t, st){
   var ids = t.days.map(function(d){ return d.id; }).filter(function(id){ return st.byDay[id] || st.list.some(function(e){ return e.day === id; }); }).reverse();
@@ -110,7 +110,7 @@ function ExpenseForm(p){
   }
   var catOpts = D.EXP_ORDER.map(function(c){ return {label: D.EXP_CATS[c], value: c, icon: D.EXP_ICON[c]}; });
   var dayOpts = [{label: "Yola çıkmadan", value: "pre"}].concat(t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true), value: d.id}; }));
-  var conv = f.currency !== "TL" && D.parseAmount(f.amount) ? (t.rate[f.currency] ? "≈ " + D.fmtMoney(Math.round(D.parseAmount(f.amount) * t.rate[f.currency]), "TL") + " · " + rateHint(t, f.currency) : "Kur girilmedi; TL karşılığı için sağdaki Kur'u doldur.") : undefined;
+  var conv = f.currency !== "TL" && D.parseAmount(f.amount) ? (D.rateOf(t, f.currency) ? "≈ " + D.fmtMoney(Math.round(D.parseAmount(f.amount) * D.rateOf(t, f.currency)), "TL") + " · " + rateHint(t, f.currency) : "Kur girilmedi; TL karşılığı için sağdaki Kur'u doldur.") : undefined;
   return h("form", {className: "app-stack", onSubmit: save},
     p.title !== false ? h("div", {className: "app-row"}, h("h2", {className: "heading", style:{margin:0, flex:1}}, e ? "Harcamayı düzenle" : "Yeni harcama"),
       p.onDone ? h(T.IconButton, {icon: "close", label: "Kapat", size: "sm", onClick: p.onDone}) : null) : null,
@@ -147,17 +147,25 @@ function RateBox(p){
     h("div", {className: "app-rates"},
       h("span", {className: "label app-muted"}, "Kurlar"),
       foreign.map(function(c){
-        var r = t.rate[c], n = used(c), edit = st[0] && st[0].c === c;
+        var man = t.rate[c], au = D.autoRate(c), r = man || au, n = used(c), edit = st[0] && st[0].c === c;
         if(edit) return h("form", {key: c, className: "app-rate is-edit", onSubmit: function(e){ saveRate(e, c); }},
-          h(T.TextField, {label: "1 " + c + " kaç TL?", value: st[0].v, placeholder: "16,00", autoFocus: true, inputMode: "decimal", onChange: function(v){ st[1]({c: c, v: v}); }}),
-          h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ st[1](null); }}, "Vazgeç"), h(T.Button, {variant: "primary", size: "sm", type: "submit"}, "Kaydet")));
+          h(T.TextField, {label: "1 " + c + " kaç TL?", value: st[0].v, placeholder: au ? D.fmtNum(au, true) : "16,00", autoFocus: true, inputMode: "decimal", onChange: function(v){ st[1]({c: c, v: v}); }}),
+          au ? h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Otomatik kur: 1 " + c + " = " + D.fmtNum(au, true) + " TL") : null,
+          h("div", {className: "app-row", style: {flexWrap: "wrap"}},
+            man && au ? h(T.Button, {variant: "ghost", size: "sm", icon: "refresh", onClick: function(){ delete t.rate[c]; st[1](null); A.commit(); }}, "Otomatik kura dön") : null,
+            h("span", {style: {flex: 1}}),
+            h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ st[1](null); }}, "Vazgeç"), h(T.Button, {variant: "primary", size: "sm", type: "submit"}, "Kaydet")));
         return h("div", {key: c, className: "app-rate" + (!r && n ? " is-missing" : "")},
           h("span", {className: "app-rate__cur"}, c),
           h("span", {className: "app-rate__val"}, r ? "1 " + c + " = " + D.fmtNum(r, true) + " TL" : "Kur girilmedi",
+            r ? h("small", {className: "app-rate__src"}, man ? "Elle girdin" : "Otomatik") : null,
             !r && n ? h("small", null, n + " harcama TL toplamına girmiyor") : null),
-          h(T.IconButton, {icon: "edit", label: c + " kurunu " + (r ? "değiştir" : "gir"), size: "sm", onClick: function(){ st[1]({c: c, v: r ? D.fmtNum(r, true) : ""}); }}));
+          h(T.IconButton, {icon: "edit", label: c + " kurunu " + (r ? "değiştir" : "gir"), size: "sm", onClick: function(){ st[1]({c: c, v: man ? D.fmtNum(man, true) : ""}); }}));
       }),
-      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Harcamaların TL toplamı bu kurlarla hesaplanır.")),
+      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Harcamaların TL toplamı bu kurlarla hesaplanır. Elle girdiğin kur otomatik kurun yerine geçer."),
+      D.fx().fetched ? h("p", {className: "body-sm app-muted app-rates__src", style: {margin: 0}}, "Otomatik kurlar: ",
+        h("a", {href: "https://www.exchangerate-api.com", target: "_blank", rel: "noopener noreferrer", className: "tp-link"}, "Rates By Exchange Rate API"),
+        D.fx().at ? " · " + D.fmtDay(D.fx().at.slice(0, 10)).short : "") : null),
     h("div", {className: "app-rates"},
       h("span", {className: "label app-muted", id: "main-cur-l"}, "Gezinin ana parası"),
       h("div", {className: "app-curseg app-curseg--wrap", role: "radiogroup", "aria-labelledby": "main-cur-l"}, curs.map(function(c){
@@ -200,16 +208,23 @@ function Aside(p){
       h("div", {className: "app-thumbs"}, recent.map(function(ph){ return h(T.Photo, {key: ph.id, src: D.photoUrl(ph.asset), alt: "Gezi fotoğrafı", ratio: "1 / 1", href: A.href("galeri")}); }))) : null);
 }
 
+/* harcamayı sil (kaydırarak); ulaşım biletinden geliyorsa bilet harcamasız işaretlenir */
+function removeExpense(t, e){
+  var snap = A.snapshot(), it = e.source === "transport" && t.items[e.ref];
+  if(it) it.noExpense = true;
+  var i = t.expenses.indexOf(e); if(i > -1) t.expenses.splice(i, 1);
+  A.commit(); A.flash("“" + (e.title || D.EXP_CATS[e.cat]) + "” silindi.", function(){ A.restore(snap); });
+}
 function rowFor(t, e){
   var ph = e.photos.map(function(pid){ return photoOf(t, pid); }).filter(Boolean);
   var src = SRC[e.source];
   var other = e.by && !A.isMine(e.by) ? (e.byName || "Biri") : "";
-  return h(T.ExpenseRow, {key: e.id, title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
+  return h(A.Swipe, {key: e.id, onAction: function(){ removeExpense(t, e); }}, h(T.ExpenseRow, {title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
     time: e.time || undefined, source: src ? src[0] + (other ? " · " + other : "") : (other ? other + " ekledi" : undefined), sourceIcon: src ? src[1] : (other ? "user" : undefined), photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
     highlighted: S.newExp === e.id, actionIcon: "edit", actionLabel: "Düzenle",
     onClick: function(ev){
       if(ph.length && ev && ev.target && ev.target.closest && ev.target.closest(".tp-photo")){ A.openViewer(ph.map(function(x){ return D.photoUrl(x.asset); }), 0); return; }
-      edit(e.id); }, onMore: function(){ edit(e.id); }});
+      edit(e.id); }, onMore: function(){ edit(e.id); }}));
 }
 function edit(id){ if(A.isPhone){ S.dialog = {kind: "expense", id: id}; } else { S.expEdit = id; S.expOpen = false; } S.newExp = null; A.render(); }
 
@@ -240,7 +255,7 @@ function Widget(p){
   return h("section", {className: "tp-onshell tp-aurora-card app-widget", "aria-label": "Özet"},
     h("div", {className: "app-widget__top"},
       h("div", {style:{flex:"1 1 240px", minWidth:0}}, h(T.Stat, {size: "hero", label: "Toplam harcama", value: D.fmtNum(Math.round(st.total)), unit: "TL",
-        sub: st.list.length + " harcama" + (t.rate[t.currency] ? " · " + t.currency + " tutarları " + rateHint(t, t.currency) + " ile" : "") + (st.missing ? " · " + st.missing + " harcamanın kuru yok" : "")})),
+        sub: st.list.length + " harcama" + (t.currency && D.rateOf(t, t.currency) ? " · " + t.currency + " tutarları " + rateHint(t, t.currency) + " ile" : "") + (st.missing ? " · " + st.missing + " harcamanın kuru yok" : "")})),
       h("div", {style:{flex:"1 1 260px", minWidth:0}}, meter)),
     sh.length ? h("ul", {className: "tp-legend", "aria-label": "Kategoriler"}, sh.map(function(x){
       return h("li", {key: x.color, className: "tp-legend__item body-sm", style:{color: "var(--foreground-on-shell-weak)"}}, h("span", {className: "tp-legend__key", style:{background: "var(--chart-" + x.color + ")"}}), D.EXP_CATS[x.color] + " ", h("span", {style:{color: "var(--foreground-on-shell)"}}, "%" + x.share));
@@ -283,7 +298,7 @@ function QuickExpense(p){
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
   }
-  var cur = t.currency || "TL", rate = t.rate[cur], st2 = stats(t);
+  var cur = t.currency || "TL", rate = D.rateOf(t, cur), st2 = stats(t);
   var curs = [cur].concat(D.curList(t).filter(function(c){ return c !== cur; })).slice(0, 4);
   var line = [cur === "TL" ? null : rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince kategori ve gün"].filter(Boolean).join(" · ");
   return h("form", {className: "app-qexp", onSubmit: add, noValidate: true},

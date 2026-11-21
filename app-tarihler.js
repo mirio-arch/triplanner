@@ -10,7 +10,7 @@ function removeToSide(t, id){
   var snap = A.snapshot(), it = t.items[id];
   A.moveItem(t, id, "removed", 0);
   A.commit();
-  A.flash("“" + (it.title || "Plan") + "” kenar listesine taşındı.", function(){ A.restore(snap); });
+  A.flash("“" + (it.title || "Plan") + "” " + (A.isPhone ? "Fikirler'e" : "kenar listesine") + " taşındı.", function(){ A.restore(snap); });
 }
 function addToDay(t, id, dayId){
   var snap = A.snapshot(), it = t.items[id];
@@ -118,9 +118,10 @@ function PlanList(p){
           h("span", {className: "app-prow__t"}, tm ? tm[1].replace(/\s+/g, "") : (it.time ? "" : "—")),
           tm && tm[2] ? h("span", {className: "app-prow__z"}, tm[2]) : (!tm && it.time ? h("span", {className: "app-prow__z"}, it.time) : null),
           h("span", {className: "app-prow__dot", "aria-hidden": "true"})),
-        h(PhonePlanCard, {it: it, extra: extra, next: isNext ? nx : null, open: S.planOpen === id,
-          onToggle: function(){ S.planOpen = S.planOpen === id ? null : id; A.render(); },
-          onRemove: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }}));
+        h(A.Swipe, {label: "Çıkar", icon: "close", onAction: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }},
+          h(PhonePlanCard, {it: it, extra: extra, next: isNext ? nx : null, open: S.planOpen === id,
+            onToggle: function(){ S.planOpen = S.planOpen === id ? null : id; A.render(); },
+            onRemove: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }})));
     }
     return h(T.PlanCard, {key: id, dataId: id, time: it.time || "—", title: it.title || "Adsız plan", note: it.note, category: dsCat,
       categoryLabel: D.CATS[it.cat], link: it.link ? "Bilgi" : undefined, href: it.link || undefined, extra: extra || (it.critical ? "Kesin saat" : undefined), extraIcon: extra ? "cash" : (it.critical ? "warning" : undefined),
