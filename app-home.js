@@ -80,6 +80,7 @@ function tripState(t){
   return {kind: "past", text: "Bitti", n: 1e9};
 }
 A.tripState = tripState;
+function lastAct(t){ return (t.activity || []).find(function(a){ return !A.isMine(a.by); }) || null; }
 function TripCard(p){
   var t = p.t, st = tripState(t), total = t.checklist.length, done = t.checklist.filter(function(c){ return c.done; }).length;
   var spent = A.expStats ? A.expStats(t).total : 0, nx = A.nextPlan ? A.nextPlan(t) : null, nxi = nx ? t.items[nx.id] : null;
@@ -90,6 +91,7 @@ function TripCard(p){
       h("span", {style: {flex: 1, minWidth: 0}}, h("span", {className: "heading", style: {display: "block"}}, t.name),
         h("span", {className: "body-sm app-muted"}, A.shortRange(t) + " · " + t.days.length + " gün"))),
     h("span", {className: "app-row app-row--wrap"}, h(T.Chip, {tone: st.kind === "now" ? "success" : (st.kind === "soon" ? "primary" : "outline"), icon: st.kind === "past" ? "check" : "clock"}, st.text)),
+    lastAct(t) ? h("span", {className: "app-hometrip__act body-sm"}, h(T.Icon, {name: "bell", size: 14}), h("span", {className: "app-ellipsis"}, h("strong", null, lastAct(t).byName || "Biri"), " " + lastAct(t).text + " · " + ago(lastAct(t).at))) : null,
     st.kind !== "past" && nxi ? h("span", {className: "app-hometrip__next body-sm"}, h(T.Icon, {name: "arrow-right", size: 16}), h("span", {className: "app-ellipsis"}, "Sıradaki: " + (nxi.time ? A.clockOf(nxi.time) + " " : "") + nxi.title)) : null,
     h("span", {className: "app-hometrip__stats"},
       total ? h("span", null, h("strong", null, done + "/" + total), " hazırlık") : null,
@@ -115,6 +117,46 @@ function DealCard(p){
     })) : null,
     h(T.Button, {size: "sm", variant: "ghost", icon: "calendar", onClick: function(){ start(""); }}, "Bu tarihlerle gezi aç"));
 }
+
+/* ---------- Son hareketler ---------- */
+var ACT_ICON = {expense: "wallet", plan: "calendar", idea: "calendar", transit: "route", check: "checklist", done: "check", photo: "gallery"};
+function ago(iso){
+  var d = new Date(iso), now = Date.now(), min = Math.round((now - d.getTime()) / 6e4);
+  if(!(min >= 0)) return "";
+  if(min < 1) return "az önce"; if(min < 60) return min + " dk önce";
+  var hr = Math.round(min / 60); if(hr < 24) return hr + " saat önce";
+  var days = Math.round(hr / 24); if(days < 7) return days + " gün önce";
+  return D.fmtDay(iso.slice(0, 10)).short;
+}
+A.ago = ago;
+function dayKey(iso){ var d = new Date(iso); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function openRef(t, a){
+  var v = A.view(); S.dialog = null;
+  if(a.kind === "expense"){ if(!t.expenses.some(function(e){ return e.id === a.ref; })){ A.flash("Bu harcama artık yok."); return; } if(A.isPhone){ A.go("harcamalar"); setTimeout(function(){ S.dialog = {kind: "expense", id: a.ref}; A.render(); }, 0); } else { S.expEdit = a.ref; S.expOpen = false; A.go("harcamalar"); } return; }
+  if(a.kind === "plan" || a.kind === "idea"){ var w = A.whereIs(t, a.ref); if(!w){ A.flash("Bu plan artık yok."); return; } if(A.dayById(t, w)) v.day = w; A.saveViews(); A.go("tarihler"); return; }
+  if(a.kind === "transit"){ if(!t.items[a.ref]){ A.flash("Bu yolculuk artık yok."); return; } v.transit = a.ref; var w2 = A.whereIs(t, a.ref); if(w2) v.day = w2; A.saveViews(); A.go("ulasim"); return; }
+  if(a.kind === "check" || a.kind === "done"){ var c = t.checklist.find(function(x){ return x.id === a.ref; }); A.go("hazirlik", A.isPhone && c ? c.group : ""); return; }
+  if(a.kind === "photo"){ if(t.photos.some(function(x){ return x.id === a.ref; })){ v.photo = a.ref; A.saveViews(); } A.go("galeri"); }
+}
+A.ActivityFeed = function(p){
+  var t = p.t, list = (t.activity || []).slice(0, p.limit || 120), seen = p.seenAt || "";
+  if(!list.length) return h("div", {className: "app-actempty"}, h(T.Icon, {name: "bell", size: 22}),
+    h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Henüz bir hareket yok. Sen ya da yol arkadaşların plan, bilet, harcama ya da fotoğraf ekledikçe burada görünür."));
+  var groups = [], last = null, today = dayKey(new Date().toISOString()), yest = dayKey(new Date(Date.now() - 864e5).toISOString());
+  list.forEach(function(a){ var k = dayKey(a.at); if(k !== last){ groups.push({k: k, items: []}); last = k; } groups[groups.length - 1].items.push(a); });
+  return h("div", {className: "app-acts"}, groups.map(function(g){
+    return h("section", {key: g.k, className: "app-acts__day"},
+      h("h3", {className: "label app-muted app-acts__h"}, g.k === today ? "Bugün" : (g.k === yest ? "Dün" : D.fmtDay(g.k).label)),
+      g.items.map(function(a){
+        var mine = A.isMine(a.by), name = A.nameOf(a.by, a.byName), fresh = !mine && a.at > seen;
+        return h("button", {key: a.id, type: "button", className: "app-act" + (fresh ? " is-new" : ""), onClick: function(){ openRef(t, a); }},
+          h("span", {className: "app-act__who", style: {background: "var(--category-" + (mine ? "teal" : A.personColor(a.by)) + "-strong)"}, "aria-hidden": "true"}, (name || "?").slice(0, 1).toLocaleUpperCase("tr")),
+          h("span", {className: "app-act__text"}, h("span", {className: "body-sm"}, h("strong", null, name), " " + a.text),
+            h("span", {className: "app-act__meta"}, h(T.Icon, {name: ACT_ICON[a.kind] || "dot", size: 14}), ago(a.at))),
+          h(T.Icon, {name: "chevron-right", size: 16, className: "app-act__chev"}));
+      }));
+  }));
+};
 
 function Home(){
   var B = window.TPB, name = B && B.firstName ? B.firstName() : "";

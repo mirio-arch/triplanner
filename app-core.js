@@ -206,6 +206,39 @@ A.me = function(){
   var name = md.full_name || md.name || (u && u.email ? u.email.split("@")[0] : "");
   return {name: name, email: u ? u.email : "", photo: md.avatar_url || md.picture || "", initials: name ? D.initials(name) : ""};
 };
+/* ---------- Kim ne yaptı ---------- */
+A.who = function(){
+  var B = window.TPB, u = B && B.session ? B.session.user : null;
+  if(!u) return {by: "", name: ""};
+  var n = (B.firstName && B.firstName()) || String(u.email || "").split("@")[0];
+  return {by: u.id, name: D.str(n, 40)};
+};
+A.stamp = function(o){ var w = A.who(); if(w.by){ o.by = w.by; o.byName = w.name; } if(!o.at) o.at = new Date().toISOString(); return o; };
+A.log = function(t, kind, ref, text){
+  if(!t) return; var w = A.who();
+  t.activity = t.activity || [];
+  var a = {id: D.uid("a"), at: new Date().toISOString(), kind: kind, ref: ref || "", text: D.str(text, 160)};
+  if(w.by){ a.by = w.by; a.byName = w.name; }
+  t.activity.unshift(a); if(t.activity.length > 300) t.activity.length = 300;
+};
+A.isMine = function(by){ var w = A.who(); return !by || !w.by || by === w.by; };
+A.nameOf = function(by, byName){ return A.isMine(by) ? "Sen" : (byName || "Biri"); };
+/* kişiye göre sabit renk */
+var PCOL = ["teal", "violet", "amber", "blue", "green", "wine"];
+A.personColor = function(by){ var s = String(by || ""), n = 0; for(var i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % 997; return PCOL[n % PCOL.length]; };
+A.unseen = function(t){
+  if(!t || !t.activity || !t.activity.length) return 0;
+  var v = A.view(), seen = v.seenAt || "";
+  return t.activity.filter(function(a){ return !A.isMine(a.by) && a.at > seen; }).length;
+};
+A.ActivityButton = function(p){
+  var t = A.trip(); if(!t || S.page === "home") return null;
+  var n = A.unseen(t);
+  return h("button", {type: "button", className: "app-actbtn" + (p.onShell ? " is-shell" : ""), "aria-label": "Son hareketler" + (n ? ", " + n + " yeni" : ""), title: "Son hareketler",
+      onClick: function(){ S.dialog = {kind: "activity"}; A.render(); }},
+    h(T.Icon, {name: "bell", size: p.size || 22}), n ? h("span", {className: "app-actbtn__n"}, n > 9 ? "9+" : n) : null);
+};
+
 /* Gezi simgesi, tıklanmayan hali (başka bir düğmenin içinde kullanmak için) */
 A.shortRange = function(t){ var a = D.fmtDay(t.start), b = D.fmtDay(t.end); return a.short + " – " + b.short; };
 A.TripMark = function(p){ var t = p.t; return h("span", {className: "tp-trip__btn app-tripmark", "aria-hidden": "true", style: {background: "var(--category-" + COLORS[t.color % 6] + "-strong)"}}, t.short); };
@@ -229,6 +262,7 @@ function Sidebar(){
       h("div", {style:{flex:1, minWidth:0}},
         h("div", {className: "heading app-ellipsis"}, t.name),
         h("div", {className: "body-sm app-weak"}, D.fmtRange(t.start, t.end) + " · " + t.days.length + " gün")),
+      h(A.ActivityButton, {size: 18}),
       h(T.IconButton, {icon: "settings", label: "Gezi ayarları", size: "sm", onClick: function(){ S.dialog = {kind: "trip-settings"}; A.render(); }})),
     h("div", {className: "app-side__nav"}, PAGES.map(function(p){
       return h(T.NavItem, {key: p, icon: A.PAGE_INFO[p].icon, label: A.PAGE_INFO[p].label, count: c[p], href: A.href(p), active: S.page === p});
@@ -252,6 +286,7 @@ function PhoneHeader(){
       h("span", {style:{minWidth:0, textAlign:"left", flex: 1}},
         h("span", {className: "body-strong app-ellipsis", style:{display:"block"}}, t.name),
         h("span", {className: "body-sm app-weak app-ellipsis", style:{display:"block"}}, A.shortRange(t) + " · " + t.days.length + " gün"))),
+    t ? h(A.ActivityButton, {onShell: true}) : null,
     h(A.AvatarButton, {size: 44}));
 }
 function PhoneNav(){

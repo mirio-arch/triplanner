@@ -15,10 +15,14 @@ function removeToSide(t, id){
 function addToDay(t, id, dayId){
   var snap = A.snapshot(), it = t.items[id];
   A.moveItem(t, id, dayId, "time");
+  A.log(t, "plan", id, "“" + (it.title || "Plan") + "” planını " + A.dayLabel(t, dayId) + " gününe koydu");
   A.commit();
   A.flash("“" + (it.title || "Plan") + "” " + A.dayLabel(t, dayId) + " planına eklendi.", function(){ A.restore(snap); });
 }
 A.addToDay = addToDay;
+/* öneriyi plana koymadan önce gün ve saati sor */
+function askTime(id, dayId){ S.dialog = {kind: "idea-add", id: id, day: dayId}; A.render(); }
+A.askTime = askTime;
 
 function useSortable(ref, onMove, deps){
   React.useEffect(function(){
@@ -154,7 +158,7 @@ function IdeaStrip(p){
       return h("div", {key: id, role: "listitem", className: "app-ideachip"},
         h("span", {className: "app-ideachip__t"}, it.title || "Adsız"),
         h("span", {className: "app-ideachip__n"}, it.note || D.CATS[it.cat] || ""),
-        h("button", {type: "button", className: "app-ideachip__add", onClick: function(){ addToDay(t, id, target); }}, h(T.Icon, {name: "plus", size: 14}), A.dayLabel(t, target) + " planına"));
+        h("button", {type: "button", className: "app-ideachip__add", onClick: function(){ askTime(id, target); }}, h(T.Icon, {name: "plus", size: 14}), A.dayLabel(t, target) + " planına"));
     })),
     h("p", {className: "app-peekline"}, (t.removed.length ? t.removed.length + " çıkardığın · " : "") + t.ideas.length + " öneri · yukarı çekince arama ve tamamı"));
 }
@@ -171,7 +175,7 @@ function SideList(p){
     return h(T.IdeaCard, {key: id, dataId: id, title: it.title || "Adsız", note: it.note, category: D.CAT_TO_DS[it.cat], categoryLabel: D.CATS[it.cat],
       source: kind === "removed" && it.from && A.dayById(t, it.from) ? A.dayLabel(t, it.from) + " planından" : undefined,
       day: A.dayLabel(t, target), days: dayNames,
-      onAdd: function(){ addToDay(t, id, target); }, onPick: function(i){ addToDay(t, id, t.days[i].id); },
+      onAdd: function(){ askTime(id, target); }, onPick: function(i){ askTime(id, t.days[i].id); },
       extraItems: [{label: "Düzenle", icon: "edit", onClick: function(){ S.dialog = {kind: "plan", id: id}; A.render(); }},
         {label: "Kalıcı olarak sil", icon: "trash", danger: true, onClick: function(){ S.dialog = {kind: "plan-delete", id: id}; A.render(); }}]});
   }

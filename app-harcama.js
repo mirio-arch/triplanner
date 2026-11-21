@@ -61,10 +61,12 @@ A.uploadPhotos = function(t, files, meta){
     if(!assets){ A.flash("Fotoğraf yüklenemiyor: bu görünümde yükleme izni yok."); return []; }
     return Promise.all(files.slice(0, 8).map(function(f){
       return shrink(f).then(function(b){ return assets.upload(b); }).then(function(r){
-        var p = {id: D.uid("p"), asset: r.id, day: meta.day || "pre", ref: meta.ref || "", refKind: meta.refKind || "", note: "", at: new Date().toISOString()};
+        var p = A.stamp({id: D.uid("p"), asset: r.id, day: meta.day || "pre", ref: meta.ref || "", refKind: meta.refKind || "", note: "", at: new Date().toISOString()});
         t.photos.push(p); return p;
       }, function(){ return null; });
-    })).then(function(ps){ ps = ps.filter(Boolean); if(ps.length < files.length) A.flash("Bazı fotoğraflar yüklenemedi."); return ps; });
+    })).then(function(ps){ ps = ps.filter(Boolean); if(ps.length < files.length) A.flash("Bazı fotoğraflar yüklenemedi.");
+      if(ps.length && meta.refKind !== "expense") A.log(t, "photo", ps[0].id, (ps.length === 1 ? "bir fotoğraf" : ps.length + " fotoğraf") + " ekledi · " + A.dayLabel(t, meta.day || "pre"));
+      return ps; });
   });
 };
 
@@ -93,7 +95,7 @@ function ExpenseForm(p){
     var x = e || {id: D.uid("x"), source: f.ref ? "plan" : "manual", at: new Date().toISOString()};
     x.title = D.str(title, 120); x.amount = amount; x.currency = f.currency; x.cat = f.cat; x.day = f.day; x.time = D.str(f.time, 5); x.ref = f.ref || (item ? x.ref : ""); x.photos = f.photos;
     if(!item) x.source = f.ref ? "plan" : (x.source === "check" ? "check" : "manual");
-    if(!e) t.expenses.push(x);
+    if(!e){ A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi · " + D.fmtMoney(amount, f.currency)); }
     f.photos.forEach(function(pid){ var ph = photoOf(t, pid); if(ph){ ph.ref = x.id; ph.refKind = "expense"; ph.day = f.day; } });
     S.newExp = x.id; A.commit();
     A.flash(e ? "Harcama güncellendi." : "“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency));
@@ -182,8 +184,9 @@ function Aside(p){
 function rowFor(t, e){
   var ph = e.photos.map(function(pid){ return photoOf(t, pid); }).filter(Boolean);
   var src = SRC[e.source];
+  var other = e.by && !A.isMine(e.by) ? (e.byName || "Biri") : "";
   return h(T.ExpenseRow, {key: e.id, title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
-    time: e.time || undefined, source: src ? src[0] : undefined, sourceIcon: src ? src[1] : undefined, photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
+    time: e.time || undefined, source: src ? src[0] + (other ? " · " + other : "") : (other ? other + " ekledi" : undefined), sourceIcon: src ? src[1] : (other ? "user" : undefined), photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
     highlighted: S.newExp === e.id, actionIcon: "edit", actionLabel: "Düzenle",
     onClick: function(){ edit(e.id); }, onMore: function(){ edit(e.id); }});
 }
@@ -247,7 +250,8 @@ function QuickExpense(p){
     var amount = D.parseAmount(f.amount); if(!amount){ err[1]("Tutarı yaz."); return; }
     var title = f.title.trim(), cat = guessCat(title);
     var x = {id: D.uid("x"), source: "manual", at: new Date().toISOString(), title: D.str(title || D.EXP_CATS[cat], 120), amount: amount, currency: f.currency, cat: cat, day: b.day, time: "", ref: "", photos: []};
-    t.expenses.push(x); S.newExp = x.id; S.quickCur = f.currency; A.commit();
+    A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi · " + D.fmtMoney(amount, f.currency));
+    S.newExp = x.id; S.quickCur = f.currency; A.commit();
     st[1]({amount: "", title: "", currency: f.currency}); err[1]("");
     A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
   }

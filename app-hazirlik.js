@@ -15,7 +15,8 @@ function CheckForm(p){
     if(!f.title.trim()){ err[1]("Maddenin adını yaz."); return; }
     var link = f.link.trim() ? D.safeLink(/^https?:/i.test(f.link.trim()) ? f.link.trim() : "https://" + f.link.trim()) : "";
     if(c){ c.group = f.group; c.title = D.str(f.title.trim(), 160); c.note = D.str(f.note, 600); c.link = link; c.due = f.due; }
-    else { var n = {id: D.uid("k"), group: f.group, title: D.str(f.title.trim(), 160), note: D.str(f.note, 600), link: link, done: false, due: f.due}; t.checklist.push(n); S.justAdded = n.id; }
+    else { var n = A.stamp({id: D.uid("k"), group: f.group, title: D.str(f.title.trim(), 160), note: D.str(f.note, 600), link: link, done: false, due: f.due}); delete n.at; t.checklist.push(n); S.justAdded = n.id;
+      A.log(t, "check", n.id, "“" + n.title + "” maddesini hazırlık listesine ekledi"); }
     A.commit(); A.flash(c ? "Madde güncellendi." : "“" + f.title.trim() + "” eklendi.");
     if(c || p.onDone) (p.onDone || function(){})(); else st[1]({group: f.group, title: "", note: "", link: "", due: ""});
   }
@@ -36,8 +37,8 @@ function QuickCheck(p){
   var t = p.t, st = React.useState(""), g = React.useState(p.group || S.quickGroup || "belge");
   function add(e){
     e.preventDefault(); var title = st[0].trim(); if(!title) return;
-    var n = {id: D.uid("k"), group: g[0], title: D.str(title, 160), note: "", link: "", done: false, due: ""};
-    t.checklist.push(n); S.justAdded = n.id; S.quickGroup = g[0]; A.commit(); st[1]("");
+    var n = A.stamp({id: D.uid("k"), group: g[0], title: D.str(title, 160), note: "", link: "", done: false, due: ""}); delete n.at;
+    t.checklist.push(n); A.log(t, "check", n.id, "“" + n.title + "” maddesini hazırlık listesine ekledi"); S.justAdded = n.id; S.quickGroup = g[0]; A.commit(); st[1]("");
     A.flash("“" + title + "” eklendi.");
   }
   return h("form", {onSubmit: add},
@@ -49,7 +50,14 @@ function QuickCheck(p){
     })));
 }
 
-function noteOf(c){ var due = c.due ? D.fmtDay(c.due).short : ""; return [due ? "Son gün " + due : "", c.note].filter(Boolean).join(" · "); }
+function setDone(t, c, on){
+  c.done = on;
+  if(on){ var w = A.who(); if(w.by){ c.doneBy = w.by; c.doneByName = w.name; } A.log(t, "done", c.id, "“" + c.title + "” maddesini tamamladı"); }
+  else { delete c.doneBy; delete c.doneByName; }
+  A.commit();
+}
+function noteOf(c){ var due = c.due ? D.fmtDay(c.due).short : "", who = c.done && c.doneBy && !A.isMine(c.doneBy) ? (c.doneByName || "Biri") + " tamamladı" : "";
+  return [who, due ? "Son gün " + due : "", c.note].filter(Boolean).join(" · "); }
 function removeItem(t, c){ var snap = A.snapshot(); t.checklist.splice(t.checklist.indexOf(c), 1); A.commit(); A.flash("“" + c.title + "” silindi.", function(){ A.restore(snap); }); }
 /* Telefonda madde satırı: düzenleme seçenekleri üç nokta menüsünde, içerik sıkışmasın */
 function CheckRow(p){
@@ -58,7 +66,7 @@ function CheckRow(p){
     {label: "Düzenle", icon: "edit", onClick: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); }},
     {label: "Sil", icon: "trash", danger: true, onClick: function(){ removeItem(t, c); }}].filter(Boolean);
   return h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
-    h("input", {id: id, type: "checkbox", className: "tp-check__input", checked: !!c.done, onChange: function(e){ c.done = e.target.checked; A.commit(); }}),
+    h("input", {id: id, type: "checkbox", className: "tp-check__input", checked: !!c.done, onChange: function(e){ setDone(t, c, e.target.checked); }}),
     h("label", {htmlFor: id, className: "tp-checkitem__main"},
       h("span", {className: "tp-check__box", "aria-hidden": "true"}, h(T.Icon, {name: "check", size: 14, strokeWidth: 2.5})),
       h("span", {className: "tp-check__text"}, h("span", {className: "body-strong tp-checkitem__title"}, c.title || "Adsız madde"), note ? h("span", {className: "body-sm tp-muted"}, note) : null)),
@@ -100,7 +108,7 @@ function Hazirlik(p){
         var due = c.due ? D.fmtDay(c.due).short : "";
         return h(T.ChecklistItem, {key: c.id, title: c.title || "Adsız madde", note: [due ? "Son gün " + due : "", c.note].filter(Boolean).join(" · "), checked: c.done,
           link: c.link ? "Bilgi" : undefined, href: c.link || undefined,
-          onToggle: function(v){ c.done = v; A.commit(); },
+          onToggle: function(v){ setDone(t, c, v); },
           onEdit: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); },
           onRemove: function(){ var snap = A.snapshot(); t.checklist.splice(t.checklist.indexOf(c), 1); A.commit(); A.flash("“" + c.title + "” silindi.", function(){ A.restore(snap); }); }});
       }));

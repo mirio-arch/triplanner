@@ -401,3 +401,31 @@ a{color:var(--foreground-secondary)}
 .app-ticket.is-next .app-ticket__acts .tp-icon{--tp-duo:currentColor}
 @keyframes app-lines-drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-12px,6px,0) scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.app-ticket.is-next::before{animation:none}}
+
+/* Bilet çentiği: kenar, zemin ve çizgi birlikte kesilsin */
+.app-ticket__cut::before,.app-ticket__cut::after{display:none}
+.app-ticket.has-cut{-webkit-mask:radial-gradient(circle 9px at 0 var(--cut-y),transparent 8.5px,#000 9px),radial-gradient(circle 9px at 100% var(--cut-y),transparent 8.5px,#000 9px);-webkit-mask-composite:source-in;mask:radial-gradient(circle 9px at 0 var(--cut-y),transparent 8.5px,#000 9px),radial-gradient(circle 9px at 100% var(--cut-y),transparent 8.5px,#000 9px);mask-composite:intersect}
+.app-ticket__cut{margin:0 calc(-1 * var(--space-4) + 12px)}
+/* Son hareketler */
+.app-actbtn{position:relative;flex:none;width:40px;height:40px;border:0;border-radius:var(--radius-full);display:grid;place-items:center;background:none;color:var(--foreground-weak);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-actbtn:hover{background:var(--background-sunken)}
+.app-actbtn .tp-icon{--tp-duo:currentColor}
+.app-actbtn.is-shell{width:44px;height:44px;color:var(--foreground-on-shell,#fff);background:var(--background-on-shell,rgba(255,255,255,.08))}
+.app-actbtn__n{position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:var(--radius-full);background:var(--background-primary);color:var(--foreground-on-primary);font:700 11px var(--font-sans);display:grid;place-items:center;box-shadow:0 0 0 2px var(--background-shell,#0b1030);animation:tp-badge-in var(--duration-base) var(--ease-spring) both}
+.app-acts{display:flex;flex-direction:column;gap:var(--space-4)}
+.app-acts__day{display:flex;flex-direction:column;gap:2px}
+.app-acts__h{margin:0 0 var(--space-1)}
+.app-act{width:100%;display:flex;align-items:flex-start;gap:var(--space-3);padding:var(--space-2);border:0;border-radius:var(--radius-tile);background:none;color:var(--foreground);font:inherit;text-align:left;cursor:pointer;transition:background-color var(--duration-base) var(--ease-standard)}
+.app-act:hover{background:var(--background-sunken)}
+.app-act.is-new{background:var(--background-primary-weak)}
+.app-act__who{flex:none;width:32px;height:32px;border-radius:var(--radius-full);display:grid;place-items:center;color:var(--background-raised);font:700 14px var(--font-sans)}
+.app-act__text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.app-act__text strong{font-weight:600}
+.app-act__meta{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--foreground-weak)}
+.app-act__meta .tp-icon{--tp-duo:currentColor}
+.app-act__chev{flex:none;margin-top:8px;color:var(--foreground-weakest,var(--foreground-weak))}
+.app-actempty{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);padding:var(--space-6) var(--space-4);text-align:center;color:var(--foreground-weak)}
+.app-hometrip__act{display:flex;align-items:center;gap:6px;min-width:0;color:var(--foreground-weak)}
+.app-hometrip__act strong{color:var(--foreground);font-weight:600}
+.app-side__trip .app-actbtn{width:32px;height:32px;color:var(--foreground-on-shell-weak,rgba(255,255,255,.7))}
+.app-side__trip .app-actbtn:hover{background:var(--background-on-shell,rgba(255,255,255,.08))}

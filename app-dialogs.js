@@ -24,7 +24,9 @@ function PlanDialog(p){
     if(!v.title.trim()){ err[1]("Yerin ya da etkinliğin adını yaz."); return; }
     var x = it || {id: D.uid("i")};
     x.time = D.str(v.time.trim(), 40); x.title = D.str(v.title.trim(), 160); x.note = D.str(v.note, 800); x.cat = v.cat; x.link = fixLink(v.link); x.critical = !!v.critical;
-    if(!it){ t.items[x.id] = x; A.moveItem(t, x.id, v.where, A.dayById(t, v.where) ? "time" : 0); }
+    if(!it){ t.items[x.id] = x; A.moveItem(t, x.id, v.where, A.dayById(t, v.where) ? "time" : 0); A.stamp(x);
+      if(A.dayById(t, v.where)) A.log(t, "plan", x.id, "“" + x.title + "” planını ekledi · " + A.dayLabel(t, v.where));
+      else A.log(t, "idea", x.id, "“" + x.title + "” önerisini kenar listesine ekledi"); }
     else if(v.where !== where) A.moveItem(t, x.id, v.where, A.dayById(t, v.where) ? "time" : 0);
     A.commit(); close();
     A.flash(it ? "Plan güncellendi." : "“" + x.title + "” eklendi.");
@@ -106,7 +108,8 @@ function TransitSheet(p){
     var amount = D.parseAmount(v.amount);
     if(amount){ x.priceAmount = amount; x.priceCur = v.currency; } else { delete x.priceAmount; delete x.priceCur; }
     if(v.addExp) delete x.noExpense; else x.noExpense = true;
-    if(!it){ t.items[x.id] = x; A.moveItem(t, x.id, v.day, "time"); }
+    if(!it){ t.items[x.id] = x; A.moveItem(t, x.id, v.day, "time"); A.stamp(x);
+      A.log(t, "transit", x.id, "“" + x.title + "” yolculuğunu ekledi · " + A.dayLabel(t, v.day) + (x.time ? " " + x.time : "")); }
     else if(v.day !== where) A.moveItem(t, x.id, v.day, "time");
     var v2 = A.view(); v2.transit = x.id; v2.day = v.day; A.saveViews();
     A.commit(); close();
@@ -238,6 +241,26 @@ function TripDialog(p){
         del[0] ? h(A.Confirm, {text: leave ? "“" + t.name + "” listenden kalksın mı? Diğerleri için gezi olduğu gibi kalır." : "“" + t.name + "” ve içindeki her şey silinsin mi?", yes: leave ? "Geziden ayrıl" : "Geziyi sil", onYes: function(){ var id = t.id; delete S.app.trips[id]; S.app.order = S.app.order.filter(function(x){ return x !== id; }); A.sync.remove(id); D.saveLocal(S.app); close(); S.cur = S.app.order[0] || null; if(S.cur) A.go("tarihler"); else { location.hash = ""; A.render(); } }, onNo: function(){ del[1](false); }})
           : h(T.Button, {variant: "ghost", size: "sm", icon: "trash", onClick: function(){ del[1](true); }}, leave ? "Geziden ayrıl" : "Geziyi sil")) : null));
 }
+function IdeaAdd(p){
+  var t = A.trip(), it = t.items[p.id];
+  var f = useForm({day: A.dayById(t, p.day) ? p.day : A.view().day, time: it && /\d/.test(it.time || "") ? it.time : ""});
+  var v = f[0], set = f[1];
+  if(!it) return null;
+  function save(e){ if(e) e.preventDefault(); it.time = D.str(v.time.trim(), 40); close(); A.addToDay(t, p.id, v.day); }
+  var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; });
+  var body = h("form", {className: "app-stack", onSubmit: save},
+    h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
+    h(T.TextField, {label: "Saat", optional: true, value: v.time, placeholder: "14:00", inputMode: "numeric", autoFocus: !A.isPhone, hint: "Boş bırakırsan saatsiz plan olarak günün sonuna eklenir.", onChange: function(x){ set("time", x); }}),
+    h("div", {className: "app-row", style: {justifyContent: "flex-end"}}, h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "primary", icon: "plus", type: "submit"}, "Plana ekle")));
+  return A.isPhone ? h(T.Sheet, {title: "“" + (it.title || "Öneri") + "”", eyebrow: "Plana ekle", placement: "bottom", onClose: close, direction: "none"}, body)
+    : h(T.Dialog, {title: "Plana ekle", description: it.title, width: "440px", onClose: close}, body);
+}
+function Activity(){
+  var t = A.trip(), v = A.view(), seen = React.useState(v.seenAt || "")[0];
+  React.useEffect(function(){ v.seenAt = new Date().toISOString(); A.saveViews(); A.render(); }, []);
+  var body = h(A.ActivityFeed, {t: t, seenAt: seen});
+  return h(T.Sheet, {title: "Son hareketler", eyebrow: t.name, placement: A.isPhone ? "bottom" : "right", onClose: close, direction: "none"}, body);
+}
 function Profile(){
   var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false);
   var opts = [["", "Cihaz", "sparkle"], ["light", "Açık", "sun"], ["dark", "Koyu", "eye"]];
@@ -277,6 +300,8 @@ A.Dialogs = function(){
   if(d.kind === "trip-new" || d.kind === "trip-settings") return h(TripDialog, {kind: d.kind, key: d.kind});
   if(d.kind === "trip-menu") return h(TripMenu);
   if(d.kind === "profile") return h(Profile);
+  if(d.kind === "activity" && A.trip()) return h(Activity);
+  if(d.kind === "idea-add" && A.trip()) return h(IdeaAdd, {id: d.id, day: d.day, key: d.id});
   if(!t) return null;
   if(d.kind === "plan") return h(PlanDialog, {id: d.id, newIn: d.newIn, key: d.id || "new"});
   if(d.kind === "plan-delete"){

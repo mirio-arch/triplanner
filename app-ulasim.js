@@ -214,8 +214,14 @@ function TicketCard(p){
   var t = p.t, e = p.e, it = e.it, r = routeOf(it), mode = modeOf(it), sel = p.selected;
   var carrier = [it.carrier, it.code].filter(Boolean).join(" · ");
   var cd = p.next ? countdown(e) : "";
-  var expanded = sel && A.isPhone;
-  return h("div", {id: "tk-" + e.id, role: "button", tabIndex: 0, "aria-pressed": sel ? "true" : "false",
+  var expanded = sel && A.isPhone, ref = React.useRef(null);
+  /* kesik çizginin yerinde kartın kenarından gerçek çentik aç */
+  React.useLayoutEffect(function(){
+    var el = ref.current; if(!el) return;
+    var cut = el.querySelector(".app-ticket__cut"), on = cut && cut.offsetParent !== null && getComputedStyle(cut).display !== "none";
+    if(on){ el.style.setProperty("--cut-y", cut.offsetTop + "px"); el.classList.add("has-cut"); } else el.classList.remove("has-cut");
+  });
+  return h("div", {ref: ref, id: "tk-" + e.id, role: "button", tabIndex: 0, "aria-pressed": sel ? "true" : "false",
       className: "app-ticket" + (sel ? " is-selected" : "") + (p.next ? " is-next" : "") + (e.past ? " is-past" : ""),
       onClick: function(){ select(e.id); }, onKeyDown: keyAct(function(){ select(e.id); })},
     h("div", {className: "app-ticket__top"},
