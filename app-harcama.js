@@ -219,7 +219,7 @@ function rowFor(t, e){
   var ph = e.photos.map(function(pid){ return photoOf(t, pid); }).filter(Boolean);
   var src = SRC[e.source];
   var other = e.by && !A.isMine(e.by) ? (e.byName || "Biri") : "";
-  return h(A.Swipe, {key: e.id, onAction: function(){ removeExpense(t, e); }}, h(T.ExpenseRow, {title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
+  return h(A.Swipe, {key: e.id, radius: "var(--radius-card)", onAction: function(){ removeExpense(t, e); }}, h(T.ExpenseRow, {title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
     time: e.time || undefined, source: src ? src[0] + (other ? " · " + other : "") : (other ? other + " ekledi" : undefined), sourceIcon: src ? src[1] : (other ? "user" : undefined), photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
     highlighted: S.newExp === e.id, actionIcon: "edit", actionLabel: "Düzenle",
     onClick: function(ev){

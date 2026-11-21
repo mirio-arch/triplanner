@@ -26,8 +26,8 @@ function CheckForm(p){
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: f.note, onChange: function(v){ set("note", v); }}),
     h(T.TextField, {label: "Bağlantı", optional: true, value: f.link, placeholder: "https://", onChange: function(v){ set("link", v); }}),
     h(A.DateField, {label: "Son gün", value: f.due, max: t.start, month: f.due || A.todayISO(), onChange: function(v){ set("due", v); }}),
-    h("div", {className: "app-row app-stickyfoot"},
-      c ? h(T.Button, {variant: "ghost", onClick: p.onDone}, "Vazgeç") : null,
+    h("div", {className: "app-row app-stickyfoot" + (A.isPhone ? " app-foot--phone" : "")},
+      c ? h(T.Button, {variant: A.isPhone ? "outline" : "ghost", onClick: p.onDone}, "Vazgeç") : null,
       h(T.Button, {variant: "primary", icon: c ? "check" : "plus", type: "submit", full: !c}, c ? "Kaydet" : "Ekle")));
 }
 A.CheckForm = CheckForm;
@@ -69,7 +69,7 @@ function CheckRow(p){
     {label: "Düzenle", icon: "edit", onClick: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); }},
     A.chatApi && A.chatApi() ? {label: "Sohbette bahset", icon: "share", onClick: function(){ A.openChat({k: "check", id: c.id, l: D.str(c.title, 80)}); }} : null,
     {label: "Sil", icon: "trash", danger: true, onClick: function(){ removeItem(t, c); }}].filter(Boolean);
-  return h(A.Swipe, {onAction: function(){ removeItem(t, c); }}, h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
+  return h(A.Swipe, {radius: "var(--radius-card)", onAction: function(){ removeItem(t, c); }}, h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
     h("input", {id: id, type: "checkbox", className: "tp-check__input", checked: !!c.done, onChange: function(e){ setDone(t, c, e.target.checked); }}),
     h("label", {htmlFor: id, className: "tp-checkitem__main"},
       h("span", {className: "tp-check__box", "aria-hidden": "true"}, h(T.Icon, {name: "check", size: 14, strokeWidth: 2.5})),

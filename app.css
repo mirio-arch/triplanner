@@ -903,3 +903,19 @@ a{color:var(--foreground-secondary)}
 .app-tripmark.is-flag{font-size:22px;line-height:1}
 .app-tripicon .app-curseg button.is-flag{font-size:20px;min-width:46px}
 .app-tripicon__in{margin-top:var(--space-2)}
+/* Telefonda pencere düğmeleri yan yana, tam genişlik */
+.app-foot--phone{display:grid !important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--space-3)}
+.app-foot--phone>.tp-btn{width:100%;justify-content:center}
+.app-foot__left{flex-wrap:wrap}
+.tp-dialog .app-foot--phone{margin-top:var(--space-2)}
+/* Klavye açıkken alt düğmeler sabit değil, içeriğin sonunda: görünen dar alanı kapatmasın */
+.kbd .tp-sheet__body .app-stickyfoot,.kbd .app-pane__scroll .app-stickyfoot{position:static;margin-top:var(--space-2);padding-bottom:var(--space-3) !important}
+.kbd .tp-sheet--bottom .tp-sheet__body:has(.app-stickyfoot){padding-bottom:var(--space-3)}
+.app-cpick__panel input[type=search]{scroll-margin-top:var(--space-2)}
+/* eşik geçilince silme alanı belirgin büyür */
+.app-swipe.is-full .app-swipe__lbl{transform:scale(1.12)}
+.app-swipe__lbl{transition:width 120ms var(--ease-standard),transform 160ms var(--ease-spring,cubic-bezier(.3,1.4,.5,1))}
+/* kaydırırken kart kendi kutusunun içinde kayar (saatin ya da komşu öğelerin üstüne taşmaz); kırmızı alan kartla aynı boy ve köşede */
+.app-swipe.is-active,.app-swipe.is-leaving{overflow:hidden;border-radius:var(--sw-radius,var(--radius-card));-webkit-mask-image:-webkit-radial-gradient(white,black)}
+.app-swipe__act{top:0;bottom:0;left:0;right:0;border-radius:inherit}
+.app-swipe.is-active .app-swipe__body>*{box-shadow:none}

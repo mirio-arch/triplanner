@@ -480,7 +480,7 @@ A.CountryPicker = function(p){
         h(T.Icon, {name: open[0] ? "check" : "plus", size: 14}), h("span", null, open[0] ? "Bitti" : (sel.length ? "Ülke ekle" : "Ülke seç")))),
     h(A.Expand, {open: open[0]},
       h("div", {id: "cp-panel", className: "app-cpick__panel"},
-        h("input", {type: "search", className: "tp-input body", placeholder: "Ülke ara", value: q[0], "aria-label": "Ülke ara", onChange: function(e){ q[1](e.target.value); }}),
+        h("input", {type: "search", className: "tp-input body", placeholder: "Ülke ara", value: q[0], "aria-label": "Ülke ara", onChange: function(e){ q[1](e.target.value); }, onFocus: toTop}),
         h("ul", {className: "app-select__list", role: "listbox", "aria-multiselectable": "true", "aria-labelledby": "cp-l"},
           list.length ? list.map(function(c){
             var on = sel.indexOf(c[0]) > -1;
@@ -496,6 +496,8 @@ A.CountryPicker = function(p){
 /* Yer seçici: tek kutuda şehir ya da ülke aranır; şehir seçilince ülkesi de bilinir (saat ve para için) */
 function fold(x){ return low(x).replace(/ş/g, "s").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/â/g, "a"); }
 var POPULAR = ["Roma", "Paris", "Barselona", "Amsterdam", "Prag", "Viyana", "Tiflis", "Saraybosna", "Londra", "Tokyo", "Marakeş", "Dubai"];
+/* arama kutusu seçilince pencerede üste kaysın: klavye açıkken sonuçlar görünsün */
+function toTop(e){ var el = e.currentTarget; setTimeout(function(){ if(document.activeElement === el && el.scrollIntoView) el.scrollIntoView({block: "start", behavior: "smooth"}); }, 350); }
 A.PlacePicker = function(p){
   var open = React.useState(false), q = React.useState(""), sel = p.value || [];
   var qq = fold(q[0]).trim();
@@ -529,7 +531,7 @@ A.PlacePicker = function(p){
         h(T.Icon, {name: open[0] ? "check" : "plus", size: 14}), h("span", null, open[0] ? "Bitti" : (sel.length ? "Yer ekle" : "Şehir ya da ülke seç")))),
     h(A.Expand, {open: open[0]},
       h("div", {id: "pp-panel", className: "app-cpick__panel"},
-        h("input", {type: "search", className: "tp-input body", placeholder: "Şehir ya da ülke ara", value: q[0], "aria-label": "Şehir ya da ülke ara", onChange: function(e){ q[1](e.target.value); }}),
+        h("input", {type: "search", className: "tp-input body", placeholder: "Şehir ya da ülke ara", value: q[0], "aria-label": "Şehir ya da ülke ara", onChange: function(e){ q[1](e.target.value); }, onFocus: toTop}),
         !qq ? h("span", {className: "label app-muted"}, "Sık gidilenler") : null,
         h("ul", {className: "app-select__list", role: "listbox", "aria-multiselectable": "true", "aria-labelledby": "pp-l"},
           cities.map(function(x){ return opt("c" + x[0], x[1], x[0], D.COUNTRY[x[1]] ? D.COUNTRY[x[1]][1] : "", has(x[1], x[0]), function(){ add(x[1], x[0]); }); }),
@@ -591,20 +593,38 @@ document.addEventListener("visibilitychange", function(){ if(document.visibility
 /* Kaydırarak silme (Apple tarzı): sola kaydırınca kırmızı alan ve simge çıkar; dokununca ya da
    kaydırmaya devam edince işlem yapılır. Yalnızca dokunmatikte; dikey kaydırmayı engellemez. */
 var SW_ACT = 84, swOpen = null;
+/* Dokunsal geri bildirim: Android'de titreşim; iPhone'da (iOS 18+) gizli bir açma/kapama düğmesine dokunma, sistemin kendi hafif titreşimini verir */
+var hapEl = null;
+A.haptic = function(){
+  try{
+    if(navigator.vibrate){ navigator.vibrate(12); return; }
+    if(!/iP(hone|ad|od)/.test(navigator.userAgent)) return;
+    if(!hapEl){
+      hapEl = document.createElement("label"); hapEl.setAttribute("aria-hidden", "true");
+      hapEl.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
+      var inp = document.createElement("input"); inp.type = "checkbox"; inp.setAttribute("switch", ""); inp.tabIndex = -1;
+      hapEl.appendChild(inp); document.body.appendChild(hapEl);
+    }
+    hapEl.click();
+  }catch(e){}
+};
+/* Kaydırarak silme (Apple tarzı ama daha zor): sola kaydırınca kırmızı alan açılır; dokununca silinir.
+   Tam kaydırmada kart parmağı daha yavaş izler, eşik geçilince alan büyür ve titreşir;
+   silinmesi için eşikte kısa bir an durmak gerekir (hızlı fiske silmez). */
 A.Swipe = function(p){
   var wrap = React.useRef(null), body = React.useRef(null), st = React.useRef(null), x = React.useRef(0), leaving = React.useState(false);
-  function set(nx, anim){
+  function set(nx, anim, full){
     x.current = nx; var b = body.current, w = wrap.current; if(!b || !w) return;
     b.style.transition = anim ? "transform var(--duration-base) var(--ease-standard)" : "none";
     b.style.transform = nx ? "translate3d(" + nx + "px,0,0)" : "";
     w.classList.toggle("is-active", nx < 0);
-    w.classList.toggle("is-full", -nx > w.offsetWidth * .55);
+    w.classList.toggle("is-full", !!full);
     w.style.setProperty("--sw", Math.max(SW_ACT, -nx) + "px");
   }
-  function close(){ set(0, true); if(swOpen === close) swOpen = null; }
+  function close(){ set(0, true, false); if(swOpen === close) swOpen = null; }
   function run(){
     var w = wrap.current; if(!w) return;
-    set(-w.offsetWidth, true);
+    set(-w.offsetWidth, true, true);
     w.style.height = w.offsetHeight + "px";
     requestAnimationFrame(function(){ w.classList.add("is-leaving"); w.style.height = "0px"; });
     setTimeout(function(){ if(swOpen === close) swOpen = null; p.onAction(); }, 260);
@@ -613,93 +633,41 @@ A.Swipe = function(p){
     if(e.pointerType !== "touch" || leaving[0]) return;
     if(e.target.closest && e.target.closest(".tp-card__handle,input,textarea,select,.app-swipe__act")) return;
     if(swOpen && swOpen !== close) swOpen();
-    st.current = {x0: e.clientX, y0: e.clientY, base: x.current, dir: null, id: e.pointerId};
+    st.current = {x0: e.clientX, y0: e.clientY, base: x.current, dir: null, id: e.pointerId, armed: false, armedAt: 0};
   }
   function move(e){
     var s = st.current; if(!s || e.pointerId !== s.id) return;
     var dx = e.clientX - s.x0, dy = e.clientY - s.y0;
     if(!s.dir){ if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? "h" : "v"; if(s.dir === "h"){ try{ wrap.current.setPointerCapture(e.pointerId); }catch(er){} } }
     if(s.dir !== "h") return;
-    var nx = Math.min(0, s.base + dx); if(nx > 0) nx = 0;
-    set(nx, false);
+    var w = wrap.current.offsetWidth, pull = Math.max(0, -(s.base + dx));
+    /* açık alandan sonrası dirençli */
+    var shown = pull <= SW_ACT ? pull : SW_ACT + (pull - SW_ACT) * .75;
+    var armed = shown > w * .6;
+    if(armed !== s.armed){ s.armed = armed; s.armedAt = Date.now(); A.haptic(); }
+    set(-Math.min(shown, w), false, armed);
   }
-  function up(e){
+  function up(){
     var s = st.current; st.current = null; if(!s || s.dir !== "h") return;
-    s.swiped = true; wrap.current._swiped = Date.now();
-    var w = wrap.current.offsetWidth, nx = x.current;
-    if(-nx > w * .55) run();
-    else if(-nx > SW_ACT * .5){ set(-SW_ACT, true); swOpen = close; }
+    wrap.current._swiped = Date.now();
+    var shown = -x.current;
+    if(s.armed && Date.now() - s.armedAt > 140) run();
+    else if(shown > SW_ACT * .5){ set(-SW_ACT, true, false); swOpen = close; }
     else close();
   }
   function clickCap(e){
     var w = wrap.current;
     if(e.target.closest && e.target.closest(".app-swipe__act")) return;
     if(w && w._swiped && Date.now() - w._swiped < 400){ e.stopPropagation(); e.preventDefault(); return; }
-    if(x.current < 0 && !(e.target.closest && e.target.closest(".app-swipe__act"))){ e.stopPropagation(); e.preventDefault(); close(); }
+    if(x.current < 0){ e.stopPropagation(); e.preventDefault(); close(); }
   }
   React.useEffect(function(){ return function(){ if(swOpen === close) swOpen = null; }; }, []);
   if(!A.isPhone || p.disabled) return p.children;
   return h("div", {ref: wrap, className: "app-swipe" + (p.className ? " " + p.className : ""), style: p.radius ? {"--sw-radius": p.radius} : null,
-      onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up, onClickCapture: clickCap},
-    h("button", {type: "button", className: "app-swipe__act", tabIndex: -1, "aria-hidden": "true", onClick: function(e){ e.stopPropagation(); run(); }},
+      onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: function(){ st.current = null; close(); }, onClickCapture: clickCap},
+    h("button", {type: "button", className: "app-swipe__act", tabIndex: -1, "aria-hidden": "true", onClick: function(e){ e.stopPropagation(); A.haptic(); run(); }},
       h("span", {className: "app-swipe__lbl"}, h(T.Icon, {name: p.icon || "trash", size: 20}), h("span", null, p.label || "Sil"))),
     h("div", {ref: body, className: "app-swipe__body"}, p.children));
-};
-
-/* Tarih seçici: tasarım sisteminin takvim görünümüyle, pencerenin içinde açılır.
-   range: başlangıç–bitiş aralığı (ilk dokunuş başlangıç, ikincisi bitiş); değilse tek gün. */
-var CAL_WD = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-function isoOf(y, m, d){ return y + "-" + ("0" + (m + 1)).slice(-2) + "-" + ("0" + d).slice(-2); }
-function niceDate(iso, yr){ var d = D.parseISO(iso); return d ? d.getUTCDate() + " " + MONTHS[d.getUTCMonth()].slice(0, 3) + (yr ? " " + d.getUTCFullYear() : "") : ""; }
-var calSeq = 0;
-A.DateField = function(p){
-  var range = !!p.range, a = p.start || p.value || "", b = range ? (p.end || "") : "";
-  var open = React.useState(false), id = React.useRef("cal" + (++calSeq)).current;
-  var base = D.parseISO(a || p.month || A.todayISO()) || new Date();
-  var mo = React.useState({y: base.getUTCFullYear(), m: base.getUTCMonth()});
-  var pend = React.useState(null); /* aralıkta ilk dokunuş: bitiş bekleniyor */
-  var s = pend[0] || a, e = pend[0] ? "" : b;
-  function shift(k){ var m = mo[0].m + k, y = mo[0].y + Math.floor(m / 12); mo[1]({y: y, m: ((m % 12) + 12) % 12}); }
-  function pick(iso){
-    if(p.max && iso > p.max) return;
-    if(!range){ p.onChange(iso); open[1](false); return; }
-    if(!pend[0] || iso < pend[0]){ pend[1](iso); return; }
-    pend[1](null); p.onChange(pend[0], iso);
-  }
-  var y = mo[0].y, m = mo[0].m, first = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), today = A.todayISO();
-  var cells = CAL_WD.map(function(w){ return h("span", {key: "w" + w, className: "tp-cal__wd label", "aria-hidden": "true"}, w); });
-  for(var i = 0; i < first; i++) cells.push(h("span", {key: "b" + i}));
-  for(var d = 1; d <= days; d++){
-    (function(d){
-      var iso = isoOf(y, m, d), st = iso === s, en = e && iso === e, inr = s && e && iso > s && iso < e, off = p.max && iso > p.max;
-      cells.push(h("button", {key: d, type: "button", disabled: off || undefined,
-        className: "tp-cal__day body" + (st ? " is-start" : "") + (en ? " is-end" : "") + (st && (!e || en) ? " is-single" : "") + (inr ? " in-range" : "") + (iso === today ? " is-today" : ""),
-        "aria-label": d + " " + MONTHS[m] + " " + y + (st ? (range ? ", başlangıç" : ", seçili") : "") + (en ? ", bitiş" : ""), "aria-pressed": st || en ? "true" : "false",
-        onClick: function(){ pick(iso); }}, d));
-    })(d);
-  }
-  var nDays = a && b ? Math.round((D.parseISO(b) - D.parseISO(a)) / 864e5) + 1 : 0;
-  var shown = range ? (a && b ? niceDate(a, D.parseISO(a).getUTCFullYear() !== D.parseISO(b).getUTCFullYear()) + " – " + niceDate(b, true) + " · " + nDays + " gün" : "")
-    : (a ? niceDate(a, true) : "");
-  var status = range ? (pend[0] ? "Bitiş gününü seç" : (nDays ? nDays + " gün · " + (nDays - 1) + " gece" : "Başlangıç gününü seç")) : "";
-  return h("div", {className: "tp-field app-date" + (open[0] ? " is-open" : "")},
-    p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label) : null,
-    h("button", {type: "button", className: "tp-input tp-trigger body", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id, "aria-labelledby": (p.label ? id + "-l " : "") + id + "-v",
-        onClick: function(){ if(open[0]) pend[1](null); open[1](!open[0]); }},
-      h(T.Icon, {name: "calendar", size: 18}),
-      h("span", {id: id + "-v", className: "tp-trigger__value" + (shown ? "" : " tp-trigger__placeholder")}, shown || p.placeholder || (range ? "Tarihleri seç" : "Tarih seç")),
-      h(T.Icon, {name: "chevron-down", size: 18, className: "tp-muted app-select__chev"})),
-    h(A.Expand, {open: open[0]},
-      h("div", {id: id, className: "tp-cal app-cal", role: "group", "aria-label": (p.label ? (typeof p.label === "string" ? p.label : "Tarih") : "Tarih") + " seç"},
-        h("div", {className: "tp-cal__nav"},
-          h(T.IconButton, {icon: "chevron-left", label: "Önceki ay", size: "sm", onClick: function(){ shift(-1); }}),
-          h(T.IconButton, {icon: "chevron-right", label: "Sonraki ay", size: "sm", onClick: function(){ shift(1); }})),
-        h("div", {className: "tp-cal__month"}, h("div", {className: "tp-cal__title body-strong", "aria-live": "polite"}, MONTHS[m] + " " + y), h("div", {className: "tp-cal__grid"}, cells)),
-        h("div", {className: "tp-cal__foot"},
-          h("span", {className: "body-sm tp-muted", style: {marginRight: "auto"}}, status),
-          a ? h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ pend[1](null); if(range) p.onChange("", ""); else p.onChange(""); }}, "Temizle") : null,
-          h(T.Button, {variant: "primary", size: "sm", onClick: function(){ pend[1](null); open[1](false); }}, "Tamam")))),
-    p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null);
 };
 
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */

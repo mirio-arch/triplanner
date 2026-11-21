@@ -21,7 +21,14 @@ function useForm(init){
 function fixLink(s){ s = (s || "").trim(); if(!s) return ""; return D.safeLink(/^https?:/i.test(s) ? s : "https://" + s); }
 /* Form pencereleri: telefonda alttan açılan pencere, masaüstünde ortada */
 function Modal(p){ return A.isPhone ? h(T.Sheet, Object.assign({placement: "bottom", direction: "none"}, p, {width: undefined})) : h(T.Dialog, p); }
-function Foot(p){ return h("div", {className: "app-dialogfoot app-stickyfoot"}, p.left || h("span"), h("div", {className: "app-row"}, p.children)); }
+/* Pencere düğmeleri: telefonda altta sabit, yan yana ve tam genişlikte (ulaşım penceresiyle aynı); Vazgeç çerçeveli.
+   Sil gibi ek düğmeler sabit alanın üstünde kendi satırında. */
+function Foot(p){
+  if(!A.isPhone) return h("div", {className: "app-dialogfoot app-stickyfoot"}, p.left || h("span"), h("div", {className: "app-row"}, p.children));
+  var btns = React.Children.toArray(p.children).filter(Boolean).map(function(el){ return el.props && el.props.variant === "ghost" ? React.cloneElement(el, {variant: "outline"}) : el; });
+  return h(F, null, p.left ? h("div", {className: "app-row app-foot__left"}, p.left) : null,
+    h("div", {className: "app-stickyfoot app-foot--phone"}, btns));
+}
 
 /* ---------- Plan ---------- */
 function PlanDialog(p){

@@ -118,7 +118,7 @@ function PlanList(p){
           h("span", {className: "app-prow__t"}, tm ? tm[1].replace(/\s+/g, "") : (it.time ? "" : "—")),
           tm && tm[2] ? h("span", {className: "app-prow__z"}, tm[2]) : (!tm && it.time ? h("span", {className: "app-prow__z"}, it.time) : null),
           h("span", {className: "app-prow__dot", "aria-hidden": "true"})),
-        h(A.Swipe, {label: "Çıkar", icon: "close", onAction: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }},
+        h(A.Swipe, {label: "Çıkar", icon: "close", radius: "var(--radius-card)", onAction: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }},
           h(PhonePlanCard, {it: it, extra: extra, next: isNext ? nx : null, open: S.planOpen === id,
             onToggle: function(){ S.planOpen = S.planOpen === id ? null : id; A.render(); },
             onRemove: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }})));
