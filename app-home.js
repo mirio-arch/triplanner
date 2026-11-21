@@ -16,14 +16,14 @@ var HOLIDAYS = [
 ];
 /* Her döneme mevsimine ve süresine uygun birkaç rota; elle seçildi */
 var IDEAS = {
-  yilbasi27: [["Viyana", "Yeni yıl konserleri ve Noel pazarlarının son günleri", "Schengen vizesi"], ["Tiflis", "Kısa uçuş, kükürt hamamları, şarap", "Kimlikle"]],
-  ramazan27: [["Fas", "Marakeş, Fes ve Sahra; Mart'ta ılık", "Vizesiz"], ["Endülüs", "Sevilla ve Granada, portakal çiçekleri", "Schengen vizesi"], ["Ürdün", "Petra ve Vadi Rum, kalabalık yok", "Vizesiz"]],
-  nisan27: [["Saraybosna ve Mostar", "Uzun hafta sonu için kısa uçuş", "Vizesiz"], ["Amsterdam", "Lale mevsiminin tam ortası", "Schengen vizesi"]],
-  mayis27: [["Belgrad", "Hafta sonu kaçamağı, Tuna kıyısı", "Vizesiz"]],
-  kurban27: [["Japonya", "Tokyo, Kyoto ve Osaka; Mayıs en rahat ay", "Vizesiz"], ["Güney Kore", "Seul ve Busan, bahar sonu", "K-ETA gerekebilir"], ["Sicilya", "Deniz açılırken, kalabalık başlamadan", "Schengen vizesi"]],
-  temmuz27: [["Karadağ", "Kotor körfezi ve Budva", "Vizesiz"], ["Kazbegi", "Gürcistan'da dağ havası, serin yazlar", "Kimlikle"]],
-  agustos27: [["Ohri", "Kuzey Makedonya'da göl kıyısı", "Vizesiz"]],
-  ekim27: [["Prag", "Sonbahar renkleri, uzun hafta sonu", "Schengen vizesi"], ["Kapadokya", "Balon mevsimi, yurt içi", "Yurt içi"]]
+  yilbasi27: [["Viyana", "Yeni yıl konserleri ve Noel pazarlarının son günleri", "Schengen vizesi", "AT"], ["Tiflis", "Kısa uçuş, kükürt hamamları, şarap", "Kimlikle", "GE"]],
+  ramazan27: [["Fas", "Marakeş, Fes ve Sahra; Mart'ta ılık", "Vizesiz", "MA"], ["Endülüs", "Sevilla ve Granada, portakal çiçekleri", "Schengen vizesi", "ES"], ["Ürdün", "Petra ve Vadi Rum, kalabalık yok", "Vizesiz", "JO"]],
+  nisan27: [["Saraybosna ve Mostar", "Uzun hafta sonu için kısa uçuş", "Vizesiz", "BA"], ["Amsterdam", "Lale mevsiminin tam ortası", "Schengen vizesi", "NL"]],
+  mayis27: [["Belgrad", "Hafta sonu kaçamağı, Tuna kıyısı", "Vizesiz", "RS"]],
+  kurban27: [["Japonya", "Tokyo, Kyoto ve Osaka; Mayıs en rahat ay", "Vizesiz", "JP"], ["Güney Kore", "Seul ve Busan, bahar sonu", "K-ETA gerekebilir", "KR"], ["Sicilya", "Deniz açılırken, kalabalık başlamadan", "Schengen vizesi", "IT"]],
+  temmuz27: [["Karadağ", "Kotor körfezi ve Budva", "Vizesiz", "ME"], ["Kazbegi", "Gürcistan'da dağ havası, serin yazlar", "Kimlikle", "GE"]],
+  agustos27: [["Ohri", "Kuzey Makedonya'da göl kıyısı", "Vizesiz", "MK"]],
+  ekim27: [["Prag", "Sonbahar renkleri, uzun hafta sonu", "Schengen vizesi", "CZ"], ["Kapadokya", "Balon mevsimi, yurt içi", "Yurt içi", "TR"]]
 };
 function iso(d){ return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); }
 function add(s, n){ var d = D.parseISO(s); d.setUTCDate(d.getUTCDate() + n); return iso(d); }
@@ -175,7 +175,11 @@ function DealArt(p){
 var DEAL_TONES = ["teal", "violet", "amber", "pink", "blue", "green", "indigo", "rose"];
 function DealCard(p){
   var d = p.d;
-  function start(name){ S.dialog = {kind: "trip-new", preset: {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b}}; A.render(); }
+  function start(name, code){
+    var c = code && D.COUNTRY[code], pre = {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b};
+    if(c){ pre.countries = [code]; if(c[3] !== "TL") pre.currency = c[3]; }
+    S.dialog = {kind: "trip-new", preset: pre}; A.render();
+  }
   return h("article", {className: "app-deal is-" + DEAL_TONES[p.i % DEAL_TONES.length] + (DEAL_ART[d.key] ? " has-art" : "")},
     h(DealArt, {k: d.key}),
     h("div", {className: "app-deal__head"},
@@ -183,7 +187,7 @@ function DealCard(p){
       h("span", {className: "app-deal__len"}, h("strong", null, d.len), h("small", null, "gün"))),
     h("span", {className: "app-deal__how"}, d.leave ? leaveText(d.leave) + " izinle" : "İzin almadan"),
     d.ideas.length ? h("div", {className: "app-deal__ideas"}, d.ideas.map(function(x){
-      return h("button", {key: x[0], type: "button", className: "app-deal__idea", title: x[1] + " · " + x[2], onClick: function(){ start(x[0]); }}, x[0]);
+      return h("button", {key: x[0], type: "button", className: "app-deal__idea", title: x[1] + " · " + x[2], onClick: function(){ start(x[0], x[3]); }}, x[0]);
     })) : null);
 }
 
@@ -257,6 +261,58 @@ function Home(){
 }
 A.Home = Home;
 
+/* ---------- Hazır avatarlar (özgün çizimler) ---------- */
+var AV = {
+  balon: ["Balon", '<rect width="64" height="64" fill="url(#avg-balon)"/><defs><linearGradient id="avg-balon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#0f766e"/></linearGradient></defs><ellipse cx="13" cy="47" rx="9" ry="3.5" fill="#fff" opacity=".55"/><ellipse cx="51" cy="19" rx="7" ry="3" fill="#fff" opacity=".45"/><path d="M32 10c-9.4 0-16 6.9-16 15.2 0 6.9 5.6 12.3 10.4 16.8L28.5 44h7l2.1-2C42.4 37.5 48 32.1 48 25.2 48 16.9 41.4 10 32 10z" fill="#fb7185"/><path d="M32 10c-4 0-6.5 7-6.5 15.2 0 6.9 1.4 12.3 3 18.8h7c1.6-6.5 3-11.9 3-18.8C38.5 17 36 10 32 10z" fill="#fde047"/><path d="M28.5 44l1 6M35.5 44l-1 6" stroke="#7c2d12" stroke-width="1.2"/><rect x="28" y="50" width="8" height="6" rx="1.5" fill="#92400e"/>'],
+  kaktus: ["Kaktüs", '<rect width="64" height="64" fill="#fde68a"/><circle cx="50" cy="14" r="6" fill="#fbbf24"/><rect x="25" y="16" width="14" height="30" rx="7" fill="#16a34a"/><path d="M25 33h-4a3 3 0 0 1-3-3v-5a2.5 2.5 0 0 1 5 0v3h2zM39 29h3v-4a2.5 2.5 0 0 1 5 0v6a3 3 0 0 1-3 3h-5z" fill="#16a34a"/><rect x="25.5" y="23" width="6" height="4" rx="1.5" fill="#111827"/><rect x="32.5" y="23" width="6" height="4" rx="1.5" fill="#111827"/><path d="M31.5 24.6h1" stroke="#111827" stroke-width="1.2"/><path d="M29 31q3 2.5 6 0" stroke="#064e3b" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M22 46h20l-2.5 12h-15z" fill="#ea580c"/><rect x="20" y="43" width="24" height="5" rx="1.5" fill="#c2410c"/>'],
+  valiz: ["Valiz", '<rect width="64" height="64" fill="#ddd6fe"/><path d="M26 18v-3a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3" stroke="#5b21b6" stroke-width="2.5" fill="none"/><rect x="14" y="18" width="36" height="32" rx="6" fill="#7c3aed"/><rect x="20" y="18" width="3" height="32" fill="#6d28d9"/><rect x="41" y="18" width="3" height="32" fill="#6d28d9"/><circle cx="28" cy="31" r="2.3" fill="#fff"/><circle cx="36" cy="31" r="2.3" fill="#fff"/><circle cx="28.4" cy="31.4" r="1.1" fill="#1e1b4b"/><circle cx="36.4" cy="31.4" r="1.1" fill="#1e1b4b"/><path d="M28.5 37q3.5 3 7 0" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="46" cy="44" r="3.5" fill="#5eead4"/><circle cx="20" cy="53" r="2.2" fill="#3b0764"/><circle cx="44" cy="53" r="2.2" fill="#3b0764"/>'],
+  tilki: ["Tilki", '<rect width="64" height="64" fill="#ffedd5"/><path d="M15 13l11 10-8 5zM49 13l-11 10 8 5z" fill="#ea580c"/><path d="M18 18l5 5-4 2zM46 18l-5 5 4 2z" fill="#fff7ed"/><path d="M14 26c0-3 8-6 18-6s18 3 18 6c0 9-9 20-18 24-9-4-18-15-18-24z" fill="#f97316"/><path d="M14 27c4 0 10 3 13 9l5 14c-9-4-18-14-18-23zM50 27c-4 0-10 3-13 9l-5 14c9-4 18-14 18-23z" fill="#fff7ed"/><circle cx="25" cy="31" r="2" fill="#1c1917"/><circle cx="39" cy="31" r="2" fill="#1c1917"/><ellipse cx="32" cy="45" rx="2.6" ry="2" fill="#1c1917"/>'],
+  penguen: ["Penguen", '<rect width="64" height="64" fill="#bae6fd"/><circle cx="12" cy="14" r="1.5" fill="#fff"/><circle cx="53" cy="22" r="1.2" fill="#fff"/><circle cx="48" cy="9" r="1" fill="#fff"/><ellipse cx="32" cy="40" rx="15" ry="18" fill="#1e293b"/><ellipse cx="32" cy="43" rx="10" ry="13" fill="#f8fafc"/><path d="M32 24c-6 0-9 4-9 8 0 3 2 5 4 6h10c2-1 4-3 4-6 0-4-3-8-9-8z" fill="#f8fafc"/><path d="M19 26c0-8 6-13 13-13s13 5 13 13z" fill="#e11d48"/><rect x="18" y="24" width="28" height="4" rx="2" fill="#be123c"/><circle cx="32" cy="12" r="3" fill="#fff"/><circle cx="28.5" cy="31.5" r="1.6" fill="#0f172a"/><circle cx="35.5" cy="31.5" r="1.6" fill="#0f172a"/><path d="M30 34.5h4l-2 2.5z" fill="#f59e0b"/><ellipse cx="26" cy="58" rx="4" ry="1.8" fill="#f59e0b"/><ellipse cx="38" cy="58" rx="4" ry="1.8" fill="#f59e0b"/>'],
+  cay: ["Çay", '<rect width="64" height="64" fill="#fecdd3"/><path d="M27 14c-2 2 2 4 0 6M33 12c-2 2 2 4 0 6M39 14c-2 2 2 4 0 6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="52" rx="16" ry="4" fill="#f8fafc"/><ellipse cx="32" cy="51" rx="10" ry="2.2" fill="#e2e8f0"/><path d="M23 22h18c0 5-3 7-3 12s3 7 3 12c0 3-4 5-9 5s-9-2-9-5c0-5 3-7 3-12s-3-7-3-12z" fill="#fff" opacity=".6"/><path d="M24.2 27h15.6c-.8 2.3-1.8 4-1.8 7 0 5 3 7 3 12 0 2.2-3.6 4-9 4s-9-1.8-9-4c0-5 3-7 3-12 0-3-1-4.7-1.8-7z" fill="#b91c1c"/><path d="M27 30c-.6 2-.6 4 .4 6" stroke="#fff" stroke-width="1.4" opacity=".7" fill="none" stroke-linecap="round"/><rect x="22.5" y="21" width="19" height="2" rx="1" fill="#fff"/>'],
+  dag: ["Dağ", '<defs><linearGradient id="avg-dag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c084fc"/><stop offset="1" stop-color="#fdba74"/></linearGradient></defs><rect width="64" height="64" fill="url(#avg-dag)"/><circle cx="42" cy="25" r="8" fill="#fef3c7"/><path d="M-2 54l18-24 10 10 10-14 30 28z" fill="#7c3aed" opacity=".8"/><path d="M36 26l-4.3 6 2.8 1.5 1.5-2 2 2.3 2.5-1.3z" fill="#fff"/><path d="M-2 66v-12l16-14 12 10 12-8 28 24z" fill="#4c1d95"/>'],
+  kedi: ["Kedi", '<rect width="64" height="64" fill="#e0e7ff"/><path d="M15 31l3-17 12 8zM49 31l-3-17-12 8z" fill="#475569"/><path d="M18.5 26.5l1.5-8 5.5 4zM45.5 26.5l-1.5-8-5.5 4z" fill="#fda4af"/><ellipse cx="32" cy="37" rx="17" ry="15" fill="#64748b"/><ellipse cx="32" cy="43" rx="7" ry="5" fill="#f1f5f9"/><ellipse cx="25" cy="35" rx="2.5" ry="3" fill="#a3e635"/><ellipse cx="39" cy="35" rx="2.5" ry="3" fill="#a3e635"/><ellipse cx="25" cy="35.3" rx="1" ry="2.2" fill="#0f172a"/><ellipse cx="39" cy="35.3" rx="1" ry="2.2" fill="#0f172a"/><path d="M30.5 41h3l-1.5 1.8z" fill="#fb7185"/><path d="M32 42.8v1.3M32 44.1q-2 1.6-3.5.4M32 44.1q2 1.6 3.5.4" stroke="#334155" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M20 42h-7M20 45l-6 1.5M44 42h7M44 45l6 1.5" stroke="#cbd5e1" stroke-width="1" stroke-linecap="round"/>']
+};
+A.AVATARS = AV;
+A.AvatarArt = function(p){ var a = AV[p.k]; return a ? h("span", {className: "app-avart", "aria-hidden": "true", dangerouslySetInnerHTML: {__html: '<svg viewBox="0 0 64 64" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">' + a[1] + '</svg>'}}) : null; };
+/* seçimi kaydet: hesapta (web) ya da bu cihazda */
+A.setPic = function(o){
+  var B = window.TPB;
+  if(B && B.session && B.setPic) return B.setPic(o).then(function(){ A.flash("Profil fotoğrafı güncellendi."); }, function(){ A.flash("Kaydedilemedi; bağlantını kontrol et."); });
+  if(o.avatar) S.views._avatar = o.avatar; else delete S.views._avatar;
+  A.saveViews(); A.render(); A.flash("Profil fotoğrafı güncellendi."); return Promise.resolve();
+};
+/* yüklenen fotoğraf: ortadan kare kırpılır, küçültülür */
+function squareImage(file){
+  return new Promise(function(res){
+    if(!window.createImageBitmap){ res(file); return; }
+    createImageBitmap(file).then(function(bmp){
+      var side = Math.min(bmp.width, bmp.height), out = Math.min(360, side), c = document.createElement("canvas"); c.width = c.height = out;
+      c.getContext("2d").drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, out, out);
+      c.toBlob(function(b){ res(b || file); }, "image/jpeg", 0.86);
+    }, function(){ res(file); });
+  });
+}
+function PicPicker(p){
+  var me = A.me(), B = window.TPB, fileRef = React.useRef(null), busy = React.useState(false);
+  var cur = me.avatar ? me.avatar : (me.pic === "photo" ? "photo" : "google");
+  function pick(o){ A.setPic(o).then(function(){ if(p.onDone) p.onDone(); }); }
+  function onFile(e){
+    var f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f || !B || !B.assets) return;
+    busy[1](true);
+    squareImage(f).then(function(b){ return B.assets.upload(b); }).then(function(r){ busy[1](false); pick({photo: r.id}); }, function(){ busy[1](false); A.flash("Fotoğraf yüklenemedi."); });
+  }
+  return h("div", {className: "app-avpick", role: "radiogroup", "aria-label": "Profil fotoğrafı"},
+    B && B.session ? h("button", {type: "button", className: "app-avpick__tile app-avpick__up" + (busy[0] ? " is-busy" : ""), onClick: function(){ if(fileRef.current) fileRef.current.click(); }, disabled: busy[0]},
+      h(T.Icon, {name: "image-add", size: 22}), h("span", null, busy[0] ? "Yükleniyor…" : "Fotoğraf yükle")) : null,
+    B && B.session ? h("input", {ref: fileRef, type: "file", accept: "image/*", className: "tp-sr", tabIndex: -1, "aria-label": "Fotoğraf seç", onChange: onFile}) : null,
+    me.googlePhoto ? h("button", {type: "button", role: "radio", "aria-checked": cur === "google" ? "true" : "false", className: "app-avpick__tile", "aria-label": "Google fotoğrafın", onClick: function(){ pick({}); }},
+      h("img", {src: me.googlePhoto, alt: "", referrerPolicy: "no-referrer"})) : null,
+    me.pic === "photo" && me.photo ? h("button", {type: "button", role: "radio", "aria-checked": "true", className: "app-avpick__tile", "aria-label": "Yüklediğin fotoğraf"}, h("img", {src: me.photo, alt: ""})) : null,
+    Object.keys(AV).map(function(k){
+      return h("button", {key: k, type: "button", role: "radio", "aria-checked": cur === k ? "true" : "false", className: "app-avpick__tile", "aria-label": AV[k][0], title: AV[k][0], onClick: function(){ pick({avatar: k}); }}, h(A.AvatarArt, {k: k}));
+    }));
+}
+
 /* ---------- Profil sayfası ---------- */
 function ProfilePage(){
   var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false), fileRef = React.useRef(null), msg = React.useState("");
@@ -264,16 +320,31 @@ function ProfilePage(){
   var days = trips.reduce(function(n, t){ return n + t.days.length; }, 0), photos = trips.reduce(function(n, t){ return n + t.photos.length; }, 0);
   var opts = [["", "Cihaz", "sparkle"], ["light", "Açık", "sun"], ["dark", "Koyu", "eye"]];
   function back(e){ if(e) e.preventDefault(); var to = S.profBack && S.profBack !== "#profil" ? S.profBack : "#home"; S.profBack = null; location.hash = to; }
-  var stats = [["Gezi", trips.length, "route"], ["Gün", days, "calendar"], ["Fotoğraf", photos, "gallery"]];
+  var picking = React.useState(false), today = A.todayISO();
+  /* gidilen ve gidilecek ülkeler (Türkiye hariç) */
+  var went = [], next = [];
+  trips.forEach(function(t){ (t.countries || []).forEach(function(c){ if(c === "TR" || !D.COUNTRY[c]) return; var arr = t.start <= today ? went : next; if(arr.indexOf(c) < 0 && !(arr === next && went.indexOf(c) > -1)) arr.push(c); }); });
+  next = next.filter(function(c){ return went.indexOf(c) < 0; });
+  var countryN = went.length + next.length;
+  var stats = [["Gezi", trips.length, "route"], ["Ülke", countryN, "flag"], ["Gün", days, "calendar"], ["Fotoğraf", photos, "gallery"]];
+  function chips(list){ return h("div", {className: "app-cpick__chips"}, list.map(function(c){ return h("span", {key: c, className: "app-cchip app-cchip--static"}, A.flag(c) ? h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(c)) : null, h("span", null, D.COUNTRY[c][1])); })); }
+  var places = went.length || next.length ? h("section", {className: "app-psec", "aria-labelledby": "ps-places"},
+    h("h2", {id: "ps-places", className: "label app-muted"}, "Yerler"),
+    went.length ? h("div", {className: "app-pplaces"}, h("span", {className: "body-sm app-muted"}, "Gittiğin"), chips(went)) : null,
+    next.length ? h("div", {className: "app-pplaces"}, h("span", {className: "body-sm app-muted"}, "Gideceğin"), chips(next)) : null) : null;
   var body = h("div", {className: "app-home app-profilepage"},
     A.isPhone ? h("a", {href: "#home", className: "app-back", onClick: back}, h(T.Icon, {name: "chevron-left", size: 20}), h("span", null, "Geri")) : null,
     h("section", {className: "app-phero", "aria-label": "Profil"},
-      h("span", {className: "app-avatar app-avatar--xl", "aria-hidden": "true"}, me.photo && !img[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ img[1](true); }}) : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: 32}))),
+      h("button", {type: "button", className: "app-avatar app-avatar--xl app-phero__pic", "aria-expanded": picking[0] ? "true" : "false", "aria-label": "Profil fotoğrafını değiştir", onClick: function(){ picking[1](!picking[0]); }},
+        me.avatar ? h(A.AvatarArt, {k: me.avatar}) : me.photo && !img[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ img[1](true); }}) : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: 32})),
+        h("span", {className: "app-phero__edit", "aria-hidden": "true"}, h(T.Icon, {name: "edit", size: 14}))),
       h("h1", {className: "section-title app-phero__name"}, me.name || "Bu cihaz"),
       me.email ? h("p", {className: "body-sm app-muted app-phero__mail"}, me.email) : h("p", {className: "body-sm app-muted app-phero__mail"}, "Veriler bu tarayıcıda tutuluyor")),
+    h(A.Expand, {open: picking[0]}, h(PicPicker, {onDone: function(){ picking[1](false); }})),
     h("div", {className: "app-pstats"}, stats.map(function(x){
       return h("div", {key: x[0], className: "app-pstat"}, h(T.Icon, {name: x[2], size: 18}), h("strong", null, x[1]), h("span", {className: "body-sm app-muted"}, x[0]));
     })),
+    places,
     h("section", {className: "app-psec", "aria-labelledby": "ps-theme"},
       h("h2", {id: "ps-theme", className: "label app-muted"}, "Görünüm"),
       h("div", {className: "app-seg app-seg--wide", role: "radiogroup", "aria-labelledby": "ps-theme"}, opts.map(function(o){

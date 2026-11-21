@@ -294,7 +294,10 @@ function Rail(){
 A.me = function(){
   var B = window.TPB, u = B && B.session ? B.session.user : null, md = u ? (u.user_metadata || {}) : {};
   var name = md.full_name || md.name || (u && u.email ? u.email.split("@")[0] : "");
-  return {name: name, email: u ? u.email : "", photo: md.avatar_url || md.picture || "", initials: name ? D.initials(name) : ""};
+  var g = md.avatar_url || md.picture || "", pic = u ? (md.tp_avatar || "") : (S.views._avatar || "");
+  var avatar = pic && pic !== "photo" && A.AVATARS && A.AVATARS[pic] ? pic : "";
+  var photo = pic === "photo" && md.tp_photo ? D.photoUrl(md.tp_photo) : (avatar ? "" : g);
+  return {name: name, email: u ? u.email : "", photo: photo, googlePhoto: g, avatar: avatar, pic: pic, initials: name ? D.initials(name) : ""};
 };
 /* ---------- Kim ne yaptı ---------- */
 A.who = function(){
@@ -371,10 +374,34 @@ A.TimeWheel = function(p){
     h(A.Wheel, {id: pre + "m", compact: true, className: "app-timewheel__m", label: "Dakika", options: mins, value: mm[0], onChange: function(x){ mm[1](x); if(hh) p.onChange(hh + ":" + x); }}));
 };
 /* Saat dilimi: yurt dışı gezilerinde "hangi ülkenin saati" yazmak yerine seçilir */
-A.tripZones = function(t){ return t && (t.geo === "georgia" || t.currency === "GEL") ? [["TR", "Türkiye saati"], ["GE", "Gürcistan saati"]] : []; };
+/* bir saat diliminin o tarihteki UTC farkı (dakika) */
+var offCache = {};
+A.tzOffset = function(tz, iso){
+  var k = tz + "|" + (iso || ""); if(k in offCache) return offCache[k];
+  var v = null;
+  try{
+    var d = iso ? new Date(iso + "T12:00:00Z") : new Date();
+    var part = new Intl.DateTimeFormat("en-US", {timeZone: tz, timeZoneName: "shortOffset"}).formatToParts(d).filter(function(x){ return x.type === "timeZoneName"; })[0];
+    var m = part && /GMT(?:([+-])(\d{1,2})(?::(\d{2}))?)?/.exec(part.value);
+    if(m) v = m[1] ? (m[1] === "-" ? -1 : 1) * (+m[2] * 60 + (+m[3] || 0)) : 0;
+  }catch(e){}
+  if(v === null) v = {"Europe/Istanbul": 180, "Asia/Tbilisi": 240}[tz] != null ? {"Europe/Istanbul": 180, "Asia/Tbilisi": 240}[tz] : null;
+  offCache[k] = v; return v;
+};
+/* bir ülke kodunun (TR, GE…) o tarihteki UTC farkı */
+A.zoneOffset = function(code, iso){ var c = D.COUNTRY[code]; return c ? A.tzOffset(c[2], iso) : null; };
+/* saat seçiminde gösterilecek ülkeler: Türkiye + saati Türkiye'den farklı olan gidilen ülkeler */
+A.tripZones = function(t){
+  if(!t) return [];
+  var ref = A.tzOffset("Europe/Istanbul", t.start);
+  var diff = (t.countries || []).filter(function(c){ return c !== "TR" && D.COUNTRY[c] && A.zoneOffset(c, t.start) !== ref; });
+  return diff.length ? [["TR", "Türkiye saati"]].concat(diff.map(function(c){ return [c, D.COUNTRY[c][1] + " saati"]; })) : [];
+};
+/* ülke bayrağı (emoji); bayrağı olmayan kodlarda boş */
+A.flag = function(code){ return /^[A-Z]{2}$/.test(code) && code !== "XK" ? String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65) : ""; };
 A.splitTime = function(s){
   var m = /^(~?)\s*(\d{1,2}[:.]\d{2})?\s*(.*)$/.exec(s || "") || [];
-  var z = /^[A-ZÇĞİÖŞÜ]{2,4}$/.test(m[3] || "") ? m[3] : "";
+  var z = /^[A-Z]{2,4}$/.test(m[3] || "") && D.COUNTRY[m[3]] ? m[3] : "";
   return {pre: m[1] || "", clock: m[2] ? m[2].replace(".", ":") : "", zone: z};
 };
 /* Saat alanı (telefon): tekerlek + yanında ülke saati seçimi ve isteğe bağlı ek (kesin saat gibi) */
@@ -433,6 +460,39 @@ function PhoneSelect(p){
 }
 A.Select = function(p){ return A.isPhone ? h(PhoneSelect, p) : h(T.Select, p); };
 
+/* Ülke seçici: seçilenler bayraklı etiket; "Ülke ekle" ile aranabilir liste pencerenin içinde açılır */
+var trColl = typeof Intl !== "undefined" && Intl.Collator ? new Intl.Collator("tr") : null;
+function low(x){ return String(x || "").toLocaleLowerCase("tr"); }
+A.CountryPicker = function(p){
+  var open = React.useState(false), q = React.useState(""), sel = p.value || [];
+  var all = React.useMemo(function(){ return D.COUNTRIES.slice().sort(function(a, b){ return a[0] === "TR" ? -1 : b[0] === "TR" ? 1 : (trColl ? trColl.compare(a[1], b[1]) : (a[1] < b[1] ? -1 : 1)); }); }, []);
+  var qq = low(q[0]).trim(), list = qq ? all.filter(function(c){ return low(c[1]).indexOf(qq) > -1 || low(c[0]) === qq; }) : all;
+  function toggle(code){ p.onChange(sel.indexOf(code) > -1 ? sel.filter(function(x){ return x !== code; }) : sel.concat([code])); }
+  return h("div", {className: "tp-field app-cpick"},
+    h("span", {className: "label tp-field__label", id: "cp-l"}, p.label || "Nereye?"),
+    h("div", {className: "app-cpick__chips"},
+      sel.map(function(code){
+        var c = D.COUNTRY[code]; if(!c) return null;
+        return h("span", {key: code, className: "app-cchip"}, A.flag(code) ? h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(code)) : null, h("span", null, c[1]),
+          h("button", {type: "button", className: "app-cchip__x", "aria-label": c[1] + " çıkarılsın", onClick: function(){ toggle(code); }}, h(T.Icon, {name: "close", size: 14})));
+      }),
+      h("button", {type: "button", className: "app-cchip app-cchip--add", "aria-expanded": open[0] ? "true" : "false", "aria-controls": "cp-panel", onClick: function(){ open[1](!open[0]); if(open[0]) q[1](""); }},
+        h(T.Icon, {name: open[0] ? "check" : "plus", size: 14}), h("span", null, open[0] ? "Bitti" : (sel.length ? "Ülke ekle" : "Ülke seç")))),
+    h(A.Expand, {open: open[0]},
+      h("div", {id: "cp-panel", className: "app-cpick__panel"},
+        h("input", {type: "search", className: "tp-input body", placeholder: "Ülke ara", value: q[0], "aria-label": "Ülke ara", onChange: function(e){ q[1](e.target.value); }}),
+        h("ul", {className: "app-select__list", role: "listbox", "aria-multiselectable": "true", "aria-labelledby": "cp-l"},
+          list.length ? list.map(function(c){
+            var on = sel.indexOf(c[0]) > -1;
+            return h("li", {key: c[0], role: "option", tabIndex: 0, "aria-selected": on ? "true" : "false", className: "tp-option", onClick: function(){ toggle(c[0]); },
+                onKeyDown: function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(c[0]); } }},
+              h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(c[0]) || "·"),
+              h("span", {className: "tp-option__text"}, h("span", {className: "body"}, c[1])),
+              on ? h(T.Icon, {name: "check", size: 18, className: "tp-option__check"}) : null);
+          }) : h("li", {className: "body-sm app-muted", style: {padding: "var(--space-2) var(--space-3)"}}, "Bulunamadı")))),
+    h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Saat seçiminde ülke saati ve yerel para buna göre gelir."));
+};
+
 /* Zorunlu alan etiketi: yıldız; isteğe bağlı olanlara ayrıca yazı eklenmez */
 A.req = function(label){ return h(F, null, label, h("span", {className: "app-req", "aria-hidden": "true"}, " *"), h("span", {className: "tp-sr"}, " (zorunlu)")); };
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
@@ -446,7 +506,7 @@ A.AvatarButton = function(p){
   return h("button", {type: "button", className: "app-avatar", style: {width: sz, height: sz}, "aria-label": "Profil" + (me.name ? ": " + me.name : ""), title: "Profil",
       "aria-current": S.page === "profil" ? "page" : undefined,
       onClick: function(){ if(S.page === "profil") return; S.profBack = location.hash || "#home"; location.hash = "profil"; }},
-    me.photo && !err[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ err[1](true); }})
+    me.avatar && A.AvatarArt ? h(A.AvatarArt, {k: me.avatar}) : me.photo && !err[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ err[1](true); }})
       : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: Math.round(sz * .5)})));
 };
 function Sidebar(){

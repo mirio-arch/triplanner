@@ -117,7 +117,7 @@ function ExpenseForm(p){
     item ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Bu tutar Ulaşım'daki “" + item.title + "” biletinden geliyor; değiştirirsen orada da değişir.") : null,
     h(T.PhotoInput, {label: "Fotoğraf", optional: true, photos: f.photos.map(function(pid){ var ph = photoOf(t, pid); return ph ? {src: D.photoUrl(ph.asset), alt: "Harcama fotoğrafı"} : null; }).filter(Boolean),
       hint: "Galeri’ye de eklenir. Fişi de çekebilirsin.", busy: up[0], onFiles: onFiles, onRemove: function(i){ set("photos", f.photos.filter(function(_, j){ return j !== i; })); }}),
-    h(T.MoneyField, {label: A.req("Tutar"), value: f.amount, currency: f.currency, currencies: D.CURRENCIES, hint: conv, autoFocus: !e && !A.isPhone,
+    h(T.MoneyField, {label: A.req("Tutar"), value: f.amount, currency: f.currency, currencies: D.curList(t), hint: conv, autoFocus: !e && !A.isPhone,
       onChange: function(o){ var n = Object.assign({}, st[0]); n.amount = o.value; n.currency = o.currency; st[1](n); err[1](""); }}),
     err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, err[0]) : null,
     item ? null : h(T.TextField, {label: "Ne için", value: f.title, placeholder: "Örn. Akşam: hinkali", onChange: function(v){ set("title", v); }}),
@@ -135,7 +135,7 @@ function ExpenseForm(p){
 A.ExpenseForm = ExpenseForm;
 
 function RateBox(p){
-  var t = p.t, cur = t.currency || "GEL";
+  var t = p.t, cur = t.currency || D.curList(t)[1] || "EUR";
   var st = React.useState(null), b = React.useState(null);
   var rate = t.rate[cur];
   return h("div", {className: "app-stack"},
@@ -145,7 +145,7 @@ function RateBox(p){
         h("span", {className: "body-sm app-muted", style:{display:"block"}}, rate ? "Elle girdin. " + cur + " tutarları bununla çevrilir." : cur + " harcamaların TL toplamına girmesi için kuru yaz.")),
       h(T.IconButton, {icon: "edit", label: "Kuru değiştir", size: "sm", onClick: function(){ st[1](rate ? D.fmtNum(rate, true) : ""); }}))
     : h("form", {className: "app-stack", onSubmit: function(e){ e.preventDefault(); var r = D.parseAmount(st[0]); if(r){ t.rate[cur] = r; } else delete t.rate[cur]; st[1](null); A.commit(); }},
-        h(A.Select, {label: "Gezinin para birimi", value: cur, options: D.CURRENCIES.filter(function(c){ return c !== "TL"; }), onChange: function(v){ t.currency = v; A.commit(); }}),
+        h(A.Select, {label: "Gezinin para birimi", value: cur, options: D.curList(t).filter(function(c){ return c !== "TL"; }), onChange: function(v){ t.currency = v; A.commit(); }}),
         h(T.TextField, {label: "1 " + cur + " kaç TL?", value: st[0], placeholder: "16,00", autoFocus: true, inputMode: "decimal", onChange: function(v){ st[1](v); }}),
         h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ st[1](null); }}, "Vazgeç"), h(T.Button, {variant: "primary", size: "sm", type: "submit"}, "Kaydet"))),
     b[0] === null ? h("div", {className: "app-row"},
@@ -246,7 +246,7 @@ var GUESS = [[/taksi|bolt|otobüs|marş|marsh|tren|bilet|uçak|transfer|metro|ya
   [/müze|giriş|kale|mağara|teleferik|tur\b|rehber|bahçe/i, "sights"], [/harç|vize|sigorta|pasaport|ceza/i, "fees"], [/hediye|market|alışveriş|çurçhela|şarap|baharat|magnet/i, "shopping"]];
 function guessCat(s){ for(var i = 0; i < GUESS.length; i++){ if(GUESS[i][0].test(s)) return GUESS[i][1]; } return "food"; }
 function QuickExpense(p){
-  var t = p.t, b = blank(t), st = React.useState({amount: "", title: "", currency: S.quickCur || b.currency}), err = React.useState("");
+  var t = p.t, b = blank(t), st = React.useState({amount: "", title: "", currency: S.quickCur && D.curList(t).indexOf(S.quickCur) > -1 ? S.quickCur : b.currency}), err = React.useState("");
   var f = st[0];
   function set(k, val){ var n = Object.assign({}, st[0]); n[k] = val; st[1](n); }
   function add(e){
@@ -260,9 +260,9 @@ function QuickExpense(p){
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
   }
-  var cur = t.currency || "GEL", rate = t.rate[cur], st2 = stats(t);
-  var curs = [cur].concat(D.CURRENCIES.filter(function(c){ return c !== cur; }));
-  var line = [rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince fotoğraf ve kategori"].filter(Boolean).join(" · ");
+  var cur = t.currency || "TL", rate = t.rate[cur], st2 = stats(t);
+  var curs = [cur].concat(D.curList(t).filter(function(c){ return c !== cur; })).slice(0, 4);
+  var line = [cur === "TL" ? null : rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince fotoğraf ve kategori"].filter(Boolean).join(" · ");
   return h("form", {className: "app-qexp", onSubmit: add, noValidate: true},
     h("div", {className: "app-quick"},
       h("input", {className: "app-quick__in app-quick__in--amount", value: f.amount, placeholder: "0", inputMode: "decimal", enterKeyHint: "next", "aria-label": "Tutar", onChange: function(e){ set("amount", e.target.value); err[1](""); }}),

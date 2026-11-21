@@ -159,7 +159,7 @@ function TransitSheet(p){
       h(T.TextField, {label: "Koltuk, peron ya da kapı", value: v.seat, placeholder: v.mode === "plane" ? "14C" : "Peron 7", onChange: function(x){ set("seat", x); }}),
       h(TicketFile, {value: v.ticket, onChange: function(x){ set("ticket", x); }})),
     h(T.TextField, {label: "Süre", optional: true, value: v.duration, placeholder: "~2,5 saat", onChange: function(x){ set("duration", x); }}),
-    h(T.MoneyField, {label: "Bilet fiyatı", optional: true, value: v.amount, currency: v.currency, currencies: D.CURRENCIES, hint: "Gidiş-dönüş tek biletse toplamı yaz.", autoFocus: p.step === 2 && !A.isPhone,
+    h(T.MoneyField, {label: "Bilet fiyatı", optional: true, value: v.amount, currency: v.currency, currencies: D.curList(t), hint: "Gidiş-dönüş tek biletse toplamı yaz.", autoFocus: p.step === 2 && !A.isPhone,
       onChange: function(o){ set({amount: o.value, currency: o.currency}); }}),
     h(T.Checkbox, {label: "Harcamalara ekle", description: "Fiyat girersen Harcamalar'da Ulaşım kategorisine düşer.", checked: v.addExp, strong: true, onChange: function(x){ set("addExp", x); }}),
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: v.note, placeholder: "Peron, rezervasyon kodu, şoför numarası…", onChange: function(x){ set("note", x); }}),
@@ -228,7 +228,7 @@ function applyDates(t, start, end){
 function TripDialog(p){
   var t = p.kind === "trip-settings" ? A.trip() : null;
   var pre = !t && S.dialog && S.dialog.preset || {};
-  var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || ""} : {name: pre.name || "", start: pre.start || "", end: pre.end || "", short: "", color: A.COLORS[S.app.order.length % 6], currency: ""});
+  var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || "", countries: (t.countries || []).slice()} : {name: pre.name || "", start: pre.start || "", end: pre.end || "", short: "", color: A.COLORS[S.app.order.length % 6], currency: pre.currency || "", countries: (pre.countries || []).slice()});
   var v = f[0], set = f[1], err = React.useState(""), del = React.useState(false), reset = React.useState(false);
   var leave = !!(t && window.TPB && !window.TPB.isOwner(t.id));
   function save(e){
@@ -236,9 +236,9 @@ function TripDialog(p){
     if(!v.name.trim()){ err[1]("Gezinin adını yaz."); return; }
     var bad = validRange(v.start, v.end); if(bad){ err[1](bad); return; }
     var ci = A.COLORS.indexOf(v.color);
-    if(t){ t.name = D.str(v.name.trim(), 60); t.short = D.str(v.short.trim(), 3) || D.initials(t.name); t.color = ci; t.currency = v.currency; applyDates(t, v.start, v.end); A.commit(t.id); close(); A.flash("Gezi kaydedildi."); }
+    if(t){ t.name = D.str(v.name.trim(), 60); t.short = D.str(v.short.trim(), 3) || D.initials(t.name); t.color = ci; t.currency = v.currency; t.countries = v.countries.slice(); applyDates(t, v.start, v.end); A.commit(t.id); close(); A.flash("Gezi kaydedildi."); }
     else {
-      var n = D.newTrip(D.str(v.name.trim(), 60), D.str(v.short.trim(), 3), v.start, v.end, ci); n.currency = v.currency;
+      var n = D.newTrip(D.str(v.name.trim(), 60), D.str(v.short.trim(), 3), v.start, v.end, ci); n.currency = v.currency; n.countries = v.countries.slice();
       S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); close(); A.go("hazirlik", "", n.id);
     }
   }
@@ -246,8 +246,14 @@ function TripDialog(p){
     h("form", {className: "app-stack", onSubmit: save},
       h(T.TextField, {label: A.req("Gezi adı"), value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t && !A.isPhone, onChange: function(x){ set("name", x); err[1](""); }}),
       h("div", {className: "app-two"}, h(A.Field, {label: A.req("Başlangıç"), type: "date", value: v.start, onChange: function(x){ set("start", x); err[1](""); }}), h(A.Field, {label: A.req("Bitiş"), type: "date", value: v.end, min: v.start, onChange: function(x){ set("end", x); err[1](""); }})),
-      h("div", {className: "app-two"}, h(T.TextField, {label: "Simge yazısı", optional: true, value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", onChange: function(x){ set("short", x); }}),
-        h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.CURRENCIES.filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
+      h(A.CountryPicker, {value: v.countries, onChange: function(list){
+        /* ilk yurt dışı ülke eklenince yerel para kendiliğinden gelir */
+        var o = {countries: list}, first = list.filter(function(c){ return D.COUNTRY[c] && D.COUNTRY[c][3] !== "TL"; })[0];
+        if(!v.currency && first) o.currency = D.COUNTRY[first][3];
+        if(v.currency && !list.some(function(c){ return D.COUNTRY[c] && D.COUNTRY[c][3] === v.currency; }) && v.countries.some(function(c){ return D.COUNTRY[c] && D.COUNTRY[c][3] === v.currency; })) o.currency = first ? D.COUNTRY[first][3] : "";
+        set(o); }}),
+      h("div", {className: "app-two"}, h(T.TextField, {label: "Simge yazısı", value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", onChange: function(x){ set("short", x); }}),
+        h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.curList({currency: v.currency, countries: v.countries}).filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
       h(T.SwatchPicker, {label: "Renk", value: v.color, onChange: function(x){ set("color", x); }}),
       err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, h(T.Icon, {name: "warning", size: 16}), err[0]) : null,
       t ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Tarihleri kısaltırsan dışarıda kalan günlerin planları kenar listesine taşınır.") : null,

@@ -19,12 +19,11 @@ function routeOf(it){
   return ["", ""];
 }
 function hm(s){ var m = String(s || "").match(/(\d{1,2})[:.](\d{2})/); return m ? [+m[1], +m[2]] : null; }
-function zoneOf(s){ var m = String(s || "").match(/\b(TR|GE)\b/); return m ? m[1] : ""; }
-var OFFSET = {TR: 3, GE: 4};
+function zoneOf(s){ var m = String(s || "").match(/\b([A-Z]{2}|KKTC)\s*$/); return m && D.COUNTRY[m[1]] ? m[1] : ""; }
 function at(date, s){
   var x = hm(s), d = D.parseISO(date); if(!x || !d) return null;
-  var z = zoneOf(s);
-  if(z) return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), x[0] - OFFSET[z], x[1]);
+  var z = zoneOf(s), off = z ? A.zoneOffset(z, date) : null;
+  if(off !== null) return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), x[0], x[1] - off);
   return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), x[0], x[1]).getTime();
 }
 function durMin(s){

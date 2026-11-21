@@ -181,6 +181,17 @@ B.assets = {
   }
 };
 
+/* ---------- Profil fotoğrafı: hazır avatar ya da yüklenen fotoğraf; seçim hesabın profil bilgisinde ---------- */
+B.setPic = function(o){
+  if(!sb || !B.session) return Promise.reject(new Error("Oturum yok"));
+  o = o || {};
+  return sb.auth.updateUser({data: {tp_avatar: o.photo ? "photo" : (o.avatar || null), tp_photo: o.photo || null}}).then(function(r){
+    if(r.error) throw r.error;
+    if(r.data && r.data.user && B.session) B.session = Object.assign({}, B.session, {user: r.data.user});
+    rerender();
+  });
+};
+
 /* ---------- Gezi sohbeti ---------- */
 var chats = {};   /* gezi id -> {list, state, chan} */
 function chatOf(id){ return chats[id] || (chats[id] = {list: [], state: "idle", chan: null, timer: null}); }

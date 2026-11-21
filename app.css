@@ -764,3 +764,40 @@ a{color:var(--foreground-secondary)}
 .app-psec>h2{margin:0}
 .app-pbtns{display:flex;flex-direction:column;gap:var(--space-2)}
 .app-pout{padding-top:var(--space-2);border-top:1px solid var(--border-weak)}
+/* Ülke seçici */
+.app-cpick__chips{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.app-cchip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 6px 0 12px;border-radius:var(--radius-full);background:var(--background-primary-weak);color:var(--foreground);font:500 14px var(--font-sans);box-sizing:border-box}
+.app-cchip__flag{font-size:16px;line-height:1}
+.app-cchip__x{display:grid;place-items:center;width:24px;height:24px;border:0;border-radius:50%;background:none;color:var(--foreground-weak);cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+.app-cchip__x:hover{background:var(--background-sunken);color:var(--foreground)}
+.app-cchip--add{padding:0 14px 0 10px;border:1px dashed var(--border);background:none;color:var(--foreground-primary);font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-cchip--add .tp-icon{--tp-duo:currentColor}
+.app-cpick__panel{display:flex;flex-direction:column;gap:var(--space-2);padding-top:var(--space-2)}
+.app-cpick__panel .app-select__list{margin:0}
+.app-cpick .tp-option{align-items:center}
+/* Plan: saat noktası ile kart arası daha geniş */
+.app-prow{column-gap:30px}
+.app-prow::before,.app-prow__dot{left:61px}
+/* Avatarlar */
+.app-avart{display:block;width:100%;height:100%}
+.app-avart svg{display:block}
+.app-avatar .app-avart{border-radius:50%;overflow:hidden}
+.app-phero__pic{position:relative;padding:0;cursor:pointer;overflow:visible;-webkit-tap-highlight-color:transparent;transition:transform var(--duration-fast) var(--ease-standard)}
+.app-phero__pic:active{transform:scale(.97)}
+.app-phero__pic>img,.app-phero__pic>.app-avart{border-radius:50%;overflow:hidden;width:100%;height:100%;object-fit:cover}
+.app-phero__pic:focus-visible{box-shadow:0 0 0 3px var(--border-focus)}
+.app-phero__edit{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--background-raised);color:var(--foreground-primary);box-shadow:var(--shadow-card,0 1px 3px rgba(0,0,0,.15));border:1px solid var(--border-weak)}
+.app-phero__edit .tp-icon{--tp-duo:currentColor}
+.app-avpick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--space-3);padding:var(--space-2) var(--space-1) var(--space-1)}
+.app-avpick__tile{aspect-ratio:1;padding:0;border:0;border-radius:50%;overflow:hidden;background:var(--background-sunken);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform var(--duration-fast) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard)}
+.app-avpick__tile:active{transform:scale(.94)}
+.app-avpick__tile img{width:100%;height:100%;object-fit:cover;display:block}
+.app-avpick__tile[aria-checked="true"]{box-shadow:0 0 0 3px var(--background),0 0 0 5px var(--border-primary)}
+.app-avpick__tile:focus-visible{box-shadow:0 0 0 3px var(--border-focus)}
+.app-avpick__up{grid-column:span 1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1.5px dashed var(--border);background:none;color:var(--foreground-primary);font:600 10px/1.15 var(--font-sans);text-align:center}
+.app-avpick__up .tp-icon{--tp-duo:currentColor}
+.app-avpick__up.is-busy{opacity:.6}
+/* Profil: yerler */
+.app-pplaces{display:flex;flex-direction:column;gap:6px}
+.app-cchip--static{padding:0 12px}
+.app-pstats{grid-template-columns:repeat(4,minmax(0,1fr))}
