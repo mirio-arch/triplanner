@@ -349,9 +349,64 @@ A.Wheel = function(p){
 var MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 A.DayWheel = function(p){
   var t = p.t;
-  var opts = [["pre", "Yola çıkmadan", ""]].concat(t.days.map(function(d){ var dt = D.parseISO(d.date); return [d.id, dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()], D.WDS[dt.getUTCDay()]]; }));
-  return h(A.Wheel, {id: "dw", compact: true, className: "app-daywheel1", label: p.label || "Hangi gün", options: opts, value: p.value, onChange: p.onChange});
+  var opts = (p.noPre ? [] : [["pre", "Yola çıkmadan", ""]]).concat(t.days.map(function(d){ var dt = D.parseISO(d.date); return [d.id, dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()], D.WDS[dt.getUTCDay()]]; }));
+  return h(A.Wheel, {id: p.id || "dw", compact: true, className: "app-daywheel1", label: p.label || "Hangi gün", options: opts, value: p.value, onChange: p.onChange});
 };
+
+/* Saat seçici: saat ve dakika (5'er) tekerlekleri; en üstte "Saatsiz" */
+function pad2(n){ return ("0" + n).slice(-2); }
+A.TimeWheel = function(p){
+  var m = /(\d{1,2})[:.](\d{2})/.exec(p.value || "");
+  var hh = m ? pad2(Math.min(23, +m[1])) : "", mm = React.useState(m ? pad2(Math.round(+m[2] / 5) * 5 % 60) : "00");
+  var hours = [["", "Saatsiz"]], mins = [], i;
+  for(i = 0; i < 24; i++) hours.push([pad2(i), pad2(i)]);
+  for(i = 0; i < 60; i += 5) mins.push([pad2(i), pad2(i)]);
+  var pre = p.id || "tw";
+  return h("div", {className: "app-timewheel" + (hh ? "" : " is-none")},
+    h(A.Wheel, {id: pre + "h", compact: true, className: "app-timewheel__h", label: "Saat", options: hours, value: hh, onChange: function(x){ p.onChange(x ? x + ":" + mm[0] : ""); }}),
+    h("span", {className: "app-timewheel__sep", "aria-hidden": "true"}, ":"),
+    h(A.Wheel, {id: pre + "m", compact: true, className: "app-timewheel__m", label: "Dakika", options: mins, value: mm[0], onChange: function(x){ mm[1](x); if(hh) p.onChange(hh + ":" + x); }}));
+};
+/* Gün + saat yan yana tekerlekler (telefonda formlarda) */
+A.DayTimePick = function(p){
+  return h("div", {className: "app-dtpick"},
+    h("div", {className: "app-dtpick__col"}, h("span", {className: "label tp-field__label"}, p.dayLabel || "Gün"), h(A.DayWheel, {t: p.t, id: (p.id || "dt") + "d", noPre: p.noPre, value: p.day, onChange: p.onDay, label: p.dayLabel || "Gün"})),
+    p.onTime ? h("div", {className: "app-dtpick__col app-dtpick__col--time"}, h("span", {className: "label tp-field__label"}, p.timeLabel || "Saat"), h(A.TimeWheel, {id: (p.id || "dt") + "t", value: p.time, onChange: p.onTime})) : null);
+};
+
+/* Seçim kutusu: telefonda liste kutunun altında, pencerenin içinde yumuşakça açılır (ekrandan taşmaz);
+   masaüstünde tasarım sistemindeki açılır liste */
+var selSeq = 0;
+function PhoneSelect(p){
+  var open = React.useState(false), ref = React.useRef(null), id = React.useRef("asel" + (++selSeq)).current;
+  var opts = (p.options || []).map(function(x){ return typeof x === "string" ? {label: x, value: x} : x; });
+  function valOf(x){ return x.value !== undefined ? x.value : x.label; }
+  var cur = opts.filter(function(x){ return valOf(x) === p.value; })[0];
+  function toggle(){ var o = !open[0]; open[1](o); if(o) setTimeout(function(){ if(ref.current) ref.current.scrollIntoView({block: "nearest", behavior: "smooth"}); }, 260); }
+  function pick(x){ if(p.onChange) p.onChange(valOf(x)); open[1](false); }
+  return h("div", {className: "tp-field app-select" + (open[0] ? " is-open" : ""), ref: ref},
+    p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label, p.optional ? h("span", {className: "tp-muted"}, " · isteğe bağlı") : null) : null,
+    h("button", {type: "button", id: id + "-b", className: "tp-input tp-trigger body", "aria-haspopup": "listbox", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id + "-list",
+        "aria-labelledby": (p.label ? id + "-l " : "") + id + "-b", onClick: toggle},
+      cur && cur.icon ? h(T.Icon, {name: cur.icon, size: 18}) : null,
+      h("span", {className: "tp-trigger__value" + (cur ? "" : " tp-trigger__placeholder")}, cur ? cur.label : (p.placeholder || "Seç")),
+      h(T.Icon, {name: "chevron-down", size: 18, className: "tp-muted app-select__chev"})),
+    h(A.Expand, {open: open[0]},
+      h("ul", {id: id + "-list", role: "listbox", "aria-labelledby": p.label ? id + "-l" : undefined, className: "app-select__list"},
+        opts.map(function(x, i){
+          var sel = valOf(x) === p.value;
+          return h("li", {key: i, role: "option", tabIndex: 0, "aria-selected": sel ? "true" : "false", className: "tp-option",
+              onClick: function(){ pick(x); }, onKeyDown: function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(x); } }},
+            x.icon ? h(T.Icon, {name: x.icon, size: 18}) : null,
+            h("span", {className: "tp-option__text"}, h("span", {className: "body"}, x.label), x.description ? h("span", {className: "body-sm tp-muted"}, x.description) : null),
+            sel ? h(T.Icon, {name: "check", size: 18, className: "tp-option__check"}) : null);
+        }))),
+    p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null);
+}
+A.Select = function(p){ return A.isPhone ? h(PhoneSelect, p) : h(T.Select, p); };
+
+/* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
+A.markDirty = function(){ S.dirty = true; };
 
 /* Gezi simgesi, tıklanmayan hali (başka bir düğmenin içinde kullanmak için) */
 A.shortRange = function(t){ var a = D.fmtDay(t.start), b = D.fmtDay(t.end); return a.short + " – " + b.short; };

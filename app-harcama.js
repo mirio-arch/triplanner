@@ -78,7 +78,8 @@ function blank(t, v){
 function ExpenseForm(p){
   var t = p.t, e = p.id ? t.expenses.find(function(x){ return x.id === p.id; }) : null;
   var item = e && e.source === "transport" ? t.items[e.ref] : null;
-  var st = React.useState(function(){ return e ? {title: e.title, amount: D.fmtNum(e.amount, e.amount % 1 !== 0), currency: e.currency, cat: e.cat, day: e.day, time: e.time, ref: e.ref, photos: e.photos.slice()} : Object.assign(blank(t), p.preset || {}); });
+  var st0 = React.useState(function(){ return e ? {title: e.title, amount: D.fmtNum(e.amount, e.amount % 1 !== 0), currency: e.currency, cat: e.cat, day: e.day, time: e.time, ref: e.ref, photos: e.photos.slice()} : Object.assign(blank(t), p.preset || {}); });
+  var st = [st0[0], function(n){ A.markDirty(); st0[1](n); }];
   var f = st[0], set = function(k, v){ var n = Object.assign({}, st[0]); n[k] = v; st[1](n); };
   var err = React.useState(""), up = React.useState(false), del = React.useState(false);
   var plans = f.day !== "pre" && A.dayById(t, f.day) ? A.dayById(t, f.day).items.filter(function(id){ return t.items[id] && t.items[id].cat !== "ulasim"; }) : [];
@@ -120,11 +121,12 @@ function ExpenseForm(p){
       onChange: function(o){ var n = Object.assign({}, st[0]); n.amount = o.value; n.currency = o.currency; st[1](n); err[1](""); }}),
     err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, err[0]) : null,
     item ? null : h(T.TextField, {label: "Ne için", value: f.title, placeholder: "Örn. Akşam: hinkali", onChange: function(v){ set("title", v); }}),
-    item ? null : h(T.Select, {label: "Kategori", value: f.cat, options: catOpts, onChange: function(v){ set("cat", v); }}),
-    item ? null : h("div", {className: "app-two"},
+    item ? null : h(A.Select, {label: "Kategori", value: f.cat, options: catOpts, onChange: function(v){ set("cat", v); }}),
+    item ? null : A.isPhone ? h(A.DayTimePick, {t: t, id: "ex", day: f.day, onDay: function(v){ var n = Object.assign({}, st[0]); n.day = v; n.ref = ""; st[1](n); }, time: f.time, onTime: function(v){ set("time", v); }})
+      : h("div", {className: "app-two"},
       h(T.Select, {label: "Gün", value: f.day, options: dayOpts, onChange: function(v){ var n = Object.assign({}, st[0]); n.day = v; n.ref = ""; st[1](n); }}),
       h(T.TextField, {label: "Saat", value: f.time, placeholder: "20:30", onChange: function(v){ set("time", v); }, maxLength: 5, inputMode: "numeric"})),
-    item || !plans.length ? null : h(T.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + " · " : "") + it.title, value: id}; })),
+    item || !plans.length ? null : h(A.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + " · " : "") + it.title, value: id}; })),
       hint: "Plan kartında tutar görünür.", onChange: function(v){ var n = Object.assign({}, st[0]); n.ref = v; if(v && t.items[v]){ if(!n.title) n.title = t.items[v].title; n.cat = D.CAT_TO_EXP[t.items[v].cat] || n.cat; } st[1](n); }}),
     h(T.Button, {variant: "primary", icon: e ? "check" : "plus", full: true, type: "submit"}, e ? "Kaydet" : "Ekle"),
     e && A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", full: true, onClick: function(){ if(p.onDone) p.onDone(); A.openChat({k: "expense", id: e.id, l: D.str(e.title || D.EXP_CATS[e.cat], 80)}); }}, "Sohbette bahset") : null,
@@ -143,7 +145,7 @@ function RateBox(p){
         h("span", {className: "body-sm app-muted", style:{display:"block"}}, rate ? "Elle girdin. " + cur + " tutarları bununla çevrilir." : cur + " harcamaların TL toplamına girmesi için kuru yaz.")),
       h(T.IconButton, {icon: "edit", label: "Kuru değiştir", size: "sm", onClick: function(){ st[1](rate ? D.fmtNum(rate, true) : ""); }}))
     : h("form", {className: "app-stack", onSubmit: function(e){ e.preventDefault(); var r = D.parseAmount(st[0]); if(r){ t.rate[cur] = r; } else delete t.rate[cur]; st[1](null); A.commit(); }},
-        h(T.Select, {label: "Gezinin para birimi", value: cur, options: D.CURRENCIES.filter(function(c){ return c !== "TL"; }), onChange: function(v){ t.currency = v; A.commit(); }}),
+        h(A.Select, {label: "Gezinin para birimi", value: cur, options: D.CURRENCIES.filter(function(c){ return c !== "TL"; }), onChange: function(v){ t.currency = v; A.commit(); }}),
         h(T.TextField, {label: "1 " + cur + " kaç TL?", value: st[0], placeholder: "16,00", autoFocus: true, inputMode: "decimal", onChange: function(v){ st[1](v); }}),
         h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ st[1](null); }}, "Vazgeç"), h(T.Button, {variant: "primary", size: "sm", type: "submit"}, "Kaydet"))),
     b[0] === null ? h("div", {className: "app-row"},

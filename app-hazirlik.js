@@ -8,7 +8,7 @@ var DESC = {belge: "Kimlik, sigorta, harç: sınırda istenenler.", konaklama: "
 function CheckForm(p){
   var t = p.t, c = p.item;
   var st = React.useState(c ? {group: c.group, title: c.title, note: c.note, link: c.link, due: c.due || ""} : {group: p.group || "belge", title: "", note: "", link: "", due: ""});
-  var f = st[0], set = function(k, v){ var n = Object.assign({}, f); n[k] = v; st[1](n); };
+  var f = st[0], set = function(k, v){ A.markDirty(); var n = Object.assign({}, f); n[k] = v; st[1](n); };
   var err = React.useState("");
   function save(e){
     e.preventDefault();
@@ -21,7 +21,7 @@ function CheckForm(p){
     if(c || p.onDone) (p.onDone || function(){})(); else st[1]({group: f.group, title: "", note: "", link: "", due: ""});
   }
   return h("form", {className: "app-stack", onSubmit: save},
-    h(T.Select, {label: "Grup", value: f.group, options: D.GROUPS.map(function(g){ return {label: g[1], value: g[0]}; }), onChange: function(v){ set("group", v); }}),
+    h(A.Select, {label: "Grup", value: f.group, options: D.GROUPS.map(function(g){ return {label: g[1], value: g[0]}; }), onChange: function(v){ set("group", v); }}),
     h(T.TextField, {label: "Madde", value: f.title, placeholder: "Örn. Seyahat sağlık sigortası", onChange: function(v){ set("title", v); err[1](""); }, error: err[0] || undefined, autoFocus: !!c}),
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: f.note, onChange: function(v){ set("note", v); }}),
     h(T.TextField, {label: "Bağlantı", optional: true, value: f.link, placeholder: "https://", onChange: function(v){ set("link", v); }}),

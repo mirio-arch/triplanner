@@ -2,14 +2,25 @@
 (function(){
 "use strict";
 var A = window.TPA, D = A.D, T = A.T, h = A.h, F = A.F, S = A.S;
-function close(){ S.dialog = null; A.render(); }
-document.addEventListener("keydown", function(e){ if(e.key === "Escape" && S.dialog){ close(); } });
+/* close: kaydettikten sonra doğrudan kapatır. ask: kullanıcı kapatmak isteyince; formda değişiklik varsa önce sorar. */
+function close(){ S.dirty = false; S.askClose = false; S.dialog = null; A.render(); }
+function ask(){ if(S.dirty){ S.askClose = true; A.render(); } else close(); }
+function keep(){ S.askClose = false; A.render(); }
+A.closeDialog = close; A.askCloseDialog = ask;
+/* pencerenin içindeki Escape'i pencerenin kendisi karşılar; bu yalnızca odak dışarıdayken */
+document.addEventListener("keydown", function(e){
+  if(e.key !== "Escape" || !S.dialog) return;
+  if(e.target && e.target.closest && e.target.closest(".tp-scrim,.tp-sheetwrap")) return;
+  if(S.askClose) keep(); else ask();
+});
 
 function useForm(init){
   var st = React.useState(init);
-  return [st[0], function(k, v){ st[1](function(o){ var n = Object.assign({}, o); if(typeof k === "object") Object.assign(n, k); else n[k] = v; return n; }); }];
+  return [st[0], function(k, v){ A.markDirty(); st[1](function(o){ var n = Object.assign({}, o); if(typeof k === "object") Object.assign(n, k); else n[k] = v; return n; }); }];
 }
 function fixLink(s){ s = (s || "").trim(); if(!s) return ""; return D.safeLink(/^https?:/i.test(s) ? s : "https://" + s); }
+/* Form pencereleri: telefonda alttan açılan pencere, masaüstünde ortada */
+function Modal(p){ return A.isPhone ? h(T.Sheet, Object.assign({placement: "bottom", direction: "none"}, p, {width: undefined})) : h(T.Dialog, p); }
 function Foot(p){ return h("div", {className: "app-dialogfoot"}, p.left || h("span"), h("div", {className: "app-row"}, p.children)); }
 
 /* ---------- Plan ---------- */
@@ -38,15 +49,15 @@ function PlanDialog(p){
   }
   var whereOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; }).concat([{label: "Kenar listesi · çıkardıkların", value: "removed"}, {label: "Kenar listesi · öneriler", value: "ideas"}]);
   var linked = it ? t.expenses.filter(function(e){ return e.ref === it.id; }) : [];
-  return h(T.Dialog, {title: it ? "Planı düzenle" : "Yeni plan", width: "560px", onClose: close},
+  return h(Modal, {title: it ? "Planı düzenle" : "Yeni plan", width: "560px", onClose: ask},
     h("form", {className: "app-stack", onSubmit: save},
       h("div", {className: "app-two app-two--time"},
         h(T.TextField, {label: "Saat", value: v.time, placeholder: "14:30", onChange: function(x){ set("time", x); }}),
         h(T.TextField, {label: "Yer / etkinlik", value: v.title, onChange: function(x){ set("title", x); err[1](""); }, error: err[0] || undefined, autoFocus: !it})),
       h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 3, value: v.note, onChange: function(x){ set("note", x); }}),
       h("div", {className: "app-two"},
-        h(T.Select, {label: "Tür", value: v.cat, options: Object.keys(D.CATS).map(function(c){ return {label: D.CATS[c], value: c}; }), onChange: function(x){ set("cat", x); }}),
-        h(T.Select, {label: "Nerede", value: v.where, options: whereOpts, onChange: function(x){ set("where", x); }})),
+        h(A.Select, {label: "Tür", value: v.cat, options: Object.keys(D.CATS).map(function(c){ return {label: D.CATS[c], value: c}; }), onChange: function(x){ set("cat", x); }}),
+        h(A.Select, {label: "Nerede", value: v.where, options: whereOpts, onChange: function(x){ set("where", x); }})),
       h(T.TextField, {label: "Bağlantı", optional: true, value: v.link, placeholder: "https://", onChange: function(x){ set("link", x); }}),
       h(T.Checkbox, {label: "Kesin saat", description: "Kaçırılmaması gereken bir saat (uçuş, sınır, rezervasyon).", checked: v.critical, onChange: function(x){ set("critical", x); }}),
       it ? h("div", {className: "app-row app-row--wrap"},
@@ -57,7 +68,7 @@ function PlanDialog(p){
           : h(T.Button, {size: "sm", variant: "ghost", icon: "route", onClick: function(){ S.dialog = {kind: "transit", id: it.id}; A.render(); }}, "Ulaşım ayrıntıları")) : null,
       h(Foot, {left: it ? (del[0] ? h(A.Confirm, {text: "Kalıcı olarak silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"),
         A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", onClick: function(){ close(); A.openChat({k: it.cat === "ulasim" ? "transit" : "plan", id: it.id, l: D.str(it.title || "Plan", 80)}); }}, "Sohbette bahset") : null)) : null},
-        h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, it ? "Kaydet" : "Ekle"))));
+        h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, it ? "Kaydet" : "Ekle"))));
 }
 
 /* ---------- Ulaşım: 4 adım ---------- */
@@ -96,7 +107,7 @@ function TransitSheet(p){
     if(step[0] === 1 && (!v.origin.trim() || (v.mode !== "border" && !v.dest.trim()))){ err[1](v.mode === "border" ? "Sınır kapısının adını yaz." : "Nereden ve nereye yaz."); return; }
     err[1](""); dir[1]("forward"); if(step[0] < 3) step[1](step[0] + 1); else save();
   }
-  function back(){ dir[1]("back"); if(step[0] > 0) step[1](step[0] - 1); else close(); }
+  function back(){ dir[1]("back"); if(step[0] > 0) step[1](step[0] - 1); else ask(); }
   function save(){
     var x = it || {id: D.uid("u"), cat: "ulasim"};
     x.cat = "ulasim"; x.mode = v.mode; x.origin = D.str(v.origin.trim(), 80); x.dest = D.str(v.dest.trim(), 80);
@@ -127,7 +138,8 @@ function TransitSheet(p){
       h(T.TextField, {label: "Kalkış kodu", optional: true, value: v.fromCode, placeholder: "IST", maxLength: 5, onChange: function(x){ set("fromCode", x.toUpperCase()); }}),
       h(T.TextField, {label: "Varış kodu", optional: true, value: v.toCode, placeholder: "RZV", maxLength: 5, onChange: function(x){ set("toCode", x.toUpperCase()); }})) : null,
     err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, err[0]) : null,
-    h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
+    A.isPhone ? h("div", {className: "tp-field"}, h("span", {className: "label tp-field__label"}, "Gün"), h(A.DayWheel, {t: t, id: "trdw", noPre: true, label: "Gün", value: v.day, onChange: function(x){ set("day", x); }}))
+      : h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
     h("div", {className: "app-two"},
       h(T.TextField, {label: "Kalkış", value: v.time, placeholder: "08:40", onChange: function(x){ set("time", x); }, hint: "Ülke saati farklıysa sonuna TR ya da GE yaz."}),
       h(T.TextField, {label: "Varış", optional: true, value: v.end, placeholder: "11:00", onChange: function(x){ set("end", x); }})));
@@ -163,7 +175,7 @@ function TransitSheet(p){
   return h(T.Sheet, {title: it ? "Yolculuğu düzenle" : "Ulaşım ekle", eyebrow: (step[0] + 1) + "/4", steps: ["Tür", "Güzergah", "Ayrıntı", "Kontrol"], current: step[0],
     placement: A.isPhone ? "bottom" : "right", direction: dir[0], key: step[0],
     primaryLabel: step[0] === 3 ? (it ? "Kaydet" : "Ekle") : "Devam", primaryIconEnd: step[0] === 3 ? undefined : "arrow-right", primaryIcon: step[0] === 3 ? "check" : undefined,
-    secondaryLabel: step[0] === 0 ? "Vazgeç" : "Geri", onPrimary: next, onSecondary: back, onClose: close}, body,
+    secondaryLabel: step[0] === 0 ? "Vazgeç" : "Geri", onPrimary: next, onSecondary: back, onClose: ask}, body,
     it && step[0] === 0 ? h("div", {style:{marginTop: "var(--space-4)"}}, h(T.Button, {variant: "ghost", icon: "trash", onClick: function(){
       var snap = A.snapshot(), arr = A.listOf(t, where); if(arr) arr.splice(arr.indexOf(it.id), 1); delete t.items[it.id]; A.commit(); close(); A.flash("Yolculuk silindi.", function(){ A.restore(snap); }); }}, "Yolculuğu sil")) : null);
 }
@@ -171,7 +183,7 @@ function TransitSheet(p){
 /* ---------- Madde ---------- */
 function CheckDialog(p){
   var t = A.trip(), c = p.id ? t.checklist.find(function(x){ return x.id === p.id; }) : null;
-  return h(T.Dialog, {title: c ? "Maddeyi düzenle" : "Madde ekle", width: "520px", onClose: close}, h(A.CheckForm, {t: t, item: c, group: p.group, onDone: close}));
+  return h(Modal, {title: c ? "Maddeyi düzenle" : "Madde ekle", width: "520px", onClose: ask}, h(A.CheckForm, {t: t, item: c, group: p.group, onDone: close}));
 }
 
 /* ---------- Önemli bilgiler ---------- */
@@ -180,7 +192,7 @@ function KeyInfoDialog(){
   var st = React.useState(t.keyinfo.map(function(k){ return Object.assign({}, k); }));
   var rows = st[0];
   function upd(i, k, val){ var n = rows.slice(); n[i] = Object.assign({}, n[i]); n[i][k] = val; st[1](n); }
-  return h(T.Dialog, {title: "Önemli bilgiler", description: "Ulaşım'da en üstte durur. Uyarılı olanlar gezi günlerinde öne çıkar.", width: "620px", onClose: close},
+  return h(Modal, {title: "Önemli bilgiler", description: "Ulaşım'da en üstte durur. Uyarılı olanlar gezi günlerinde öne çıkar.", width: "620px", onClose: ask},
     h("form", {className: "app-stack", onSubmit: function(e){ e.preventDefault(); t.keyinfo = rows.filter(function(r){ return r.label.trim() || r.value.trim(); }).slice(0, 12).map(function(r){ return {id: r.id, label: D.str(r.label, 40), value: D.str(r.value, 80), sub: D.str(r.sub, 120), warn: !!r.warn}; }); A.commit(); close(); }},
       rows.map(function(r, i){
         return h("div", {key: r.id, className: "app-card app-stack"},
@@ -190,7 +202,7 @@ function KeyInfoDialog(){
             h(T.Button, {size: "sm", variant: "ghost", icon: "trash", onClick: function(){ st[1](rows.filter(function(_, j){ return j !== i; })); }}, "Kaldır")));
       }),
       rows.length < 12 ? h(T.Button, {variant: "outline", icon: "plus", onClick: function(){ st[1](rows.concat([{id: D.uid("ki"), label: "", value: "", sub: "", warn: false}])); }}, "Bilgi ekle") : null,
-      h(Foot, null, h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, "Kaydet"))));
+      h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, "Kaydet"))));
 }
 
 /* ---------- Gezi ---------- */
@@ -224,16 +236,16 @@ function TripDialog(p){
       S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); close(); A.go("hazirlik", "", n.id);
     }
   }
-  return h(T.Dialog, {title: t ? "Gezi ayarları" : "Yeni gezi", description: t ? t.name : "Tarihleri girince her gün için bir sayfa açılır.", width: "560px", onClose: close},
+  return h(Modal, {title: t ? "Gezi ayarları" : "Yeni gezi", description: t ? t.name : "Tarihleri girince her gün için bir sayfa açılır.", width: "560px", onClose: ask},
     h("form", {className: "app-stack", onSubmit: save},
       h(T.TextField, {label: "Gezi adı", value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t, onChange: function(x){ set("name", x); err[1](""); }}),
       h("div", {className: "app-two"}, h(A.Field, {label: "Başlangıç", type: "date", value: v.start, onChange: function(x){ set("start", x); err[1](""); }}), h(A.Field, {label: "Bitiş", type: "date", value: v.end, min: v.start, onChange: function(x){ set("end", x); err[1](""); }})),
       h("div", {className: "app-two"}, h(T.TextField, {label: "Simge yazısı", optional: true, value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", onChange: function(x){ set("short", x); }}),
-        h(T.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.CURRENCIES.filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
+        h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.CURRENCIES.filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
       h(T.SwatchPicker, {label: "Renk", value: v.color, onChange: function(x){ set("color", x); }}),
       err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, h(T.Icon, {name: "warning", size: 16}), err[0]) : null,
       t ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Tarihleri kısaltırsan dışarıda kalan günlerin planları kenar listesine taşınır.") : null,
-      h(Foot, null, h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur")),
+      h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur")),
       t && window.TPB ? h(window.TPB.Members, {tripId: t.id}) : null,
       t ? h("div", {className: "app-zone"}, h("h3", {className: "label app-muted", style:{margin:0}}, "Diğer"),
         window.TPB ? h(window.TPB.Account) : null,
@@ -248,19 +260,22 @@ function IdeaAdd(p){
   var v = f[0], set = f[1];
   if(!it) return null;
   function save(e){ if(e) e.preventDefault(); it.time = D.str(v.time.trim(), 40); close(); A.addToDay(t, p.id, v.day); }
+  if(A.isPhone) return h(T.Sheet, {title: "“" + (it.title || "Öneri") + "”", eyebrow: "Plana ekle", placement: "bottom", onClose: ask, direction: "none",
+      primaryLabel: "Plana ekle", primaryIcon: "plus", onPrimary: save, secondaryLabel: "Vazgeç", onSecondary: ask},
+    h(A.DayTimePick, {t: t, id: "ia", noPre: true, day: v.day, onDay: function(x){ set("day", x); }, time: v.time, onTime: function(x){ set("time", x); }}),
+    h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Saatsiz seçersen günün sonuna eklenir."));
   var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; });
   var body = h("form", {className: "app-stack", onSubmit: save},
     h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
-    h(T.TextField, {label: "Saat", optional: true, value: v.time, placeholder: "14:00", inputMode: "numeric", autoFocus: !A.isPhone, hint: "Boş bırakırsan saatsiz plan olarak günün sonuna eklenir.", onChange: function(x){ set("time", x); }}),
-    h("div", {className: "app-row", style: {justifyContent: "flex-end"}}, h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "primary", icon: "plus", type: "submit"}, "Plana ekle")));
-  return A.isPhone ? h(T.Sheet, {title: "“" + (it.title || "Öneri") + "”", eyebrow: "Plana ekle", placement: "bottom", onClose: close, direction: "none"}, body)
-    : h(T.Dialog, {title: "Plana ekle", description: it.title, width: "440px", onClose: close}, body);
+    h(T.TextField, {label: "Saat", optional: true, value: v.time, placeholder: "14:00", inputMode: "numeric", autoFocus: true, hint: "Boş bırakırsan saatsiz plan olarak günün sonuna eklenir.", onChange: function(x){ set("time", x); }}),
+    h("div", {className: "app-row", style: {justifyContent: "flex-end"}}, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", icon: "plus", type: "submit"}, "Plana ekle")));
+  return h(T.Dialog, {title: "Plana ekle", description: it.title, width: "440px", onClose: ask}, body);
 }
 function Activity(){
   var t = A.trip(), v = A.view(), seen = React.useState(v.seenAt || "")[0];
   React.useEffect(function(){ v.seenAt = new Date().toISOString(); A.saveViews(); A.render(); }, []);
   var body = h(A.ActivityFeed, {t: t, seenAt: seen});
-  return h(T.Sheet, {title: "Son hareketler", eyebrow: t.name, placement: A.isPhone ? "bottom" : "right", onClose: close, direction: "none"}, body);
+  return h(T.Sheet, {title: "Son hareketler", eyebrow: t.name, placement: A.isPhone ? "bottom" : "right", onClose: ask, direction: "none"}, body);
 }
 function Profile(){
   var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false);
@@ -276,11 +291,11 @@ function Profile(){
           h(T.Icon, {name: o[2], size: 16}), h("span", null, o[1]));
       }))),
     B ? h("div", {className: "app-stack", style: {gap: "var(--space-2)"}}, h("h3", {className: "label app-muted", style: {margin: 0}}, "Hesap"), h(B.Account)) : null);
-  return A.isPhone ? h(T.Sheet, {title: "Profil", placement: "bottom", onClose: close, direction: "none"}, body)
-    : h(T.Dialog, {title: "Profil", width: "440px", onClose: close}, body);
+  return A.isPhone ? h(T.Sheet, {title: "Profil", placement: "bottom", onClose: ask, direction: "none"}, body)
+    : h(T.Dialog, {title: "Profil", width: "440px", onClose: ask}, body);
 }
 function TripMenu(){
-  return h(T.Sheet, {title: "Geziler", placement: "bottom", onClose: close, direction: "none"},
+  return h(T.Sheet, {title: "Geziler", placement: "bottom", onClose: ask, direction: "none"},
     h("div", {className: "app-stack"}, h("a", {href: "#home", className: A.cx("app-tile app-tile--btn", S.page === "home" && "is-current"), onClick: function(){ S.dialog = null; }},
         h("span", {className: "tp-trip__btn app-rail__home", "aria-hidden": "true"}, h(T.Icon, {name: "home", size: 22})),
         h("span", {style: {flex: 1, minWidth: 0}}, h("span", {className: "body-strong", style: {display: "block"}}, "Ana sayfa"), h("span", {className: "body-sm app-muted"}, "Gezilerin ve tatil fırsatları"))),
@@ -295,7 +310,21 @@ function TripMenu(){
     }), h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi")));
 }
 
+/* Kaydetmeden çıkış sorusu: açık pencerenin üstünde */
+function Discard(){
+  return h(T.Dialog, {title: "Kaydetmeden çıkılsın mı?", description: "Girdiğin bilgiler kaydedilmedi; çıkarsan kaybolur.", width: "400px", onClose: keep},
+    h(Foot, null, h(T.Button, {variant: "ghost", onClick: keep}, "Düzenlemeye dön"), h(T.Button, {variant: "danger", onClick: close}, "Kaydetmeden çık")));
+}
 A.Dialogs = function(){
+  var d = S.dialog;
+  if(!d){ S.dirty = false; S.askClose = false; S._dlgKey = null; return null; }
+  /* başka bir pencere açıldıysa değişiklik izi sıfırlanır */
+  var key = d.kind + ":" + (d.id || d.newIn || "");
+  if(S._dlgKey !== key){ S._dlgKey = key; S.dirty = false; S.askClose = false; }
+  var main = h(Route), q = S.askClose ? h(Discard, {key: "discard"}) : null;
+  return q ? h(F, null, main, q) : main;
+};
+function Route(){
   var d = S.dialog; if(!d) return null;
   var t = A.trip();
   if(d.kind === "trip-new" || d.kind === "trip-settings") return h(TripDialog, {kind: d.kind, key: d.kind});
@@ -307,15 +336,15 @@ A.Dialogs = function(){
   if(d.kind === "plan") return h(PlanDialog, {id: d.id, newIn: d.newIn, key: d.id || "new"});
   if(d.kind === "plan-delete"){
     var it = t.items[d.id];
-    return h(T.Dialog, {title: "Kalıcı olarak silinsin mi?", description: "“" + (it ? it.title : "") + "” kenar listesinden de kalkar.", width: "440px", onClose: close},
-      h(Foot, null, h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "danger", icon: "trash", onClick: function(){
+    return h(T.Dialog, {title: "Kalıcı olarak silinsin mi?", description: "“" + (it ? it.title : "") + "” kenar listesinden de kalkar.", width: "440px", onClose: ask},
+      h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "danger", icon: "trash", onClick: function(){
         var snap = A.snapshot(), w = A.whereIs(t, d.id), arr = A.listOf(t, w); arr.splice(arr.indexOf(d.id), 1); delete t.items[d.id]; A.commit(); close(); A.flash("Silindi.", function(){ A.restore(snap); }); }}, "Sil")));
   }
   if(d.kind === "transit") return h(TransitSheet, {id: d.id, day: d.day, step: d.step, key: (d.id || "new") + (d.step || 0)});
   if(d.kind === "check") return h(CheckDialog, {id: d.id, group: d.group});
   if(d.kind === "ticket") return h(A.TicketView, {id: d.id});
   if(d.kind === "keyinfo") return h(KeyInfoDialog);
-  if(d.kind === "expense") return h(T.Sheet, {title: d.id ? "Harcamayı düzenle" : "Harcama ekle", placement: A.isPhone ? "bottom" : "right", onClose: close, direction: "none"},
+  if(d.kind === "expense") return h(T.Sheet, {title: d.id ? "Harcamayı düzenle" : "Harcama ekle", placement: A.isPhone ? "bottom" : "right", onClose: ask, direction: "none"},
     h(A.ExpenseForm, {t: t, id: d.id, preset: d.preset, title: false, onDone: close}));
   if(d.kind === "photo") return h(T.Sheet, {title: "Fotoğraf", placement: "bottom", onClose: function(){ A.view().photo = null; close(); }, direction: "none"}, h(A.GaleriAside, {t: t, v: A.view(), noAdd: true}));
   return null;

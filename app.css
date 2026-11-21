@@ -692,3 +692,39 @@ a{color:var(--foreground-secondary)}
 [data-theme="dark"] .app-prow.is-next .app-prow__t{color:var(--camgobegi-300,#5eead4)}
 .app-prow.is-next .app-prow__dot{border-color:var(--camgobegi-300,#5eead4);background:var(--camgobegi-300,#5eead4);box-shadow:0 0 0 4px rgba(94,234,212,.22),0 0 12px rgba(94,234,212,.55)}
 .app-prow.app-ghost .app-prow__dot,.app-prow.app-ghost .app-prow__time{opacity:0}
+
+/* Pencereler telefonda ekrana sabit: iPhone ana ekran uygulamasında tam boy, klavye açıkken görünen alana sığar */
+@media (max-width:899px){
+  .app-root>.tp-sheetwrap,.app-root>.tp-scrim{position:fixed;inset:0}
+  .app-root>.tp-scrim{padding:var(--space-4)}
+  .tp-sheet--bottom{max-height:calc(100% - max(env(safe-area-inset-top,0px),12px) - 8px)}
+  .tp-sheet--bottom .tp-sheet__body{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .tp-sheet--bottom .tp-sheet__foot{padding-bottom:max(var(--space-4),env(safe-area-inset-bottom,0px))}
+  .tp-sheet--bottom .tp-sheet__body:last-child{padding-bottom:max(var(--space-4),env(safe-area-inset-bottom,0px))}
+}
+.ios-standalone .app-root>.tp-sheetwrap,.ios-standalone .app-root>.tp-scrim{bottom:auto;height:var(--tp-screen-h,100%)}
+.kbd .app-root>.tp-sheetwrap,.kbd .app-root>.tp-scrim{top:var(--vvt,0px) !important;bottom:auto !important;height:var(--vvh,100%) !important}
+.kbd .tp-sheet--bottom{max-height:calc(100% - 8px)}
+.kbd .tp-sheet--bottom .tp-sheet__foot,.kbd .tp-sheet--bottom .tp-sheet__body:last-child{padding-bottom:var(--space-3)}
+
+/* Telefonda seçim kutusu: liste pencerenin içinde, kutunun altında */
+.app-select__chev{flex:none;transition:transform var(--duration-base) var(--ease-standard)}
+.app-select.is-open .app-select__chev{transform:rotate(180deg)}
+.app-select__list{list-style:none;margin:var(--space-1) 0 0;padding:var(--space-1);display:flex;flex-direction:column;gap:2px;border:1px solid var(--border-weak);border-radius:var(--radius-control);background:var(--background-raised);max-height:264px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
+.app-select__list .tp-option{cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:44px;align-items:center}
+.app-select__list .tp-option>.tp-icon{margin-top:0}
+
+/* Gün + saat tekerlekleri */
+.app-dtpick{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:var(--space-3)}
+.app-dtpick__col{display:flex;flex-direction:column;gap:var(--space-2);min-width:0}
+.app-timewheel{position:relative;display:grid;grid-template-columns:minmax(0,1.35fr) 12px minmax(0,1fr);align-items:center}
+.app-timewheel::before{content:"";position:absolute;left:0;right:0;top:40px;height:40px;border-radius:var(--radius-control);background:var(--background-primary-weak);pointer-events:none}
+.app-timewheel .app-wheel__band{display:none}
+.app-timewheel .app-wheel__row{padding:0 4px}
+.app-timewheel__h .app-wheel__row:first-child{font-size:14px}
+.app-timewheel__h .app-wheel__row:first-child.is-on{font-size:16px}
+.app-timewheel__sep{text-align:center;font:700 20px var(--font-sans);color:var(--foreground-primary);transition:opacity var(--duration-base) var(--ease-standard)}
+.app-timewheel__m{transition:opacity var(--duration-base) var(--ease-standard)}
+.app-timewheel.is-none .app-timewheel__m,.app-timewheel.is-none .app-timewheel__sep{opacity:.35}
+.app-select__list .tp-option{flex:none}
+@media (max-width:899px){.app-two:has(> .app-select){grid-template-columns:minmax(0,1fr)}}
