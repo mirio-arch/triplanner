@@ -810,3 +810,34 @@ a{color:var(--foreground-secondary)}
 .app-rate__val small{font:500 12px var(--font-sans);color:var(--foreground-warning)}
 .app-rate.is-missing .app-rate__val{color:var(--foreground-weak)}
 .app-curseg--wrap{flex-wrap:wrap;align-self:flex-start}
+/* Fotoğraf görüntüleyici */
+.app-viewer{position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;background:rgba(6,8,20,.94);color:#fff;outline:none;touch-action:pan-y;animation:tp-enter-fade var(--duration-base) linear both}
+.app-viewer.is-leaving{animation:app-fade-out 180ms linear both}
+.ios-standalone .app-viewer{bottom:auto;height:var(--tp-screen-h,100%)}
+.app-viewer__bar{flex:none;display:flex;align-items:center;justify-content:space-between;padding:max(env(safe-area-inset-top,0px),8px) var(--space-2) var(--space-2) var(--space-4)}
+.app-viewer__count{font:600 14px var(--font-sans);font-variant-numeric:tabular-nums;color:rgba(255,255,255,.8)}
+.app-viewer__btn{display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-viewer__btn .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor}
+.app-viewer__stage{flex:1;min-height:0;display:grid;place-items:center;padding:0 var(--space-3) max(env(safe-area-inset-bottom,0px),var(--space-4))}
+.app-viewer__img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;user-select:none;-webkit-user-drag:none;animation:app-viewer-in var(--duration-slow) var(--ease-enter) both}
+@keyframes app-viewer-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.app-viewer__nav{position:absolute;top:50%;margin-top:-22px}
+.app-viewer__nav.is-prev{left:var(--space-2)}.app-viewer__nav.is-next{right:var(--space-2)}
+@media (prefers-reduced-motion:reduce){.app-viewer,.app-viewer__img{animation:none}}
+.app-photofield .tp-photoin__item .tp-photo{cursor:zoom-in}
+.app-qexp .app-photofield .tp-field{gap:var(--space-1)}
+/* Özet: kategori kartları dikey sayfada boşuna uzamasın */
+.app-phonepage>.tp-catcards,.app-colmain>.tp-catcards{flex:none}
+.app-linkrow{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-1);border-radius:var(--radius-control);color:var(--foreground);text-decoration:none;font:600 14px var(--font-sans)}
+.app-linkrow:hover{background:var(--background-sunken)}
+.app-linkrow .tp-icon{--tp-duo:currentColor;color:var(--foreground-weak)}
+#kur-butce{scroll-margin-top:var(--space-3)}
+/* Pencerelerde düğmeler altta sabit alanda */
+.tp-sheet__body .app-stickyfoot,.app-pane__scroll .app-stickyfoot{position:sticky;bottom:0;z-index:3;margin:0 calc(-1 * var(--space-4));padding:var(--space-3) var(--space-4) max(var(--space-3),env(safe-area-inset-bottom,0px));background:var(--background-raised);border-top:1px solid var(--border-weak)}
+.tp-sheet--bottom .tp-sheet__body:has(.app-stickyfoot),.tp-sheet__body:has(.app-stickyfoot),.app-pane__scroll:has(.app-stickyfoot){padding-bottom:0}
+.kbd .app-stickyfoot{padding-bottom:var(--space-3) !important}
+.tp-sheet__body .app-dialogfoot.app-stickyfoot{margin-top:0}
+/* Saat alanı: ülke seçimi tekerleğin seçili satırıyla aynı hizada */
+.app-timefield{align-items:start}
+.app-timefield__side{padding-top:14px}
+.app-tzpick .app-curseg button{height:38px}

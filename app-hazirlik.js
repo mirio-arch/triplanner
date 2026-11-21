@@ -26,7 +26,7 @@ function CheckForm(p){
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: f.note, onChange: function(v){ set("note", v); }}),
     h(T.TextField, {label: "Bağlantı", optional: true, value: f.link, placeholder: "https://", onChange: function(v){ set("link", v); }}),
     h(A.Field, {label: "Son gün", optional: true, type: "date", value: f.due, max: t.start, onChange: function(v){ set("due", v); }}),
-    h("div", {className: "app-row"},
+    h("div", {className: "app-row app-stickyfoot"},
       c ? h(T.Button, {variant: "ghost", onClick: p.onDone}, "Vazgeç") : null,
       h(T.Button, {variant: "primary", icon: c ? "check" : "plus", type: "submit", full: !c}, c ? "Kaydet" : "Ekle")));
 }

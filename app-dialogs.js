@@ -21,7 +21,7 @@ function useForm(init){
 function fixLink(s){ s = (s || "").trim(); if(!s) return ""; return D.safeLink(/^https?:/i.test(s) ? s : "https://" + s); }
 /* Form pencereleri: telefonda alttan açılan pencere, masaüstünde ortada */
 function Modal(p){ return A.isPhone ? h(T.Sheet, Object.assign({placement: "bottom", direction: "none"}, p, {width: undefined})) : h(T.Dialog, p); }
-function Foot(p){ return h("div", {className: "app-dialogfoot"}, p.left || h("span"), h("div", {className: "app-row"}, p.children)); }
+function Foot(p){ return h("div", {className: "app-dialogfoot app-stickyfoot"}, p.left || h("span"), h("div", {className: "app-row"}, p.children)); }
 
 /* ---------- Plan ---------- */
 function PlanDialog(p){
@@ -52,7 +52,7 @@ function PlanDialog(p){
   var crit = h(T.Checkbox, {label: "Kesin saat", description: A.isPhone ? "Kaçırılmaması gereken saat." : "Kaçırılmaması gereken bir saat (uçuş, sınır, rezervasyon).", checked: v.critical, onChange: function(x){ set("critical", x); }});
   /* telefonda saat tekerlekle, ülke saati düğmeyle seçilir */
   var timeField = A.isPhone
-    ? h(A.ClockField, {id: "pdt", label: "Saat", value: v.time, zones: A.tripZones(t), onChange: function(x){ set("time", x); }, extra: crit})
+    ? h(F, null, h(A.ClockField, {id: "pdt", label: "Saat", value: v.time, zones: A.tripZones(t), onChange: function(x){ set("time", x); }}), crit)
     : h("div", {className: "app-two", style: {alignItems: "end"}}, h(T.TextField, {label: "Saat", value: v.time, placeholder: "14:30", onChange: function(x){ set("time", x); }}), crit);
   var titleField = h(T.TextField, {label: A.req("Yer / etkinlik"), value: v.title, onChange: function(x){ set("title", x); err[1](""); }, error: err[0] || undefined, autoFocus: !it && !A.isPhone});
   return h(Modal, {title: it ? "Planı düzenle" : "Yeni plan", width: "560px", onClose: ask},

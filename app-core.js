@@ -495,6 +495,38 @@ A.CountryPicker = function(p){
 
 /* Zorunlu alan etiketi: yıldız; isteğe bağlı olanlara ayrıca yazı eklenmez */
 A.req = function(label){ return h(F, null, label, h("span", {className: "app-req", "aria-hidden": "true"}, " *"), h("span", {className: "tp-sr"}, " (zorunlu)")); };
+/* Fotoğraf görüntüleyici: tam ekran, açık pencerenin üstünde (formu kapatmaz); kaydırarak ya da oklarla gezilir */
+A.openViewer = function(srcs, i){ if(!srcs || !srcs.length) return; S.viewer = {srcs: srcs, i: Math.max(0, Math.min(srcs.length - 1, i || 0))}; A.render(); };
+function Viewer(){
+  var v = S.viewer, ref = React.useRef(null), sw = React.useRef(null), leaving = React.useState(false);
+  React.useEffect(function(){ if(ref.current) ref.current.focus(); }, []);
+  if(!v) return null;
+  var n = v.srcs.length;
+  function close(){ leaving[1](true); setTimeout(function(){ S.viewer = null; A.render(); }, 180); }
+  function go(d){ var j = v.i + d; if(j < 0 || j >= n) return; S.viewer = {srcs: v.srcs, i: j}; A.render(); }
+  function key(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); } else if(e.key === "ArrowRight") go(1); else if(e.key === "ArrowLeft") go(-1); }
+  return h("div", {ref: ref, className: "app-viewer" + (leaving[0] ? " is-leaving" : ""), role: "dialog", "aria-modal": "true", "aria-label": "Fotoğraf " + (v.i + 1) + " / " + n, tabIndex: -1, onKeyDown: key,
+      onClick: function(e){ if(e.target === e.currentTarget || e.target.classList.contains("app-viewer__stage")) close(); },
+      onPointerDown: function(e){ sw.current = {x: e.clientX, y: e.clientY}; },
+      onPointerUp: function(e){ var s = sw.current; sw.current = null; if(!s) return; var dx = e.clientX - s.x, dy = e.clientY - s.y;
+        if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1); else if(dy > 90 && Math.abs(dy) > Math.abs(dx)) close(); }},
+    h("div", {className: "app-viewer__bar"},
+      n > 1 ? h("span", {className: "app-viewer__count"}, (v.i + 1) + " / " + n) : h("span"),
+      h("button", {type: "button", className: "app-viewer__btn", "aria-label": "Kapat", onClick: close}, h(T.Icon, {name: "close", size: 22}))),
+    h("div", {className: "app-viewer__stage"}, h("img", {key: v.srcs[v.i], className: "app-viewer__img", src: v.srcs[v.i], alt: "", draggable: false})),
+    n > 1 && v.i > 0 ? h("button", {type: "button", className: "app-viewer__btn app-viewer__nav is-prev", "aria-label": "Önceki", onClick: function(){ go(-1); }}, h(T.Icon, {name: "chevron-left", size: 24})) : null,
+    n > 1 && v.i < n - 1 ? h("button", {type: "button", className: "app-viewer__btn app-viewer__nav is-next", "aria-label": "Sonraki", onClick: function(){ go(1); }}, h(T.Icon, {name: "chevron-right", size: 24})) : null);
+}
+A.Viewer = Viewer;
+/* fotoğraf alanı: küçük resme dokununca büyük açılır */
+A.PhotoField = function(p){
+  return h("div", {className: "app-photofield", onClick: function(e){
+      var it = e.target.closest && e.target.closest(".tp-photoin__item"); if(!it || e.target.closest(".tp-photoin__remove")) return;
+      var list = Array.prototype.slice.call(it.parentNode.querySelectorAll(".tp-photoin__item"));
+      A.openViewer((p.photos || []).map(function(x){ return x.src; }).filter(Boolean), list.indexOf(it));
+    }}, h(T.PhotoInput, p));
+};
+
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
 A.markDirty = function(){ S.dirty = true; };
 
@@ -573,7 +605,7 @@ function Root(){
   var home = A.offTrip() || !A.trip(), t = home ? null : A.trip();
   var Page = t && A.pages[S.page] ? A.pages[S.page].view : null;
   var content = S.page === "profil" && A.ProfilePage ? h(A.ProfilePage) : home ? (A.Home ? h(A.Home) : h(A.EmptyApp)) : (Page ? h(Page, {t: t, v: A.view()}) : null);
-  var overlay = A.Dialogs ? h(A.Dialogs) : null;
+  var overlay = h(F, null, A.Dialogs ? h(A.Dialogs) : null, S.viewer ? h(Viewer, {key: "viewer"}) : null);
   var toast = S.toast ? h("div", {className: "app-toastwrap"}, h(T.Toast, {key: S.toast.at, text: S.toast.text, actionLabel: S.toast.undo ? (S.toast.label || "Geri al") : undefined, onAction: S.toast.undo ? function(){ var u = S.toast.undo; S.toast = null; u(); } : undefined})) : null;
   if(phone){
     return h("div", {"data-theme": A.dark ? "dark" : "light", className: "app-root"},
@@ -660,7 +692,7 @@ A.PhonePane = function(p){
       p.fab.count ? h("span", {className: "app-fab__count"}, p.fab.count) : null);
   }
   var kbd = document.documentElement.classList.contains("kbd");
-  var H = size[0].H, S0 = Math.min(size[0].S, kbd ? H : Math.round(H * .45)), heights = {s: S0, h: Math.max(S0 + 60, Math.round(H * .55)), f: H};
+  var H = size[0].H, S0 = Math.min(size[0].S, kbd ? H : Math.round(H * .62)), heights = {s: S0, h: Math.max(S0 + 60, Math.round(H * .55)), f: H};
   var height = drag[0] ? drag[0].cur : heights[snap];
   var showFull = drag[0] ? height > S0 + 48 : snap !== "s";
   function down(e){ if(e.button !== undefined && e.button !== 0) return; st.current = {y: e.clientY, h0: heights[snap], moved: false}; try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(x){} }

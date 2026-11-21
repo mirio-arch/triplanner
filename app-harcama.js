@@ -115,7 +115,7 @@ function ExpenseForm(p){
     p.title !== false ? h("div", {className: "app-row"}, h("h2", {className: "heading", style:{margin:0, flex:1}}, e ? "Harcamayı düzenle" : "Yeni harcama"),
       p.onDone ? h(T.IconButton, {icon: "close", label: "Kapat", size: "sm", onClick: p.onDone}) : null) : null,
     item ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Bu tutar Ulaşım'daki “" + item.title + "” biletinden geliyor; değiştirirsen orada da değişir.") : null,
-    h(T.PhotoInput, {label: "Fotoğraf", optional: true, photos: f.photos.map(function(pid){ var ph = photoOf(t, pid); return ph ? {src: D.photoUrl(ph.asset), alt: "Harcama fotoğrafı"} : null; }).filter(Boolean),
+    h(A.PhotoField, {label: "Fotoğraf", optional: true, photos: f.photos.map(function(pid){ var ph = photoOf(t, pid); return ph ? {src: D.photoUrl(ph.asset), alt: "Harcama fotoğrafı"} : null; }).filter(Boolean),
       hint: "Galeri’ye de eklenir. Fişi de çekebilirsin.", busy: up[0], onFiles: onFiles, onRemove: function(i){ set("photos", f.photos.filter(function(_, j){ return j !== i; })); }}),
     h(T.MoneyField, {label: A.req("Tutar"), value: f.amount, currency: f.currency, currencies: D.curList(t), hint: conv, autoFocus: !e && !A.isPhone,
       onChange: function(o){ var n = Object.assign({}, st[0]); n.amount = o.value; n.currency = o.currency; st[1](n); err[1](""); }}),
@@ -128,14 +128,15 @@ function ExpenseForm(p){
       h(T.TextField, {label: "Saat", value: f.time, placeholder: "20:30", onChange: function(v){ set("time", v); }, maxLength: 5, inputMode: "numeric"})),
     item || !plans.length ? null : h(A.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + " · " : "") + it.title, value: id}; })),
       hint: "Plan kartında tutar görünür.", onChange: function(v){ var n = Object.assign({}, st[0]); n.ref = v; if(v && t.items[v]){ if(!n.title) n.title = t.items[v].title; n.cat = D.CAT_TO_EXP[t.items[v].cat] || n.cat; } st[1](n); }}),
-    h(T.Button, {variant: "primary", icon: e ? "check" : "plus", full: true, type: "submit"}, e ? "Kaydet" : "Ekle"),
     e && A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", full: true, onClick: function(){ if(p.onDone) p.onDone(); A.openChat({k: "expense", id: e.id, l: D.str(e.title || D.EXP_CATS[e.cat], 80)}); }}, "Sohbette bahset") : null,
-    e ? (del[0] ? h(A.Confirm, {text: "Bu harcama silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h(T.Button, {variant: "ghost", icon: "trash", full: true, onClick: function(){ del[1](true); }}, "Harcamayı sil")) : null);
+    e ? (del[0] ? h(A.Confirm, {text: "Bu harcama silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h(T.Button, {variant: "ghost", icon: "trash", full: true, onClick: function(){ del[1](true); }}, "Harcamayı sil")) : null,
+    h("div", {className: "app-stickyfoot"}, h(T.Button, {variant: "primary", icon: e ? "check" : "plus", full: true, type: "submit"}, e ? "Kaydet" : "Ekle")));
 }
 A.ExpenseForm = ExpenseForm;
 
 function RateBox(p){
-  var t = p.t, st = React.useState(null), b = React.useState(null);
+  var t = p.t, st = React.useState(null), b = React.useState(S.budgetEdit ? (t.budget ? String(t.budget) : "") : null);
+  if(S.budgetEdit) S.budgetEdit = false;
   /* gezinin para birimleri + harcamalarda kullanılmış olanlar; ana para en başta */
   var main = t.currency || "TL", curs = D.curList(t).slice();
   t.expenses.forEach(function(e){ if(e.currency && curs.indexOf(e.currency) < 0) curs.push(e.currency); });
@@ -184,7 +185,7 @@ function Aside(p){
         h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ S.expOpen = true; S.expEdit = null; A.render(); }}, "Harcama ekle"),
         h("p", {className: "body-sm app-muted", style:{margin:0}}, "Yemeği ya da fişi çek, tutarı yaz; gün kendiliğinden bugün seçilir.")),
     h("hr", {className: "app-hr"}),
-    h(RateBox, {t: t}),
+    h("a", {href: A.href("harcamalar", "ozet"), className: "app-linkrow"}, h(T.Icon, {name: "cash", size: 18}), h("span", {style: {flex: 1}}, "Kur ve bütçe"), h("span", {className: "body-sm app-muted"}, "Özet'te"), h(T.Icon, {name: "chevron-right", size: 16})),
     unpriced.length ? h(F, null, h("hr", {className: "app-hr"}),
       h("div", null, h("h2", {className: "heading", style:{margin:0}}, "Fiyatı girilmemiş"), h("p", {className: "body-sm app-muted", style:{margin:0}}, "Ulaşım’da fiyatı boş " + unpriced.length + " yolculuk. Girersen buraya eklenir.")),
       unpriced.slice(0, 5).map(function(x){
@@ -206,7 +207,9 @@ function rowFor(t, e){
   return h(T.ExpenseRow, {key: e.id, title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
     time: e.time || undefined, source: src ? src[0] + (other ? " · " + other : "") : (other ? other + " ekledi" : undefined), sourceIcon: src ? src[1] : (other ? "user" : undefined), photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
     highlighted: S.newExp === e.id, actionIcon: "edit", actionLabel: "Düzenle",
-    onClick: function(){ edit(e.id); }, onMore: function(){ edit(e.id); }});
+    onClick: function(ev){
+      if(ph.length && ev && ev.target && ev.target.closest && ev.target.closest(".tp-photo")){ A.openViewer(ph.map(function(x){ return D.photoUrl(x.asset); }), 0); return; }
+      edit(e.id); }, onMore: function(){ edit(e.id); }});
 }
 function edit(id){ if(A.isPhone){ S.dialog = {kind: "expense", id: id}; } else { S.expEdit = id; S.expOpen = false; } S.newExp = null; A.render(); }
 
@@ -233,7 +236,7 @@ function Widget(p){
   var t = p.t, st = p.st, sh = p.sh;
   var meter = t.budget ? h(T.Meter, {label: "Bütçe · " + D.fmtMoney(t.budget, "TL"), value: Math.round(st.total), max: t.budget, parts: sh.map(function(x){ return {color: x.color, value: x.value}; }),
       valueText: st.total <= t.budget ? "%" + Math.round(st.total / t.budget * 100) + " · " + D.fmtMoney(Math.round(t.budget - st.total), "TL") + " kaldı" : D.fmtMoney(Math.round(st.total - t.budget), "TL") + " aştı"})
-    : h(T.Button, {variant: "secondary", size: "sm", icon: "plus", onClick: function(){ S.expOpen = false; A.flash("Bütçeyi sağdaki karttan gir."); }}, "Bütçe ekle");
+    : h(T.Button, {variant: "secondary", size: "sm", icon: "plus", onClick: function(){ S.budgetEdit = true; S.rateKey = (S.rateKey || 0) + 1; A.render(); setTimeout(function(){ var el = document.getElementById("kur-butce"); if(el) el.scrollIntoView({block: "start", behavior: "smooth"}); }, 60); }}, "Bütçe ekle");
   return h("section", {className: "tp-onshell tp-aurora-card app-widget", "aria-label": "Özet"},
     h("div", {className: "app-widget__top"},
       h("div", {style:{flex:"1 1 240px", minWidth:0}}, h(T.Stat, {size: "hero", label: "Toplam harcama", value: D.fmtNum(Math.round(st.total)), unit: "TL",
@@ -261,23 +264,28 @@ var GUESS = [[/taksi|bolt|otobüs|marş|marsh|tren|bilet|uçak|transfer|metro|ya
   [/müze|giriş|kale|mağara|teleferik|tur\b|rehber|bahçe/i, "sights"], [/harç|vize|sigorta|pasaport|ceza/i, "fees"], [/hediye|market|alışveriş|çurçhela|şarap|baharat|magnet/i, "shopping"]];
 function guessCat(s){ for(var i = 0; i < GUESS.length; i++){ if(GUESS[i][0].test(s)) return GUESS[i][1]; } return "food"; }
 function QuickExpense(p){
-  var t = p.t, b = blank(t), st = React.useState({amount: "", title: "", currency: S.quickCur && D.curList(t).indexOf(S.quickCur) > -1 ? S.quickCur : b.currency}), err = React.useState("");
+  var t = p.t, b = blank(t), st = React.useState({amount: "", title: "", photos: [], currency: S.quickCur && D.curList(t).indexOf(S.quickCur) > -1 ? S.quickCur : b.currency}), err = React.useState(""), up = React.useState(false);
   var f = st[0];
+  function onFiles(files){
+    up[1](true);
+    A.uploadPhotos(t, files, {day: b.day, refKind: "expense"}).then(function(ps){ up[1](false); if(ps.length){ st[1](function(o){ return Object.assign({}, o, {photos: o.photos.concat(ps.map(function(x){ return x.id; }))}); }); A.commit(); } });
+  }
   function set(k, val){ var n = Object.assign({}, st[0]); n[k] = val; st[1](n); }
   function add(e){
     if(e) e.preventDefault();
     var amount = D.parseAmount(f.amount); if(!amount){ err[1]("Tutarı yaz."); return; }
     var title = f.title.trim(), cat = guessCat(title);
-    var x = {id: D.uid("x"), source: "manual", at: new Date().toISOString(), title: D.str(title || D.EXP_CATS[cat], 120), amount: amount, currency: f.currency, cat: cat, day: b.day, time: "", ref: "", photos: []};
+    var x = {id: D.uid("x"), source: "manual", at: new Date().toISOString(), title: D.str(title || D.EXP_CATS[cat], 120), amount: amount, currency: f.currency, cat: cat, day: b.day, time: "", ref: "", photos: f.photos.slice()};
+    f.photos.forEach(function(pid){ var ph = photoOf(t, pid); if(ph){ ph.ref = x.id; ph.refKind = "expense"; ph.day = b.day; } });
     A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi · " + D.fmtMoney(amount, f.currency));
     S.newExp = x.id; S.quickCur = f.currency; A.commit();
-    st[1]({amount: "", title: "", currency: f.currency}); err[1]("");
+    st[1]({amount: "", title: "", photos: [], currency: f.currency}); err[1]("");
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
   }
   var cur = t.currency || "TL", rate = t.rate[cur], st2 = stats(t);
   var curs = [cur].concat(D.curList(t).filter(function(c){ return c !== cur; })).slice(0, 4);
-  var line = [cur === "TL" ? null : rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince fotoğraf ve kategori"].filter(Boolean).join(" · ");
+  var line = [cur === "TL" ? null : rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince kategori ve gün"].filter(Boolean).join(" · ");
   return h("form", {className: "app-qexp", onSubmit: add, noValidate: true},
     h("div", {className: "app-quick"},
       h("input", {className: "app-quick__in app-quick__in--amount", value: f.amount, placeholder: "0", inputMode: "decimal", enterKeyHint: "next", "aria-label": "Tutar", onChange: function(e){ set("amount", e.target.value); err[1](""); }}),
@@ -285,12 +293,14 @@ function QuickExpense(p){
         return h("button", {key: c, type: "button", role: "radio", "aria-checked": f.currency === c ? "true" : "false", onMouseDown: function(e){ e.preventDefault(); }, onClick: function(){ set("currency", c); }}, c);
       }))),
     h("textarea", {className: "app-quick__in app-quick__area", rows: 2, value: f.title, placeholder: "Ne için? Örn. Akşam: hinkali", "aria-label": "Ne için", enterKeyHint: "done", onChange: function(e){ set("title", e.target.value); }}),
+    h(A.PhotoField, {label: "Fotoğraf", photos: f.photos.map(function(pid){ var ph = photoOf(t, pid); return ph ? {src: D.photoUrl(ph.asset), alt: "Harcama fotoğrafı"} : null; }).filter(Boolean),
+      busy: up[0], addLabel: "Ekle", onFiles: onFiles, onRemove: function(i){ st[1](function(o){ return Object.assign({}, o, {photos: o.photos.filter(function(_, j){ return j !== i; })}); }); }}),
     err[0] ? h("p", {className: "app-peekline tp-field__error", role: "alert"}, err[0]) : null,
     h(T.Button, {variant: "primary", icon: "plus", full: true, type: "submit"}, "Harcamayı ekle"),
     h("p", {className: "app-peekline"}, line));
 }
 function PaneFull(p){
-  return h(F, null, h(ExpenseForm, {key: "pane-new", t: p.t, preset: S.expPreset, title: false}), h("hr", {className: "app-hr"}), h(RateBox, {t: p.t}));
+  return h(ExpenseForm, {key: "pane-new", t: p.t, preset: S.expPreset, title: false});
 }
 
 function Harcamalar(p){
@@ -314,7 +324,10 @@ function Harcamalar(p){
     var max = Math.max.apply(null, ds.map(function(x){ return x.value || 0; }).concat([1]));
     var trip = stats(t, function(e){ return e.day !== "pre"; }), nd = Object.keys(trip.byDay).length;
     var head = h(A.PageHead, {title: "Harcama özeti", desc: A.isPhone ? null : "Toplam, bütçe ve paranın nereye gittiği.", right: A.isPhone ? null : right});
-    var body = h(F, null, phoneTabs, h(Widget, {t: t, st: st, sh: sh}),
+    var rates = h("section", {id: "kur-butce", className: "app-card", "aria-labelledby": "kb-h"},
+      h("div", {className: "app-card__head"}, h("h2", {id: "kb-h", className: "heading", style: {margin: 0, flex: 1}}, "Kur ve bütçe")),
+      h(RateBox, {t: t, key: "rb" + (S.rateKey || 0)}));
+    var body = h(F, null, phoneTabs, h(Widget, {t: t, st: st, sh: sh}), rates,
       sh.length ? h(T.ShareCards, {key: period, label: "Kategorilere göre harcama", compact: A.isPhone, items: sh.map(function(x){ var n = st.list.filter(function(e){ return e.cat === x.color; }).length; return Object.assign({}, x, {sub: n + " harcama"}); })}) : null,
       nd ? h("section", {className: "app-card", "aria-labelledby": "hr-gun"},
         h("div", {className: "app-card__head"}, h("h2", {id: "hr-gun", className: "heading", style:{margin:0, flex:1}}, "Günlere göre"),
