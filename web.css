@@ -20,3 +20,6 @@ html,body{height:100%;margin:0;background:var(--lacivert-950,#0b1030)}
 /* iPhone ana ekran uygulaması: kabuk ekrana sabitlensin, sayfa esneyip alt çubuğu kaydırmasın */
 html,body{overscroll-behavior:none}
 .app-phone{position:fixed;inset:0;height:auto}
+.ios-standalone,.ios-standalone body{overflow:hidden}
+.ios-standalone body,.ios-standalone #root{height:var(--tp-screen-h,100%)}
+.ios-standalone .app-phone{bottom:auto;height:var(--tp-screen-h,100%)}
