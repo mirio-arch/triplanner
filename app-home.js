@@ -228,6 +228,11 @@ A.ActivityFeed = function(p){
   }));
 };
 
+/* saate göre selam: tarih yerine tek satır */
+function greeting(){
+  var hr = new Date().getHours();
+  return hr >= 5 && hr < 11 ? "Günaydın" : hr >= 11 && hr < 17 ? "İyi günler" : hr >= 17 ? "İyi akşamlar" : "Merhaba";
+}
 function Home(){
   var B = window.TPB, name = B && B.firstName ? B.firstName() : "";
   if(B && !B.loaded) return h("div", {className: "app-empty"}, h("p", {className: "body app-muted"}, "Geziler yükleniyor…"));
@@ -235,12 +240,11 @@ function Home(){
     .sort(function(a, b){ var x = tripState(a), y = tripState(b); return (x.kind === "past") - (y.kind === "past") || x.n - y.n; });
   /* zaten gezisi olan tatil dönemleri önerilmez */
   var deals = A.holidayDeals().filter(function(x){ return !trips.some(function(t){ return !(t.end < x.a || t.start > x.b); }); });
-  var d = D.fmtDay(A.todayISO());
+  var hello = greeting() + (name ? ", " + name : "");
   var head = A.isPhone ? null : h("header", {className: "app-pagehead"},
-    h("div", {style: {flex: "1 1 320px", minWidth: 0}}, h("h1", {className: "page-title", style: {margin: 0}}, name ? "Merhaba " + name : "Ana sayfa"),
-      h("p", {className: "body app-muted", style: {margin: "var(--space-1) 0 0"}}, d.label)));
+    h("div", {style: {flex: "1 1 320px", minWidth: 0}}, h("h1", {className: "page-title", style: {margin: 0}}, hello)));
   var body = h("div", {className: "app-home"},
-    A.isPhone ? h("div", {className: "app-home__hello"}, h("h1", {className: "page-title", style: {margin: 0}}, name ? "Merhaba " + name : "Ana sayfa"), h("p", {className: "body-sm app-muted", style: {margin: 0}}, d.label)) : null,
+    A.isPhone ? h("div", {className: "app-home__hello"}, h("h1", {className: "page-title", style: {margin: 0}}, hello)) : null,
     h("section", {id: "home-trips", className: "app-home__sec", "aria-labelledby": "home-trips-h"},
       h("div", {className: "app-row"}, h("h2", {id: "home-trips-h", className: "section-title", style: {margin: 0, flex: 1}}, "Gezilerin"),
         trips.length ? h(T.Button, {size: "sm", variant: "ghost", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi") : null),
