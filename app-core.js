@@ -123,19 +123,27 @@ A.route = route;
 /* Telefonda klavye açılınca kabuğu görünen alana sığdır: alt menü gizlenir, alt bölme klavyenin hemen üstünde kalır */
 (function(){
   var vv = window.visualViewport; if(!vv) return;
-  var root = document.documentElement, raf = 0;
+  var root = document.documentElement, raf = 0, base = vv.height, baseW = window.innerWidth;
+  function typingNow(){
+    var ae = document.activeElement;
+    return !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable) && !/^(checkbox|radio|file|button|submit|range|color)$/.test(ae.type || "");
+  }
   function fit(){
     raf = 0;
-    var kb = window.innerHeight - vv.height, ae = document.activeElement;
-    var typing = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable) && !/^(checkbox|radio|file|button|submit)$/.test(ae.type || "");
-    if(kb > 120 && typing && window.innerWidth < 900){
+    var typing = typingNow();
+    /* klavyesiz en uzun görünür boy temel alınır: iOS'ta pencere boyu da klavyeyle küçülebiliyor */
+    if(window.innerWidth !== baseW){ baseW = window.innerWidth; base = typing ? Math.max(window.innerHeight, vv.height) : vv.height; }
+    if(!typing) base = Math.max(base, vv.height);
+    var full = Math.max(base, window.innerHeight), kb = full - vv.height;
+    if(kb > 120 && typing && window.innerWidth < 900 && (vv.scale || 1) < 1.05){
       root.classList.add("kbd");
-      root.style.setProperty("--vvh", vv.height + "px"); root.style.setProperty("--vvt", vv.offsetTop + "px");
+      root.style.setProperty("--vvh", Math.round(vv.height) + "px"); root.style.setProperty("--vvt", Math.round(vv.offsetTop) + "px");
     } else if(root.classList.contains("kbd")){ root.classList.remove("kbd"); root.style.removeProperty("--vvh"); root.style.removeProperty("--vvt"); }
   }
   function soon(){ if(!raf) raf = requestAnimationFrame(fit); }
-  vv.addEventListener("resize", soon); vv.addEventListener("scroll", soon);
-  document.addEventListener("focusin", function(){ setTimeout(soon, 60); }); document.addEventListener("focusout", function(){ setTimeout(soon, 120); });
+  vv.addEventListener("resize", soon); vv.addEventListener("scroll", soon); window.addEventListener("resize", soon);
+  document.addEventListener("focusin", function(){ soon(); setTimeout(soon, 120); setTimeout(soon, 400); });
+  document.addEventListener("focusout", function(){ setTimeout(soon, 120); });
 })();
 
 /* ================= Ekran boyu ================= */
@@ -422,14 +430,23 @@ A.PhonePane = function(p){
   /* açık/kapalı hali kaydedilmez: sayfaya her girişte kapalı gelir */
   S.panes = S.panes || {};
   var snap = ["s", "h", "f"].indexOf(S.panes[p.id]) > -1 ? S.panes[p.id] : "c";
-  var size = React.useState({H: 600, S: 140}), drag = React.useState(null), leaving = React.useState(false);
-  React.useEffect(function(){
+  var size = React.useState({H: 600, S: 140}), drag = React.useState(null), leaving = React.useState(false), ready = React.useState(false);
+  /* boy, boyama öncesi ölçülür; içerik yüksekliği kutunun değil içeriğin kendisinden (scrollHeight) okunur,
+     böylece bölme kendi boyunu ölçüp büyümez */
+  React.useLayoutEffect(function(){
     var box = boxRef.current && boxRef.current.parentNode; if(!box) return;
-    function m(){ var pk = peekRef.current; size[1](function(o){ var n = {H: box.clientHeight, S: pk ? pk.offsetHeight + 30 : o.S}; return n.H === o.H && n.S === o.S ? o : n; }); }
+    function m(){ var pk = peekRef.current; size[1](function(o){ var n = {H: box.clientHeight, S: pk ? pk.scrollHeight + 30 : o.S}; return n.H === o.H && n.S === o.S ? o : n; }); }
     m(); if(!window.ResizeObserver) return;
-    var ro = new ResizeObserver(m); ro.observe(box); if(peekRef.current) ro.observe(peekRef.current);
+    var ro = new ResizeObserver(m); ro.observe(box); if(peekRef.current){ ro.observe(peekRef.current); if(peekRef.current.firstChild) ro.observe(peekRef.current.firstChild); }
     return function(){ ro.disconnect(); };
   }, [snap === "c", snap === "s"]);
+  /* ilk ölçüm bitene dek boy geçişi kapalı: açılışta yalnızca aşağıdan kayma oynar */
+  React.useEffect(function(){
+    if(snap === "c"){ if(ready[0]) ready[1](false); return; }
+    if(ready[0]) return;
+    var r = requestAnimationFrame(function(){ r = requestAnimationFrame(function(){ ready[1](true); }); });
+    return function(){ cancelAnimationFrame(r); };
+  }, [snap === "c"]);
   function setSnap(x){ S.panes[p.id] = x; A.render(); }
   function close(){ leaving[1](true); setTimeout(function(){ leaving[1](false); setSnap("c"); }, 220); }
   if(snap === "c"){
@@ -458,7 +475,7 @@ A.PhonePane = function(p){
     else if(e.key === "Enter" || e.key === " "){ e.preventDefault(); setSnap(snap === "h" ? "s" : "h"); }
     else if(e.key === "Escape"){ e.preventDefault(); close(); }
   }
-  return h("section", {ref: boxRef, className: "app-pane" + (drag[0] ? " is-dragging" : "") + (leaving[0] ? " is-leaving" : "") + (showFull ? " is-full" : ""), "aria-label": p.label, style: {height: height + "px"}},
+  return h("section", {ref: boxRef, className: "app-pane" + (ready[0] ? "" : " is-sizing") + (drag[0] ? " is-dragging" : "") + (leaving[0] ? " is-leaving" : "") + (showFull ? " is-full" : ""), "aria-label": p.label, style: {height: height + "px"}},
     h("div", {className: "app-pane__edge", role: "slider", tabIndex: 0, "aria-label": p.label + " boyutu", "aria-valuemin": 0, "aria-valuemax": 2,
         "aria-valuenow": ["s", "h", "f"].indexOf(snap), "aria-valuetext": {s: "küçük", h: "yarım", f: "tam"}[snap],
         onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up, onKeyDown: key}, h("span", {className: "app-mappane__grip"})),

@@ -285,7 +285,7 @@ a{color:var(--foreground-secondary)}
 .app-checklist .tp-checkitem{padding-right:var(--space-1)}
 .app-checklist .tp-checkitem__actions{flex:none}
 .app-checkrow .tp-pop__panel{z-index:20}
-.app-plans .tp-card.is-selected{background:color-mix(in srgb,var(--background-primary-weak) 60%,var(--background-raised))}
+
 .app-ticket__acts{display:flex;align-items:center;gap:var(--space-2);padding-top:var(--space-1)}
 .app-flexrow__go{flex:none;width:32px;height:32px;margin:-6px -6px -6px 0;border-radius:var(--radius-full);display:grid;place-items:center;color:var(--foreground-primary);-webkit-tap-highlight-color:transparent}
 .app-flexrow__go:hover{background:var(--background-primary-weak)}
@@ -600,6 +600,10 @@ a{color:var(--foreground-secondary)}
 .kbd .app-phone{top:var(--vvt,0px) !important;bottom:auto !important;height:var(--vvh,100%) !important}
 .kbd .app-phonenav{display:none}
 .kbd .app-fab,.kbd .app-fabs{display:none}
+/* yedek: dokunmatik ekranda bir yazı alanı odaktayken alt menü her durumda gizli */
+@media (pointer:coarse) and (max-width:899px){
+  .app-phone:has(:is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),textarea,[contenteditable=true]):focus) .app-phonenav{display:none}
+}
 /* Hızlı harcama: tutar + para birimi, altında ne için alanı */
 .app-qexp{display:flex;flex-direction:column;gap:var(--space-2)}
 .app-qexp .app-quick__in--amount{flex:1 1 auto;font-size:20px;font-weight:600}
@@ -608,5 +612,58 @@ a{color:var(--foreground-secondary)}
 .app-curseg button[aria-checked="true"]{background:var(--background-raised);color:var(--foreground-primary);box-shadow:var(--shadow-card,0 1px 2px rgba(0,0,0,.08))}
 .app-quick__area{height:auto;min-height:64px;padding:10px 12px;resize:none;line-height:1.35}
 .app-qexp .app-peekline{margin:0}
-.app-pane__peek{overflow-y:auto;min-height:0;flex:1 1 auto}
+.app-pane__peek{overflow-y:auto;min-height:0;flex:0 1 auto}
+.app-pane.is-sizing{transition:none}
 .kbd .app-pane{border-radius:var(--radius-section) var(--radius-section) 0 0}
+
+/* Sıradaki plan: bilet kartıyla aynı koyu, çizgili, ışıklı zemin */
+.app-glow{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none;
+  background:radial-gradient(120% 90% at 0% 0%,rgba(45,212,191,.42),transparent 55%),radial-gradient(110% 100% at 100% 100%,rgba(139,92,246,.5),transparent 60%),#0d1433}
+.app-glow::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20160%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-opacity%3D%22.16%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M-20%20150%20C%2090%2060%2C%20200%20170%2C%20420%2010%22/%3E%3Cpath%20d%3D%22M-20%20162%20C%2096%2070%2C%20214%20172%2C%20420%2026%22/%3E%3Cpath%20d%3D%22M-20%20174%20C%20102%2080%2C%20228%20174%2C%20420%2042%22/%3E%3Cpath%20d%3D%22M-20%20186%20C%20108%2090%2C%20242%20176%2C%20420%2058%22/%3E%3Cpath%20d%3D%22M-20%20198%20C%20114%20100%2C%20256%20178%2C%20420%2074%22/%3E%3Cpath%20d%3D%22M-20%20210%20C%20120%20110%2C%20270%20180%2C%20420%2090%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat;opacity:.9;animation:app-lines-drift 14s var(--ease-ambient,ease-in-out) infinite alternate}
+.app-glow::after{content:"";position:absolute;width:200px;height:200px;right:-60px;top:-100px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.35),transparent 70%);filter:blur(6px)}
+@media (prefers-reduced-motion:reduce){.app-glow::before{animation:none}}
+
+/* Telefonda plan kartı: kapalıyken saat + başlık, dokununca açılır */
+.app-pcard{position:relative;isolation:isolate;background:var(--background-raised);border:1px solid var(--border-weak);border-radius:var(--radius-card);box-shadow:var(--shadow-card);color:var(--foreground);
+  transition:border-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard)}
+.app-pcard.is-open{z-index:2;border-color:var(--border);box-shadow:var(--shadow-raised,var(--shadow-card))}
+.app-pcard__row{display:flex;align-items:center;gap:var(--space-1);padding:0 var(--space-2) 0 var(--space-1);min-height:58px}
+.app-pcard .tp-card__handle{flex:none;width:24px}
+.app-pcard__main{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none;border-radius:8px}
+.app-pcard__main:focus-visible{box-shadow:0 0 0 2px var(--border-focus)}
+.app-pcard__time{flex:none;width:44px;color:var(--foreground-weak);font-variant-numeric:tabular-nums}
+.app-pcard.is-critical .app-pcard__time{color:var(--foreground-warning);font-weight:600}
+.app-pcard__text{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.app-pcard__title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.app-pcard__when{display:inline-flex;align-items:center;gap:5px;font:600 12px/1.2 var(--font-sans);color:var(--foreground-primary)}
+.app-pcard__when .tp-icon{--tp-duo:currentColor}
+.app-pcard__chev{flex:none;color:var(--foreground-weak);transition:transform var(--duration-base) var(--ease-standard)}
+.app-pcard.is-open .app-pcard__chev{transform:rotate(180deg)}
+.app-pcard__more{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--duration-base) var(--ease-standard)}
+.app-pcard.is-open .app-pcard__more{grid-template-rows:1fr}
+.app-pcard__inner{min-height:0;overflow:hidden}
+.app-pcard__inner.is-settled{overflow:visible}
+.app-pcard__pad{display:flex;flex-direction:column;gap:var(--space-3);padding:0 var(--space-3) var(--space-3) 88px;opacity:0;transition:opacity var(--duration-base) var(--ease-standard)}
+.app-pcard.is-open .app-pcard__pad{opacity:1}
+.app-pcard__note{margin:0;color:var(--foreground-weak);overflow-wrap:anywhere}
+.app-pcard__meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);color:var(--foreground-weak)}
+.app-pcard__meta .tp-chip{height:24px;padding:0 var(--space-2) 0 6px}
+.app-pcard__extra{display:inline-flex;align-items:center;gap:var(--space-1)}
+.app-pcard__extra .tp-icon{--tp-duo:currentColor}
+.app-pcard__extra.is-warn{color:var(--foreground-warning)}
+.app-pcard__acts{display:flex;align-items:center;gap:var(--space-2)}
+@media (prefers-reduced-motion:reduce){.app-pcard__more,.app-pcard__pad,.app-pcard__chev{transition:none}}
+
+/* koyu kartın içindeki yazı ve düğmeler */
+.app-pcard.is-next,.app-plans .tp-card.is-selected{color:#fff;border-color:transparent;box-shadow:0 10px 28px rgba(13,20,51,.28)}
+.app-plans .tp-card.is-selected{overflow:hidden}
+.app-pcard.is-next .app-pcard__time,.app-plans .tp-card.is-selected .tp-card__time{color:rgba(255,255,255,.8)}
+.app-pcard.is-next .app-pcard__when{color:var(--camgobegi-300,#5eead4)}
+.app-pcard.is-next .app-pcard__chev,.app-pcard.is-next .tp-card__handle,.app-plans .tp-card.is-selected .tp-card__handle{color:rgba(255,255,255,.6)}
+.app-pcard.is-next .app-pcard__note,.app-pcard.is-next .app-pcard__meta,.app-plans .tp-card.is-selected .tp-card__note,.app-plans .tp-card.is-selected .tp-card__meta{color:rgba(255,255,255,.75)}
+.app-pcard.is-next .tp-chip,.app-plans .tp-card.is-selected .tp-chip{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.22);--cat-fg:#fff;--cat-bg:rgba(255,255,255,.12)}
+.app-pcard.is-next .tp-chip .tp-icon,.app-plans .tp-card.is-selected .tp-chip .tp-icon{--tp-duo:currentColor;color:#fff}
+.app-pcard.is-next .app-pcard__acts>.tp-btn,.app-pcard.is-next .app-pcard__acts>.tp-pop>.tp-iconbtn,.app-plans .tp-card.is-selected .tp-card__actions .tp-iconbtn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.app-plans .tp-card.is-selected .tp-link{color:#fff}
+.app-plans .tp-card.is-selected::before{opacity:0}
+.app-pcard.is-next .tp-icon,.app-plans .tp-card.is-selected .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor}
