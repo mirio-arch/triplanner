@@ -64,6 +64,7 @@ function CheckRow(p){
   var t = p.t, c = p.c, id = "ci-" + c.id, note = noteOf(c);
   var items = [c.link ? {label: "Bilgi", icon: "external", onClick: function(){ window.open(c.link, "_blank", "noopener"); }} : null,
     {label: "Düzenle", icon: "edit", onClick: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); }},
+    A.chatApi && A.chatApi() ? {label: "Sohbette bahset", icon: "share", onClick: function(){ A.openChat({k: "check", id: c.id, l: D.str(c.title, 80)}); }} : null,
     {label: "Sil", icon: "trash", danger: true, onClick: function(){ removeItem(t, c); }}].filter(Boolean);
   return h("div", {className: "tp-checkitem app-checkrow" + (c.done ? " is-done" : "")},
     h("input", {id: id, type: "checkbox", className: "tp-check__input", checked: !!c.done, onChange: function(e){ setDone(t, c, e.target.checked); }}),

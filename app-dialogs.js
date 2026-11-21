@@ -55,7 +55,8 @@ function PlanDialog(p){
           var preset = {ref: it.id, title: it.title, cat: D.CAT_TO_EXP[it.cat] || "sights", day: A.dayById(t, where) ? where : (A.todayDayId(t) || "pre")};
           S.dialog = A.isPhone ? {kind: "expense", preset: preset} : null; if(!A.isPhone){ S.expOpen = true; S.expPreset = preset; A.go("harcamalar"); } else A.render(); }}, "Harcama ekle")
           : h(T.Button, {size: "sm", variant: "ghost", icon: "route", onClick: function(){ S.dialog = {kind: "transit", id: it.id}; A.render(); }}, "Ulaşım ayrıntıları")) : null,
-      h(Foot, {left: it ? (del[0] ? h(A.Confirm, {text: "Kalıcı olarak silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h(T.Button, {variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil")) : null},
+      h(Foot, {left: it ? (del[0] ? h(A.Confirm, {text: "Kalıcı olarak silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"),
+        A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", onClick: function(){ close(); A.openChat({k: it.cat === "ulasim" ? "transit" : "plan", id: it.id, l: D.str(it.title || "Plan", 80)}); }}, "Sohbette bahset") : null)) : null},
         h(T.Button, {variant: "ghost", onClick: close}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, it ? "Kaydet" : "Ekle"))));
 }
 
@@ -300,7 +301,7 @@ A.Dialogs = function(){
   if(d.kind === "trip-new" || d.kind === "trip-settings") return h(TripDialog, {kind: d.kind, key: d.kind});
   if(d.kind === "trip-menu") return h(TripMenu);
   if(d.kind === "profile") return h(Profile);
-  if(d.kind === "activity" && A.trip()) return h(Activity);
+  if(d.kind === "activity" && A.trip()) return h(A.Chat);
   if(d.kind === "idea-add" && A.trip()) return h(IdeaAdd, {id: d.id, day: d.day, key: d.id});
   if(!t) return null;
   if(d.kind === "plan") return h(PlanDialog, {id: d.id, newIn: d.newIn, key: d.id || "new"});

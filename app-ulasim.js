@@ -205,7 +205,8 @@ function Actions(p){
   var it = p.it;
   var items = [{label: "Yol tarifi", icon: "route", description: "Google Haritalar'da mesafe ve süre", onClick: function(){ openUrl(gmaps(it)); }},
     it.link ? {label: "Bilgi", icon: "external", onClick: function(){ openUrl(it.link); }} : null,
-    {label: "Plandaki karta git", icon: "calendar", onClick: function(){ A.view().day = p.day; A.saveViews(); A.go("tarihler"); }}].filter(Boolean);
+    {label: "Plandaki karta git", icon: "calendar", onClick: function(){ A.view().day = p.day; A.saveViews(); A.go("tarihler"); }},
+    A.chatApi && A.chatApi() ? {label: "Sohbette bahset", icon: "share", onClick: function(){ A.openChat({k: "transit", id: p.id, l: D.str(it.title || "Yolculuk", 80)}); }} : null].filter(Boolean);
   return h("div", {className: "app-ticket__acts", onClick: function(e){ e.stopPropagation(); }},
     h(T.Button, {size: "sm", icon: "edit", onClick: function(){ S.dialog = {kind: "transit", id: p.id}; A.render(); }}, "Düzenle"),
     h(T.Dropdown, {icon: "more", ariaLabel: "Diğer seçenekler: " + (it.title || ""), size: "sm", variant: "outline", menuWidth: "240px", items: items}));

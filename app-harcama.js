@@ -127,6 +127,7 @@ function ExpenseForm(p){
     item || !plans.length ? null : h(T.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + " · " : "") + it.title, value: id}; })),
       hint: "Plan kartında tutar görünür.", onChange: function(v){ var n = Object.assign({}, st[0]); n.ref = v; if(v && t.items[v]){ if(!n.title) n.title = t.items[v].title; n.cat = D.CAT_TO_EXP[t.items[v].cat] || n.cat; } st[1](n); }}),
     h(T.Button, {variant: "primary", icon: e ? "check" : "plus", full: true, type: "submit"}, e ? "Kaydet" : "Ekle"),
+    e && A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", full: true, onClick: function(){ if(p.onDone) p.onDone(); A.openChat({k: "expense", id: e.id, l: D.str(e.title || D.EXP_CATS[e.cat], 80)}); }}, "Sohbette bahset") : null,
     e ? (del[0] ? h(A.Confirm, {text: "Bu harcama silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h(T.Button, {variant: "ghost", icon: "trash", full: true, onClick: function(){ del[1](true); }}, "Harcamayı sil")) : null);
 }
 A.ExpenseForm = ExpenseForm;

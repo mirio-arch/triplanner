@@ -181,6 +181,45 @@ B.assets = {
   }
 };
 
+/* ---------- Gezi sohbeti ---------- */
+var chats = {};   /* gezi id -> {list, state, chan} */
+function chatOf(id){ return chats[id] || (chats[id] = {list: [], state: "idle", chan: null, timer: null}); }
+function mapMsg(r){ return {id: r.id, by: r.author, byName: r.author_name, body: r.body, refs: Array.isArray(r.refs) ? r.refs : [], at: r.created_at}; }
+function chatLoad(id){
+  var c = chatOf(id); if(!sb || !B.session) return;
+  if(c.state === "loading") return; c.state = c.list.length ? c.state : "loading";
+  sb.from("trip_messages").select("id,author,author_name,body,refs,created_at").eq("trip_id", id).order("created_at", {ascending: false}).limit(200).then(function(r){
+    if(r.error){ c.state = /relation|does not exist|42P01|PGRST205/i.test((r.error.message || "") + (r.error.code || "")) ? "missing" : "error"; rerender(); return; }
+    c.list = (r.data || []).map(mapMsg).reverse(); c.state = "ready"; rerender();
+  }, function(){ c.state = "error"; rerender(); });
+}
+B.chat = {
+  available: function(){ return !!(sb && B.session); },
+  get: function(id){ return chatOf(id); },
+  watch: function(id){
+    var c = chatOf(id); if(!sb || !B.session || c.chan) return;
+    chatLoad(id);
+    c.chan = sb.channel("chat-" + id)
+      .on("postgres_changes", {event: "*", schema: "public", table: "trip_messages", filter: "trip_id=eq." + id}, function(){ clearTimeout(c.timer); c.timer = setTimeout(function(){ chatLoad(id); }, 200); })
+      .subscribe();
+    document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") chatLoad(id); });
+  },
+  refresh: chatLoad,
+  send: function(id, body, refs){
+    var w = A() && A().who ? A().who() : {name: ""};
+    var c = chatOf(id), tmp = {id: "tmp" + Date.now(), by: uid(), byName: w.name, body: body, refs: refs || [], at: new Date().toISOString(), pending: true};
+    c.list = c.list.concat([tmp]); rerender();
+    return sb.from("trip_messages").insert({trip_id: id, author_name: (w.name || "").slice(0, 40), body: body, refs: refs || []}).then(function(r){
+      if(r.error){ c.list = c.list.filter(function(m){ return m !== tmp; }); rerender(); throw mapErr(r.error); }
+      chatLoad(id);
+    });
+  },
+  remove: function(id, mid){
+    var c = chatOf(id); c.list = c.list.filter(function(m){ return m.id !== mid; }); rerender();
+    return sb.from("trip_messages").delete().eq("id", mid).then(function(){ chatLoad(id); });
+  }
+};
+
 /* ---------- Yedek ---------- */
 function download(name, text){
   var a = document.createElement("a");

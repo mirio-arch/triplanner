@@ -138,6 +138,7 @@ function openRef(t, a){
   if(a.kind === "check" || a.kind === "done"){ var c = t.checklist.find(function(x){ return x.id === a.ref; }); A.go("hazirlik", A.isPhone && c ? c.group : ""); return; }
   if(a.kind === "photo"){ if(t.photos.some(function(x){ return x.id === a.ref; })){ v.photo = a.ref; A.saveViews(); } A.go("galeri"); }
 }
+A.openRef = openRef;
 A.ActivityFeed = function(p){
   var t = p.t, list = (t.activity || []).slice(0, p.limit || 120), seen = p.seenAt || "";
   if(!list.length) return h("div", {className: "app-actempty"}, h(T.Icon, {name: "bell", size: 22}),

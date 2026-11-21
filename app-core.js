@@ -226,19 +226,6 @@ A.nameOf = function(by, byName){ return A.isMine(by) ? "Sen" : (byName || "Biri"
 /* kişiye göre sabit renk */
 var PCOL = ["teal", "violet", "amber", "blue", "green", "wine"];
 A.personColor = function(by){ var s = String(by || ""), n = 0; for(var i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % 997; return PCOL[n % PCOL.length]; };
-A.unseen = function(t){
-  if(!t || !t.activity || !t.activity.length) return 0;
-  var v = A.view(), seen = v.seenAt || "";
-  return t.activity.filter(function(a){ return !A.isMine(a.by) && a.at > seen; }).length;
-};
-A.ActivityButton = function(p){
-  var t = A.trip(); if(!t || S.page === "home") return null;
-  var n = A.unseen(t);
-  return h("button", {type: "button", className: "app-actbtn" + (p.onShell ? " is-shell" : ""), "aria-label": "Son hareketler" + (n ? ", " + n + " yeni" : ""), title: "Son hareketler",
-      onClick: function(){ S.dialog = {kind: "activity"}; A.render(); }},
-    h(T.Icon, {name: "bell", size: p.size || 22}), n ? h("span", {className: "app-actbtn__n"}, n > 9 ? "9+" : n) : null);
-};
-
 /* Gezi simgesi, tıklanmayan hali (başka bir düğmenin içinde kullanmak için) */
 A.shortRange = function(t){ var a = D.fmtDay(t.start), b = D.fmtDay(t.end); return a.short + " – " + b.short; };
 A.TripMark = function(p){ var t = p.t; return h("span", {className: "tp-trip__btn app-tripmark", "aria-hidden": "true", style: {background: "var(--category-" + COLORS[t.color % 6] + "-strong)"}}, t.short); };
