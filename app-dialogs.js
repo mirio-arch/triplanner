@@ -49,17 +49,20 @@ function PlanDialog(p){
   }
   var whereOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; }).concat([{label: "Kenar listesi · çıkardıkların", value: "removed"}, {label: "Kenar listesi · öneriler", value: "ideas"}]);
   var linked = it ? t.expenses.filter(function(e){ return e.ref === it.id; }) : [];
+  var crit = h(T.Checkbox, {label: "Kesin saat", description: A.isPhone ? "Kaçırılmaması gereken saat." : "Kaçırılmaması gereken bir saat (uçuş, sınır, rezervasyon).", checked: v.critical, onChange: function(x){ set("critical", x); }});
+  /* telefonda saat tekerlekle, ülke saati düğmeyle seçilir */
+  var timeField = A.isPhone
+    ? h(A.ClockField, {id: "pdt", label: "Saat", value: v.time, zones: A.tripZones(t), onChange: function(x){ set("time", x); }, extra: crit})
+    : h("div", {className: "app-two", style: {alignItems: "end"}}, h(T.TextField, {label: "Saat", value: v.time, placeholder: "14:30", onChange: function(x){ set("time", x); }}), crit);
+  var titleField = h(T.TextField, {label: A.req("Yer / etkinlik"), value: v.title, onChange: function(x){ set("title", x); err[1](""); }, error: err[0] || undefined, autoFocus: !it && !A.isPhone});
   return h(Modal, {title: it ? "Planı düzenle" : "Yeni plan", width: "560px", onClose: ask},
     h("form", {className: "app-stack", onSubmit: save},
-      h("div", {className: "app-two app-two--time"},
-        h(T.TextField, {label: "Saat", value: v.time, placeholder: "14:30", onChange: function(x){ set("time", x); }}),
-        h(T.TextField, {label: "Yer / etkinlik", value: v.title, onChange: function(x){ set("title", x); err[1](""); }, error: err[0] || undefined, autoFocus: !it})),
-      h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 3, value: v.note, onChange: function(x){ set("note", x); }}),
-      h("div", {className: "app-two"},
-        h(A.Select, {label: "Tür", value: v.cat, options: Object.keys(D.CATS).map(function(c){ return {label: D.CATS[c], value: c}; }), onChange: function(x){ set("cat", x); }}),
-        h(A.Select, {label: "Nerede", value: v.where, options: whereOpts, onChange: function(x){ set("where", x); }})),
+      titleField,
+      timeField,
+      h(A.Select, {label: "Tür", value: v.cat, options: Object.keys(D.CATS).map(function(c){ return {label: D.CATS[c], value: c}; }), onChange: function(x){ set("cat", x); }}),
+      h(A.Select, {label: "Nerede", value: v.where, options: whereOpts, onChange: function(x){ set("where", x); }}),
       h(T.TextField, {label: "Bağlantı", optional: true, value: v.link, placeholder: "https://", onChange: function(x){ set("link", x); }}),
-      h(T.Checkbox, {label: "Kesin saat", description: "Kaçırılmaması gereken bir saat (uçuş, sınır, rezervasyon).", checked: v.critical, onChange: function(x){ set("critical", x); }}),
+      h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 3, value: v.note, onChange: function(x){ set("note", x); }}),
       it ? h("div", {className: "app-row app-row--wrap"},
         linked.length ? h(T.Chip, {icon: "wallet"}, linked.length + " harcama bağlı") : null,
         it.cat !== "ulasim" ? h(T.Button, {size: "sm", variant: "ghost", icon: "wallet", onClick: function(){
@@ -132,21 +135,24 @@ function TransitSheet(p){
   if(step[0] === 0) body = h(T.RadioGroup, {label: "Nasıl gidiyorsun?", variant: "tiles", columns: A.isPhone ? 2 : 3, value: v.mode, onChange: function(x){ set(v.flexTouched ? {mode: x} : {mode: x, flex: A.isFlexTransit({mode: x})}); },
     items: MODE_ITEMS.map(function(m){ return {label: m[1], value: m[0], icon: m[2]}; })});
   else if(step[0] === 1) body = h("div", {className: "app-stack"},
-    h(T.TextField, {label: v.mode === "border" ? "Sınır kapısı" : "Nereden", value: v.origin, placeholder: v.mode === "border" ? "Sarp" : "Batum", onChange: function(x){ set("origin", x); err[1](""); }, autoFocus: true}),
-    v.mode === "border" ? null : h(T.TextField, {label: "Nereye", value: v.dest, placeholder: "Kutaisi", onChange: function(x){ set("dest", x); err[1](""); }}),
+    h(T.TextField, {label: A.req(v.mode === "border" ? "Sınır kapısı" : "Nereden"), value: v.origin, placeholder: v.mode === "border" ? "Sarp" : "Batum", onChange: function(x){ set("origin", x); err[1](""); }, autoFocus: true}),
+    v.mode === "border" ? null : h(T.TextField, {label: A.req("Nereye"), value: v.dest, placeholder: "Kutaisi", onChange: function(x){ set("dest", x); err[1](""); }}),
     v.mode === "plane" ? h("div", {className: "app-two"},
       h(T.TextField, {label: "Kalkış kodu", optional: true, value: v.fromCode, placeholder: "IST", maxLength: 5, onChange: function(x){ set("fromCode", x.toUpperCase()); }}),
       h(T.TextField, {label: "Varış kodu", optional: true, value: v.toCode, placeholder: "RZV", maxLength: 5, onChange: function(x){ set("toCode", x.toUpperCase()); }})) : null,
     err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, err[0]) : null,
     A.isPhone ? h("div", {className: "tp-field"}, h("span", {className: "label tp-field__label"}, "Gün"), h(A.DayWheel, {t: t, id: "trdw", noPre: true, label: "Gün", value: v.day, onChange: function(x){ set("day", x); }}))
       : h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
-    h("div", {className: "app-two"},
+    A.isPhone ? h(F, null,
+        h(A.ClockField, {id: "trk", label: "Kalkış", value: v.time, zones: A.tripZones(t), onChange: function(x){ set("time", x); }}),
+        h(A.ClockField, {id: "trv", label: "Varış", optional: true, value: v.end, zones: A.tripZones(t), onChange: function(x){ set("end", x); }}))
+      : h("div", {className: "app-two"},
       h(T.TextField, {label: "Kalkış", value: v.time, placeholder: "08:40", onChange: function(x){ set("time", x); }, hint: "Ülke saati farklıysa sonuna TR ya da GE yaz."}),
       h(T.TextField, {label: "Varış", optional: true, value: v.end, placeholder: "11:00", onChange: function(x){ set("end", x); }})));
   else if(step[0] === 2) body = h("div", {className: "app-stack"},
     h(T.Checkbox, {label: "Saati esnek", description: "Taksi, Bolt gibi belli bir bileti olmayan yolculuk. Ulaşım'da sade bir satır olarak durur.", checked: v.flex, onChange: function(x){ set({flex: x, flexTouched: true}); }}),
     v.flex ? null : h("div", {className: "app-stack app-ticketfields"},
-      h("h3", {className: "label app-muted", style: {margin: 0}}, "Bilet · hepsi isteğe bağlı"),
+      h("h3", {className: "label app-muted", style: {margin: 0}}, "Bilet bilgileri"),
       h("div", {className: "app-two"},
         h(T.TextField, {label: "Firma", value: v.carrier, placeholder: v.mode === "plane" ? "Pegasus" : (v.mode === "train" ? "GR" : "Metro"), onChange: function(x){ set("carrier", x); }}),
         h(T.TextField, {label: "Sefer no", value: v.code, placeholder: v.mode === "plane" ? "PC 2846" : "1234", onChange: function(x){ set("code", x); }})),
@@ -238,8 +244,8 @@ function TripDialog(p){
   }
   return h(Modal, {title: t ? "Gezi ayarları" : "Yeni gezi", description: t ? t.name : "Tarihleri girince her gün için bir sayfa açılır.", width: "560px", onClose: ask},
     h("form", {className: "app-stack", onSubmit: save},
-      h(T.TextField, {label: "Gezi adı", value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t, onChange: function(x){ set("name", x); err[1](""); }}),
-      h("div", {className: "app-two"}, h(A.Field, {label: "Başlangıç", type: "date", value: v.start, onChange: function(x){ set("start", x); err[1](""); }}), h(A.Field, {label: "Bitiş", type: "date", value: v.end, min: v.start, onChange: function(x){ set("end", x); err[1](""); }})),
+      h(T.TextField, {label: A.req("Gezi adı"), value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t, onChange: function(x){ set("name", x); err[1](""); }}),
+      h("div", {className: "app-two"}, h(A.Field, {label: A.req("Başlangıç"), type: "date", value: v.start, onChange: function(x){ set("start", x); err[1](""); }}), h(A.Field, {label: A.req("Bitiş"), type: "date", value: v.end, min: v.start, onChange: function(x){ set("end", x); err[1](""); }})),
       h("div", {className: "app-two"}, h(T.TextField, {label: "Simge yazısı", optional: true, value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", onChange: function(x){ set("short", x); }}),
         h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.CURRENCIES.filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
       h(T.SwatchPicker, {label: "Renk", value: v.color, onChange: function(x){ set("color", x); }}),

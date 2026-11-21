@@ -367,6 +367,31 @@ A.TimeWheel = function(p){
     h("span", {className: "app-timewheel__sep", "aria-hidden": "true"}, ":"),
     h(A.Wheel, {id: pre + "m", compact: true, className: "app-timewheel__m", label: "Dakika", options: mins, value: mm[0], onChange: function(x){ mm[1](x); if(hh) p.onChange(hh + ":" + x); }}));
 };
+/* Saat dilimi: yurt dışı gezilerinde "hangi ülkenin saati" yazmak yerine seçilir */
+A.tripZones = function(t){ return t && (t.geo === "georgia" || t.currency === "GEL") ? [["TR", "Türkiye saati"], ["GE", "Gürcistan saati"]] : []; };
+A.splitTime = function(s){
+  var m = /^(~?)\s*(\d{1,2}[:.]\d{2})?\s*(.*)$/.exec(s || "") || [];
+  var z = /^[A-ZÇĞİÖŞÜ]{2,4}$/.test(m[3] || "") ? m[3] : "";
+  return {pre: m[1] || "", clock: m[2] ? m[2].replace(".", ":") : "", zone: z};
+};
+/* Saat alanı (telefon): tekerlek + yanında ülke saati seçimi ve isteğe bağlı ek (kesin saat gibi) */
+A.ClockField = function(p){
+  var sp = A.splitTime(p.value), zones = p.zones || [], shown = sp.zone || (zones.length ? zones[zones.length - 1][0] : "");
+  function compose(clock, zone){ return clock ? sp.pre + clock + (zone ? " " + zone : "") : ""; }
+  return h("div", {className: "tp-field"},
+    h("span", {className: "label tp-field__label"}, p.label, p.optional ? h("span", {className: "tp-muted"}, " · isteğe bağlı") : null),
+    h("div", {className: "app-timefield"},
+      h(A.TimeWheel, {id: p.id, value: sp.clock, onChange: function(x){ p.onChange(compose(x, sp.zone)); }}),
+      h("div", {className: "app-timefield__side"},
+        zones.length ? h("div", {className: "app-tzpick" + (sp.clock ? "" : " is-off")},
+          h("span", {className: "body-sm app-muted", id: p.id + "-zl"}, "Hangi ülkenin saati?"),
+          h("div", {className: "app-curseg", role: "radiogroup", "aria-labelledby": p.id + "-zl"}, zones.map(function(z){
+            return h("button", {key: z[0], type: "button", role: "radio", "aria-checked": shown === z[0] ? "true" : "false", "aria-label": z[1], title: z[1], disabled: !sp.clock,
+              onClick: function(){ p.onChange(compose(sp.clock, z[0])); }}, z[0]);
+          }))) : null,
+        p.extra || null)));
+};
+
 /* Gün + saat yan yana tekerlekler (telefonda formlarda) */
 A.DayTimePick = function(p){
   return h("div", {className: "app-dtpick"},
@@ -405,6 +430,8 @@ function PhoneSelect(p){
 }
 A.Select = function(p){ return A.isPhone ? h(PhoneSelect, p) : h(T.Select, p); };
 
+/* Zorunlu alan etiketi: yıldız; isteğe bağlı olanlara ayrıca yazı eklenmez */
+A.req = function(label){ return h(F, null, label, h("span", {className: "app-req", "aria-hidden": "true"}, " *"), h("span", {className: "tp-sr"}, " (zorunlu)")); };
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
 A.markDirty = function(){ S.dirty = true; };
 

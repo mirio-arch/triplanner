@@ -710,7 +710,7 @@ a{color:var(--foreground-secondary)}
 /* Telefonda seçim kutusu: liste pencerenin içinde, kutunun altında */
 .app-select__chev{flex:none;transition:transform var(--duration-base) var(--ease-standard)}
 .app-select.is-open .app-select__chev{transform:rotate(180deg)}
-.app-select__list{list-style:none;margin:var(--space-1) 0 0;padding:var(--space-1);display:flex;flex-direction:column;gap:2px;border:1px solid var(--border-weak);border-radius:var(--radius-control);background:var(--background-raised);max-height:264px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
+.app-select__list{list-style:none;margin:var(--space-1) 0 0;padding:var(--space-1);display:flex;flex-direction:column;gap:2px;border:1px solid var(--border-weak);border-radius:var(--radius-control);background:var(--background-raised);max-height:min(240px,40vh);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
 .app-select__list .tp-option{cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:44px;align-items:center}
 .app-select__list .tp-option>.tp-icon{margin-top:0}
 
@@ -723,8 +723,29 @@ a{color:var(--foreground-secondary)}
 .app-timewheel .app-wheel__row{padding:0 4px}
 .app-timewheel__h .app-wheel__row:first-child{font-size:14px}
 .app-timewheel__h .app-wheel__row:first-child.is-on{font-size:16px}
-.app-timewheel__sep{text-align:center;font:700 20px var(--font-sans);color:var(--foreground-primary);transition:opacity var(--duration-base) var(--ease-standard)}
+.app-timewheel__sep{position:relative;z-index:1;text-align:center;font:700 20px var(--font-sans);color:var(--foreground-primary);transition:opacity var(--duration-base) var(--ease-standard)}
 .app-timewheel__m{transition:opacity var(--duration-base) var(--ease-standard)}
 .app-timewheel.is-none .app-timewheel__m,.app-timewheel.is-none .app-timewheel__sep{opacity:.35}
 .app-select__list .tp-option{flex:none}
 @media (max-width:899px){.app-two:has(> .app-select){grid-template-columns:minmax(0,1fr)}}
+/* Saatler görünümü: blok boyunu içerikten alsın (takvim ızgarası dışında) */
+.app-hours .tp-block{height:auto;min-height:40px;container-type:inline-size}
+/* Plan penceresi: saat tekerleği ve kesin saat bir arada */
+.app-timefield{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:var(--space-4);align-items:center}
+.app-timefield .tp-check{margin:0}
+.app-timefield__side{display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
+.app-tzpick{display:flex;flex-direction:column;gap:6px;transition:opacity var(--duration-base) var(--ease-standard)}
+.app-tzpick.is-off{opacity:.45}
+.app-tzpick .app-curseg{align-self:flex-start}
+.app-tzpick .app-curseg button{min-width:52px}
+/* Zorunlu alanlar yıldızlı; "isteğe bağlı" yazıları gösterilmez */
+.tp-field__label>.tp-muted{display:none}
+.app-req{color:var(--foreground-danger);font-weight:600}
+/* Ana sayfa selamlaması telefonda daha küçük */
+.app-phone .app-home__hello .page-title{font-size:24px;line-height:32px;letter-spacing:-.01em}
+/* Sohbet: boy güvenli alanlarla birlikte ekranı aşmasın; ana ekran uygulamasında tam boy, klavyede görünen alana sığar */
+.app-chat{box-sizing:border-box}
+.app-chat__scroll{min-height:0}
+.ios-standalone .app-chatwrap{bottom:auto;height:var(--tp-screen-h,100%)}
+.kbd .app-chatwrap{top:var(--vvt,0px) !important;bottom:auto !important;height:var(--vvh,100%) !important}
+.kbd .app-chat{padding-bottom:0}

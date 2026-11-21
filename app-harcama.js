@@ -117,7 +117,7 @@ function ExpenseForm(p){
     item ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Bu tutar Ulaşım'daki “" + item.title + "” biletinden geliyor; değiştirirsen orada da değişir.") : null,
     h(T.PhotoInput, {label: "Fotoğraf", optional: true, photos: f.photos.map(function(pid){ var ph = photoOf(t, pid); return ph ? {src: D.photoUrl(ph.asset), alt: "Harcama fotoğrafı"} : null; }).filter(Boolean),
       hint: "Galeri’ye de eklenir. Fişi de çekebilirsin.", busy: up[0], onFiles: onFiles, onRemove: function(i){ set("photos", f.photos.filter(function(_, j){ return j !== i; })); }}),
-    h(T.MoneyField, {label: "Tutar", value: f.amount, currency: f.currency, currencies: D.CURRENCIES, hint: conv, autoFocus: !e && !A.isPhone,
+    h(T.MoneyField, {label: A.req("Tutar"), value: f.amount, currency: f.currency, currencies: D.CURRENCIES, hint: conv, autoFocus: !e && !A.isPhone,
       onChange: function(o){ var n = Object.assign({}, st[0]); n.amount = o.value; n.currency = o.currency; st[1](n); err[1](""); }}),
     err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, err[0]) : null,
     item ? null : h(T.TextField, {label: "Ne için", value: f.title, placeholder: "Örn. Akşam: hinkali", onChange: function(v){ set("title", v); }}),
