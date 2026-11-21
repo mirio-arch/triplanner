@@ -135,19 +135,34 @@ function ExpenseForm(p){
 A.ExpenseForm = ExpenseForm;
 
 function RateBox(p){
-  var t = p.t, cur = t.currency || D.curList(t)[1] || "EUR";
-  var st = React.useState(null), b = React.useState(null);
-  var rate = t.rate[cur];
+  var t = p.t, st = React.useState(null), b = React.useState(null);
+  /* gezinin para birimleri + harcamalarda kullanılmış olanlar; ana para en başta */
+  var main = t.currency || "TL", curs = D.curList(t).slice();
+  t.expenses.forEach(function(e){ if(e.currency && curs.indexOf(e.currency) < 0) curs.push(e.currency); });
+  var foreign = curs.filter(function(c){ return c !== "TL"; }).sort(function(x, y){ return (y === main) - (x === main); });
+  function used(c){ return t.expenses.filter(function(e){ return e.currency === c; }).length; }
+  function saveRate(e, c){ e.preventDefault(); var r = D.parseAmount(st[0].v); if(r) t.rate[c] = r; else delete t.rate[c]; st[1](null); A.commit(); }
   return h("div", {className: "app-stack"},
-    st[0] === null ? h("div", {className: "app-row"},
-      h("div", {style:{flex:1, minWidth:0}}, h("span", {className: "label app-muted", style:{display:"block"}}, "Kur"),
-        h("span", {className: "body-strong", style:{fontVariantNumeric:"tabular-nums"}}, rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi"),
-        h("span", {className: "body-sm app-muted", style:{display:"block"}}, rate ? "Elle girdin. " + cur + " tutarları bununla çevrilir." : cur + " harcamaların TL toplamına girmesi için kuru yaz.")),
-      h(T.IconButton, {icon: "edit", label: "Kuru değiştir", size: "sm", onClick: function(){ st[1](rate ? D.fmtNum(rate, true) : ""); }}))
-    : h("form", {className: "app-stack", onSubmit: function(e){ e.preventDefault(); var r = D.parseAmount(st[0]); if(r){ t.rate[cur] = r; } else delete t.rate[cur]; st[1](null); A.commit(); }},
-        h(A.Select, {label: "Gezinin para birimi", value: cur, options: D.curList(t).filter(function(c){ return c !== "TL"; }), onChange: function(v){ t.currency = v; A.commit(); }}),
-        h(T.TextField, {label: "1 " + cur + " kaç TL?", value: st[0], placeholder: "16,00", autoFocus: true, inputMode: "decimal", onChange: function(v){ st[1](v); }}),
-        h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ st[1](null); }}, "Vazgeç"), h(T.Button, {variant: "primary", size: "sm", type: "submit"}, "Kaydet"))),
+    h("div", {className: "app-rates"},
+      h("span", {className: "label app-muted"}, "Kurlar"),
+      foreign.map(function(c){
+        var r = t.rate[c], n = used(c), edit = st[0] && st[0].c === c;
+        if(edit) return h("form", {key: c, className: "app-rate is-edit", onSubmit: function(e){ saveRate(e, c); }},
+          h(T.TextField, {label: "1 " + c + " kaç TL?", value: st[0].v, placeholder: "16,00", autoFocus: true, inputMode: "decimal", onChange: function(v){ st[1]({c: c, v: v}); }}),
+          h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ st[1](null); }}, "Vazgeç"), h(T.Button, {variant: "primary", size: "sm", type: "submit"}, "Kaydet")));
+        return h("div", {key: c, className: "app-rate" + (!r && n ? " is-missing" : "")},
+          h("span", {className: "app-rate__cur"}, c),
+          h("span", {className: "app-rate__val"}, r ? "1 " + c + " = " + D.fmtNum(r, true) + " TL" : "Kur girilmedi",
+            !r && n ? h("small", null, n + " harcama TL toplamına girmiyor") : null),
+          h(T.IconButton, {icon: "edit", label: c + " kurunu " + (r ? "değiştir" : "gir"), size: "sm", onClick: function(){ st[1]({c: c, v: r ? D.fmtNum(r, true) : ""}); }}));
+      }),
+      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Harcamaların TL toplamı bu kurlarla hesaplanır.")),
+    h("div", {className: "app-rates"},
+      h("span", {className: "label app-muted", id: "main-cur-l"}, "Gezinin ana parası"),
+      h("div", {className: "app-curseg app-curseg--wrap", role: "radiogroup", "aria-labelledby": "main-cur-l"}, curs.map(function(c){
+        return h("button", {key: c, type: "button", role: "radio", "aria-checked": main === c ? "true" : "false", onClick: function(){ t.currency = c === "TL" ? "" : c; A.commit(); }}, c);
+      })),
+      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Yeni harcamada önce bu gelir.")),
     b[0] === null ? h("div", {className: "app-row"},
       h("div", {style:{flex:1, minWidth:0}}, h("span", {className: "label app-muted", style:{display:"block"}}, "Bütçe"),
         h("span", {className: "body-strong"}, t.budget ? D.fmtMoney(t.budget, "TL") : "Bütçe girilmedi")),

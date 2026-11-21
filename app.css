@@ -801,3 +801,12 @@ a{color:var(--foreground-secondary)}
 .app-pplaces{display:flex;flex-direction:column;gap:6px}
 .app-cchip--static{padding:0 12px}
 .app-pstats{grid-template-columns:repeat(4,minmax(0,1fr))}
+/* Kurlar: her para biriminin kendi satırı */
+.app-rates{display:flex;flex-direction:column;gap:var(--space-2)}
+.app-rate{display:flex;align-items:center;gap:var(--space-3);min-height:48px;padding:var(--space-1) var(--space-1) var(--space-1) var(--space-3);border-radius:var(--radius-control);background:var(--background-sunken)}
+.app-rate.is-edit{flex-direction:column;align-items:stretch;gap:var(--space-2);padding:var(--space-3);background:var(--background-sunken)}
+.app-rate__cur{flex:none;min-width:40px;font:700 13px var(--font-sans);color:var(--foreground-primary)}
+.app-rate__val{flex:1;min-width:0;display:flex;flex-direction:column;font:600 14px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--foreground)}
+.app-rate__val small{font:500 12px var(--font-sans);color:var(--foreground-warning)}
+.app-rate.is-missing .app-rate__val{color:var(--foreground-weak)}
+.app-curseg--wrap{flex-wrap:wrap;align-self:flex-start}
