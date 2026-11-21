@@ -46,6 +46,9 @@ grant select, delete on public.trips to authenticated;
 grant insert (id, data, sort, updated_at) on public.trips to authenticated;
 grant update (data, sort, updated_at)     on public.trips to authenticated;
 grant select, insert, delete on public.trip_members to authenticated;
+grant usage on schema public to authenticated;
+grant execute on function public.my_email(), public.owns_trip(text), public.is_trip_member(text) to authenticated;
+revoke execute on function public.owns_trip(text), public.is_trip_member(text) from anon, public;
 
 drop policy if exists trips_select on public.trips;
 drop policy if exists trips_insert on public.trips;
