@@ -226,6 +226,37 @@ A.nameOf = function(by, byName){ return A.isMine(by) ? "Sen" : (byName || "Biri"
 /* kişiye göre sabit renk */
 var PCOL = ["teal", "violet", "amber", "blue", "green", "wine"];
 A.personColor = function(by){ var s = String(by || ""), n = 0; for(var i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) % 997; return PCOL[n % PCOL.length]; };
+/* Tekerlek seçici: yukarı aşağı kaydırılır, ortadaki satır seçilidir */
+var ROW = 40;
+A.Wheel = function(p){
+  var opts = p.options, idx = Math.max(0, opts.findIndex(function(o){ return o[0] === p.value; }));
+  var ref = React.useRef(null), timer = React.useRef(null), cur = React.useState(idx);
+  React.useEffect(function(){ var el = ref.current; if(el) el.scrollTop = idx * ROW; }, []);
+  function settle(){
+    var el = ref.current; if(!el) return;
+    var i = Math.max(0, Math.min(opts.length - 1, Math.round(el.scrollTop / ROW)));
+    if(i !== cur[0]) cur[1](i);
+    if(opts[i][0] !== p.value) p.onChange(opts[i][0]);
+  }
+  function onScroll(){
+    var el = ref.current; if(el){ var i = Math.max(0, Math.min(opts.length - 1, Math.round(el.scrollTop / ROW))); if(i !== cur[0]) cur[1](i); }
+    clearTimeout(timer.current); timer.current = setTimeout(settle, 120);
+  }
+  function go(i){ var el = ref.current; if(el) el.scrollTo({top: i * ROW, behavior: "smooth"}); }
+  function key(e){
+    if(e.key === "ArrowDown"){ e.preventDefault(); go(Math.min(opts.length - 1, cur[0] + 1)); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); go(Math.max(0, cur[0] - 1)); }
+  }
+  return h("div", {className: "app-wheel"},
+    h("span", {className: "app-wheel__band", "aria-hidden": "true"}),
+    h("div", {ref: ref, className: "app-wheel__list", role: "listbox", tabIndex: 0, "aria-label": p.label, "aria-activedescendant": "wh-" + cur[0], onScroll: onScroll, onKeyDown: key},
+      opts.map(function(o, i){
+        var d = Math.abs(i - cur[0]);
+        return h("div", {key: o[0], id: "wh-" + i, role: "option", "aria-selected": i === cur[0] ? "true" : "false", className: "app-wheel__row" + (i === cur[0] ? " is-on" : "") + (d === 1 ? " is-near" : ""),
+          onClick: function(){ go(i); }}, o[1], o[2] ? h("small", null, o[2]) : null);
+      })));
+};
+
 /* Gezi simgesi, tıklanmayan hali (başka bir düğmenin içinde kullanmak için) */
 A.shortRange = function(t){ var a = D.fmtDay(t.start), b = D.fmtDay(t.end); return a.short + " – " + b.short; };
 A.TripMark = function(p){ var t = p.t; return h("span", {className: "tp-trip__btn app-tripmark", "aria-hidden": "true", style: {background: "var(--category-" + COLORS[t.color % 6] + "-strong)"}}, t.short); };
