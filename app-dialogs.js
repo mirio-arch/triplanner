@@ -205,7 +205,8 @@ function applyDates(t, start, end){
 }
 function TripDialog(p){
   var t = p.kind === "trip-settings" ? A.trip() : null;
-  var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || ""} : {name: "", start: "", end: "", short: "", color: A.COLORS[S.app.order.length % 6], currency: ""});
+  var pre = !t && S.dialog && S.dialog.preset || {};
+  var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || ""} : {name: pre.name || "", start: pre.start || "", end: pre.end || "", short: "", color: A.COLORS[S.app.order.length % 6], currency: ""});
   var v = f[0], set = f[1], err = React.useState(""), del = React.useState(false), reset = React.useState(false);
   var leave = !!(t && window.TPB && !window.TPB.isOwner(t.id));
   function save(e){
@@ -237,9 +238,29 @@ function TripDialog(p){
         del[0] ? h(A.Confirm, {text: leave ? "“" + t.name + "” listenden kalksın mı? Diğerleri için gezi olduğu gibi kalır." : "“" + t.name + "” ve içindeki her şey silinsin mi?", yes: leave ? "Geziden ayrıl" : "Geziyi sil", onYes: function(){ var id = t.id; delete S.app.trips[id]; S.app.order = S.app.order.filter(function(x){ return x !== id; }); A.sync.remove(id); D.saveLocal(S.app); close(); S.cur = S.app.order[0] || null; if(S.cur) A.go("tarihler"); else { location.hash = ""; A.render(); } }, onNo: function(){ del[1](false); }})
           : h(T.Button, {variant: "ghost", size: "sm", icon: "trash", onClick: function(){ del[1](true); }}, leave ? "Geziden ayrıl" : "Geziyi sil")) : null));
 }
+function Profile(){
+  var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false);
+  var opts = [["", "Cihaz", "sparkle"], ["light", "Açık", "sun"], ["dark", "Koyu", "eye"]];
+  var body = h("div", {className: "app-stack app-profile"},
+    h("div", {className: "app-profile__me"},
+      h("span", {className: "app-avatar app-avatar--lg", "aria-hidden": "true"}, me.photo && !img[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ img[1](true); }}) : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: 28}))),
+      h("div", {style: {minWidth: 0}}, h("div", {className: "heading app-ellipsis"}, me.name || "Bu cihaz"), h("div", {className: "body-sm app-muted app-ellipsis"}, me.email || "Veriler bu tarayıcıda ve Claude hesabında"))),
+    h("div", {className: "app-stack", style: {gap: "var(--space-2)"}},
+      h("h3", {className: "label app-muted", style: {margin: 0}}, "Görünüm"),
+      h("div", {className: "app-seg app-seg--wide", role: "radiogroup", "aria-label": "Tema"}, opts.map(function(o){
+        return h("button", {key: o[1], type: "button", role: "radio", "aria-checked": theme === o[0] ? "true" : "false", "aria-pressed": theme === o[0] ? "true" : "false", onClick: function(){ A.setTheme(o[0]); }},
+          h(T.Icon, {name: o[2], size: 16}), h("span", null, o[1]));
+      }))),
+    B ? h("div", {className: "app-stack", style: {gap: "var(--space-2)"}}, h("h3", {className: "label app-muted", style: {margin: 0}}, "Hesap"), h(B.Account)) : null);
+  return A.isPhone ? h(T.Sheet, {title: "Profil", placement: "bottom", onClose: close, direction: "none"}, body)
+    : h(T.Dialog, {title: "Profil", width: "440px", onClose: close}, body);
+}
 function TripMenu(){
   return h(T.Sheet, {title: "Geziler", placement: "bottom", onClose: close, direction: "none"},
-    h("div", {className: "app-stack"}, S.app.order.map(function(id){
+    h("div", {className: "app-stack"}, h("a", {href: "#home", className: A.cx("app-tile app-tile--btn", S.page === "home" && "is-current"), onClick: function(){ S.dialog = null; }},
+        h("span", {className: "tp-trip__btn app-rail__home", "aria-hidden": "true"}, h(T.Icon, {name: "home", size: 22})),
+        h("span", {style: {flex: 1, minWidth: 0}}, h("span", {className: "body-strong", style: {display: "block"}}, "Ana sayfa"), h("span", {className: "body-sm app-muted"}, "Gezilerin ve tatil fırsatları"))),
+      S.app.order.map(function(id){
       var t = S.app.trips[id]; if(!t) return null;
       return h("div", {key: id, className: "app-triprow"}, h("a", {href: A.href(S.page, "", id), className: A.cx("app-tile app-tile--btn", id === S.cur && "is-current"), onClick: function(){ S.dialog = null; }},
         h(T.TripAvatar, {initials: t.short, label: t.name, color: A.COLORS[t.color % 6], active: id === S.cur}),
@@ -255,6 +276,7 @@ A.Dialogs = function(){
   var t = A.trip();
   if(d.kind === "trip-new" || d.kind === "trip-settings") return h(TripDialog, {kind: d.kind, key: d.kind});
   if(d.kind === "trip-menu") return h(TripMenu);
+  if(d.kind === "profile") return h(Profile);
   if(!t) return null;
   if(d.kind === "plan") return h(PlanDialog, {id: d.id, newIn: d.newIn, key: d.id || "new"});
   if(d.kind === "plan-delete"){

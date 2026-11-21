@@ -193,8 +193,7 @@ function ExpenseList(p){
   var t = p.t, st = p.st;
   var days = sortedDays(t, st);
   if(!st.list.length) return h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "documents", size: "sm", headingLevel: 3, title: p.emptyTitle || "Henüz harcama yok",
-    text: p.emptyText || "Yemek, bilet, müze girişi: ne harcadıysan ekle. Ulaşım’da bilet fiyatı girersen kendiliğinden buraya düşer."},
-    h(T.Button, {variant: "primary", icon: "plus", onClick: function(){ if(A.isPhone) S.dialog = {kind: "expense"}; else S.expOpen = true; A.render(); }}, "Harcama ekle")));
+    text: p.emptyText || (A.isPhone ? "Yemek, bilet, müze girişi: ne harcadıysan sağ alttaki Harcama düğmesiyle ekle. Ulaşım’da bilet fiyatı girersen kendiliğinden buraya düşer." : "Yemek, bilet, müze girişi: ne harcadıysan sağdaki karttan ekle. Ulaşım’da bilet fiyatı girersen kendiliğinden buraya düşer.")}));
   return h("div", {className: "app-stack app-stack--lg"}, days.map(function(id){
     var items = st.list.filter(function(e){ return e.day === id; }).sort(function(a, b){ return (b.time || "").localeCompare(a.time || ""); });
     var sum = items.reduce(function(a, e){ var v = eTL(t, e); return a + (v || 0); }, 0);
@@ -348,6 +347,24 @@ function PhotoAdd(p){
     h(T.Button, {variant: p.primary ? "primary" : "outline", size: "sm", icon: up[0] ? "refresh" : "image-add", onClick: function(){ if(!up[0] && ref.current) ref.current.click(); }}, up[0] ? "Yükleniyor…" : "Fotoğraf ekle"),
     h("input", {ref: ref, type: "file", accept: "image/*", multiple: true, className: "tp-sr", "aria-label": "Fotoğraf seç", onChange: pick}));
 }
+/* Telefonda alt bölme: gün çipleri ve fotoğraf seç */
+function PhotoPeek(p){
+  var t = p.t, v = A.view(), ref = React.useRef(null), up = React.useState(false);
+  if(!v.galDay || !(v.galDay === "pre" || A.dayById(t, v.galDay))) v.galDay = A.todayDayId(t) || (t.days[0] && t.days[0].id) || "pre";
+  function pick(e){
+    var files = Array.prototype.slice.call(e.target.files || []); e.target.value = ""; if(!files.length) return;
+    up[1](true);
+    A.uploadPhotos(t, files, {day: v.galDay}).then(function(ps){ up[1](false); if(ps.length){ A.commit(); A.flash(ps.length + " fotoğraf " + A.dayLabel(t, v.galDay) + " gününe eklendi."); } });
+  }
+  var opts = [["pre", "Yola çıkmadan"]].concat(t.days.map(function(d){ return [d.id, A.dayLabel(t, d.id)]; }));
+  return h(F, null,
+    h("div", {className: "app-quickchips", role: "group", "aria-label": "Hangi güne", style: {marginTop: 0}}, opts.map(function(o){
+      return h("button", {key: o[0], type: "button", className: "app-quickchip", "aria-pressed": v.galDay === o[0] ? "true" : "false", onClick: function(){ v.galDay = o[0]; A.saveViews(); A.render(); }}, o[1]);
+    })),
+    h("div", {style: {marginTop: "var(--space-3)"}}, h(T.Button, {variant: "primary", full: true, icon: up[0] ? "refresh" : "image-add", onClick: function(){ if(!up[0] && ref.current) ref.current.click(); }}, up[0] ? "Yükleniyor…" : "Fotoğraf seç")),
+    h("input", {ref: ref, type: "file", accept: "image/*", multiple: true, className: "tp-sr", "aria-label": "Fotoğraf seç", onChange: pick}),
+    p.tip ? h("p", {className: "app-peekline"}, "Seçtiğin güne eklenir. Harcamaya bağlamak için Harcamalar'dan ekle.") : null);
+}
 function GaleriAside(p){
   var t = p.t, v = p.v, sel = v.photo ? photoOf(t, v.photo) : null;
   var del = React.useState(false);
@@ -378,7 +395,7 @@ function Galeri(p){
   var days = ["pre"].concat(t.days.map(function(d){ return d.id; })).reverse().filter(function(id){ return t.photos.some(function(ph){ return ph.day === id; }); });
   var priceOf = {}; t.expenses.forEach(function(e){ e.photos.forEach(function(pid){ priceOf[pid] = D.fmtMoney(e.amount, e.currency); }); });
   var head = h(A.PageHead, {title: "Galeri", desc: A.isPhone ? null : "Gezide çektiklerin, gününe göre. Harcamaya eklediğin fotoğraflar da burada.", right: t.photos.length ? h(T.Chip, {tone: "outline", icon: "gallery"}, t.photos.length + " fotoğraf") : null,
-    phoneRight: h(PhotoAdd, {t: t, primary: !t.photos.length})});
+    phoneRight: null});
   var body = days.length ? days.map(function(id){
     var ps = t.photos.filter(function(ph){ return ph.day === id; });
     return h("section", {key: id, id: "gal-" + id, className: "app-stack", "aria-labelledby": "galh-" + id},
@@ -387,8 +404,9 @@ function Galeri(p){
         return h(T.Photo, {key: ph.id, src: D.photoUrl(ph.asset), alt: ph.note || "Gezi fotoğrafı", button: true, selected: v.photo === ph.id, price: priceOf[ph.id], label: "Fotoğrafı aç",
           onClick: function(){ v.photo = ph.id; A.saveViews(); if(A.isPhone){ S.dialog = {kind: "photo"}; } A.render(); }});
       })));
-  }) : h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "celebrate", size: A.isPhone ? "sm" : undefined, title: "Galeri boş", text: A.isPhone ? "Günü seçip Fotoğraf ekle'ye bas. Harcamaya eklediğin fotoğraflar da burada dizilir." : "Harcamaya, bilete ya da doğrudan buraya eklediğin fotoğraflar güne göre dizilir."}));
-  return h(A.Layout, {head: head, aside: h(GaleriAside, {t: t, v: v}), asideLabel: "Seçili fotoğraf", phoneAside: false}, body);
+  }) : h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "celebrate", size: A.isPhone ? "sm" : undefined, title: "Galeri boş", text: A.isPhone ? "Sağ alttaki Fotoğraf düğmesiyle ekle. Harcamaya eklediğin fotoğraflar da burada dizilir." : "Harcamaya, bilete ya da doğrudan buraya eklediğin fotoğraflar güne göre dizilir."}));
+  return h(A.Layout, {head: head, aside: h(GaleriAside, {t: t, v: v}), asideLabel: "Seçili fotoğraf", phoneAside: false,
+    pane: A.isPhone ? {id: "galeri", label: "Fotoğraf ekle", fab: {icon: "image-add", label: "Fotoğraf"}, peek: h(PhotoPeek, {t: t}), full: h(PhotoPeek, {t: t, tip: true})} : null}, body);
 }
 A.GaleriAside = GaleriAside;
 function GSubmenu(t){
