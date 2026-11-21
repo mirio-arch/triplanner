@@ -337,7 +337,7 @@ A.pages.harcamalar = {view: Harcamalar, submenu: Submenu};
 /* Fotoğraf ekleme: gün seçimi ve düğme tek satırda */
 function PhotoAdd(p){
   var t = p.t, v = A.view(), ref = React.useRef(null), up = React.useState(false);
-  if(!v.galDay || !(v.galDay === "pre" || A.dayById(t, v.galDay))) v.galDay = A.todayDayId(t) || (t.days[0] && t.days[0].id) || "pre";
+  if(!v.galDay || !(v.galDay === "pre" || A.dayById(t, v.galDay))) v.galDay = defaultDay(t);
   function pick(e){
     var files = Array.prototype.slice.call(e.target.files || []); e.target.value = ""; if(!files.length) return;
     up[1](true);
@@ -353,16 +353,24 @@ function PhotoAdd(p){
     h("input", {ref: ref, type: "file", accept: "image/*", multiple: true, className: "tp-sr", "aria-label": "Fotoğraf seç", onChange: pick}));
 }
 /* Telefonda alt bölme: gün çipleri ve fotoğraf seç */
+/* bölme her açılışta: gezi başlamadıysa ilk gün, sürüyorsa bugün, bittiyse son gün */
+function defaultDay(t){
+  var today = A.todayISO();
+  if(!t.days.length) return "pre";
+  if(today < t.days[0].date) return t.days[0].id;
+  return A.todayDayId(t) || t.days[t.days.length - 1].id;
+}
 function PhotoPeek(p){
-  var t = p.t, v = A.view(), ref = React.useRef(null), up = React.useState(false);
-  if(!v.galDay || !(v.galDay === "pre" || A.dayById(t, v.galDay))) v.galDay = A.todayDayId(t) || (t.days[0] && t.days[0].id) || "pre";
+  var t = p.t, ref = React.useRef(null), up = React.useState(false);
+  if(!S.galDay || !(S.galDay === "pre" || A.dayById(t, S.galDay))) S.galDay = defaultDay(t);
+  var v = {get galDay(){ return S.galDay; }};
   function pick(e){
     var files = Array.prototype.slice.call(e.target.files || []); e.target.value = ""; if(!files.length) return;
     up[1](true);
     A.uploadPhotos(t, files, {day: v.galDay}).then(function(ps){ up[1](false); if(ps.length){ A.commit(); A.flash(ps.length + " fotoğraf " + A.dayLabel(t, v.galDay) + " gününe eklendi."); } });
   }
   return h(F, null,
-    h(A.DayWheel, {t: t, value: v.galDay, onChange: function(x){ v.galDay = x; A.saveViews(); A.render(); }}),
+    h(A.DayWheel, {t: t, value: S.galDay, onChange: function(x){ S.galDay = x; A.render(); }}),
     h("div", {style: {marginTop: "var(--space-3)"}}, h(T.Button, {variant: "primary", full: true, icon: up[0] ? "refresh" : "image-add", onClick: function(){ if(!up[0] && ref.current) ref.current.click(); }}, up[0] ? "Yükleniyor…" : "Fotoğraf seç")),
     h("input", {ref: ref, type: "file", accept: "image/*", multiple: true, className: "tp-sr", "aria-label": "Fotoğraf seç", onChange: pick}),
     p.tip ? h("p", {className: "app-peekline"}, "Seçtiğin güne eklenir. Harcamaya bağlamak için Harcamalar'dan ekle.") : null);
@@ -407,6 +415,7 @@ function Galeri(p){
           onClick: function(){ v.photo = ph.id; A.saveViews(); if(A.isPhone){ S.dialog = {kind: "photo"}; } A.render(); }});
       })));
   }) : h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "celebrate", size: A.isPhone ? "sm" : undefined, title: "Galeri boş", text: A.isPhone ? "Sağ alttaki Fotoğraf düğmesiyle ekle. Harcamaya eklediğin fotoğraflar da burada dizilir." : "Harcamaya, bilete ya da doğrudan buraya eklediğin fotoğraflar güne göre dizilir."}));
+  if(A.isPhone && !(S.panes && S.panes.galeri && S.panes.galeri !== "c")) S.galDay = null;
   return h(A.Layout, {head: head, aside: h(GaleriAside, {t: t, v: v}), asideLabel: "Seçili fotoğraf", phoneAside: false,
     pane: A.isPhone ? {id: "galeri", label: "Fotoğraf ekle", fab: {icon: "image-add", label: "Fotoğraf"}, peek: h(PhotoPeek, {t: t}), full: h(PhotoPeek, {t: t, tip: true})} : null}, body);
 }
