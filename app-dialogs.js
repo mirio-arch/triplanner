@@ -225,10 +225,25 @@ function applyDates(t, start, end){
   t.expenses.forEach(function(e){ if(e.day !== "pre" && dates.indexOf(e.day.slice(1, 5) + "-" + e.day.slice(5, 7) + "-" + e.day.slice(7)) < 0) e.day = "pre"; });
   t.start = start; t.end = end;
 }
+/* Gezi simgesi: canlı önizleme; harfler ya da gidilen ülkelerden birinin bayrağı (aynı ülkeye iki gezi harfle ayrılır) */
+function TripIconField(p){
+  var v = p.v, set = p.set, flags = v.countries.filter(function(c){ return A.flag(c); });
+  var flag = v.flag && flags.indexOf(v.flag) > -1 ? v.flag : "", letters = v.short.trim() || D.initials(v.name || "") || "?";
+  return h("div", {className: "tp-field"},
+    h("span", {className: "label tp-field__label", id: "ti-l"}, "Gezi simgesi"),
+    h("div", {className: "app-tripicon"},
+      h("span", {className: "tp-trip__btn app-tripmark app-tripicon__pv" + (flag ? " is-flag" : ""), "aria-hidden": "true", style: {background: "var(--category-" + v.color + "-strong)"}}, flag ? A.flag(flag) : letters),
+      flags.length ? h("div", {className: "app-curseg app-curseg--wrap", role: "radiogroup", "aria-labelledby": "ti-l"},
+        [""].concat(flags).map(function(c){
+          return h("button", {key: c || "abc", type: "button", role: "radio", "aria-checked": flag === c ? "true" : "false", "aria-label": c ? D.COUNTRY[c][1] + " bayrağı" : "Harfler",
+            className: c ? "is-flag" : "", onClick: function(){ set("flag", c); }}, c ? A.flag(c) : "Harfler");
+        })) : h("span", {className: "body-sm app-muted"}, "Nereye'den ülke seçersen bayrak da kullanabilirsin.")),
+    flag ? null : h("input", {className: "tp-input body app-tripicon__in", value: v.short, maxLength: 3, placeholder: "Harfler · en fazla 3 (" + letters + ")", "aria-label": "Simgedeki harfler", onChange: function(e){ set("short", e.target.value); }}));
+}
 function TripDialog(p){
   var t = p.kind === "trip-settings" ? A.trip() : null;
   var pre = !t && S.dialog && S.dialog.preset || {};
-  var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || "", countries: (t.countries || []).slice(), dest: (t.dest || []).slice()} : {name: pre.name || "", start: pre.start || "", end: pre.end || "", short: "", color: A.COLORS[S.app.order.length % 6], currency: pre.currency || "", countries: (pre.countries || []).slice(), dest: (pre.dest || (pre.countries || []).map(function(c){ return {c: c}; })).slice()});
+  var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || "", countries: (t.countries || []).slice(), dest: (t.dest || []).slice(), flag: t.flag || ""} : {name: pre.name || "", start: pre.start || "", end: pre.end || "", short: "", color: A.COLORS[S.app.order.length % 6], currency: pre.currency || "", countries: (pre.countries || []).slice(), dest: (pre.dest || (pre.countries || []).map(function(c){ return {c: c}; })).slice(), flag: ""});
   var v = f[0], set = f[1], err = React.useState(""), del = React.useState(false), reset = React.useState(false);
   var leave = !!(t && window.TPB && !window.TPB.isOwner(t.id));
   function save(e){
@@ -236,9 +251,9 @@ function TripDialog(p){
     if(!v.name.trim()){ err[1]("Gezinin adını yaz."); return; }
     var bad = validRange(v.start, v.end); if(bad){ err[1](bad); return; }
     var ci = A.COLORS.indexOf(v.color);
-    if(t){ t.name = D.str(v.name.trim(), 60); t.short = D.str(v.short.trim(), 3) || D.initials(t.name); t.color = ci; t.currency = v.currency; t.countries = v.countries.slice(); t.dest = v.dest.slice(); applyDates(t, v.start, v.end); A.commit(t.id); close(); A.flash("Gezi kaydedildi."); }
+    if(t){ t.name = D.str(v.name.trim(), 60); t.short = D.str(v.short.trim(), 3) || D.initials(t.name); t.color = ci; t.currency = v.currency; t.countries = v.countries.slice(); t.dest = v.dest.slice(); t.flag = v.flag && v.countries.indexOf(v.flag) > -1 ? v.flag : ""; applyDates(t, v.start, v.end); A.commit(t.id); close(); A.flash("Gezi kaydedildi."); }
     else {
-      var n = D.newTrip(D.str(v.name.trim(), 60), D.str(v.short.trim(), 3), v.start, v.end, ci); n.currency = v.currency; n.countries = v.countries.slice(); n.dest = v.dest.slice();
+      var n = D.newTrip(D.str(v.name.trim(), 60), D.str(v.short.trim(), 3), v.start, v.end, ci); n.currency = v.currency; n.countries = v.countries.slice(); n.dest = v.dest.slice(); n.flag = v.flag && v.countries.indexOf(v.flag) > -1 ? v.flag : "";
       S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); close(); A.go("hazirlik", "", n.id);
     }
   }
@@ -253,8 +268,8 @@ function TripDialog(p){
         if(!v.currency && first) o.currency = D.COUNTRY[first][3];
         if(v.currency && !list.some(function(c){ return D.COUNTRY[c] && D.COUNTRY[c][3] === v.currency; }) && v.countries.some(function(c){ return D.COUNTRY[c] && D.COUNTRY[c][3] === v.currency; })) o.currency = first ? D.COUNTRY[first][3] : "";
         o.dest = dest; set(o); }}),
-      h("div", {className: "app-two"}, h(T.TextField, {label: "Simge yazısı", value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", onChange: function(x){ set("short", x); }}),
-        h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.curList({currency: v.currency, countries: v.countries}).filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
+      h(TripIconField, {v: v, set: set}),
+      h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.curList({currency: v.currency, countries: v.countries}).filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }}),
       h(T.SwatchPicker, {label: "Renk", value: v.color, onChange: function(x){ set("color", x); }}),
       err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, h(T.Icon, {name: "warning", size: 16}), err[0]) : null,
       t ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Tarihleri kısaltırsan dışarıda kalan günlerin planları kenar listesine taşınır.") : null,
@@ -297,7 +312,7 @@ function TripMenu(){
       S.app.order.map(function(id){
       var t = S.app.trips[id]; if(!t) return null;
       return h("div", {key: id, className: "app-triprow"}, h("a", {href: A.href(S.page, "", id), className: A.cx("app-tile app-tile--btn", id === S.cur && "is-current"), onClick: function(){ S.dialog = null; }},
-        h(T.TripAvatar, {initials: t.short, label: t.name, color: A.COLORS[t.color % 6], active: id === S.cur}),
+        h(T.TripAvatar, {initials: A.markOf(t), label: t.name, color: A.COLORS[t.color % 6], active: id === S.cur}),
         h("span", {style:{flex:1, minWidth:0}}, h("span", {className: "body-strong", style:{display:"block"}}, t.name), h("span", {className: "body-sm app-muted"}, D.fmtRange(t.start, t.end)))),
         h(T.IconButton, {icon: "settings", label: "Gezi ayarları: " + t.name, size: "lg", onClick: function(){
           if(id !== S.cur){ try{ history.replaceState(null, "", A.href(S.page, "", id)); }catch(e){} A.route(); }

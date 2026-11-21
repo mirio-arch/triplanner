@@ -893,3 +893,13 @@ a{color:var(--foreground-secondary)}
 .app-date .tp-trigger>.tp-icon:first-child{color:var(--foreground-weak)}
 .app-date.is-open .app-select__chev{transform:rotate(180deg)}
 .app-homewrap .app-tphone__list{padding-bottom:84px}
+/* Pencereler ve bölmeler yalnızca dikey kayar (iPhone'da yarım piksellik taşma yana kaydırmasın) */
+.tp-sheet__body,.app-pane__scroll,.app-pane__peek,.tp-dialog{overflow-x:hidden;overscroll-behavior-x:none}
+.tp-sheet__body,.app-pane__scroll{touch-action:pan-y}
+.tp-sheet{max-width:100vw;overflow-x:hidden}
+/* Gezi simgesi alanı */
+.app-tripicon{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3)}
+.app-tripicon__pv{flex:none;width:48px;height:48px;font-size:17px;pointer-events:none}
+.app-tripmark.is-flag{font-size:22px;line-height:1}
+.app-tripicon .app-curseg button.is-flag{font-size:20px;min-width:46px}
+.app-tripicon__in{margin-top:var(--space-2)}

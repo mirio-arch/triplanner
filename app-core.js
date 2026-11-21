@@ -284,7 +284,7 @@ function Rail(){
     S.app.order.map(function(id){
       var t = S.app.trips[id]; if(!t) return null;
       var pg = A.offTrip() ? "tarihler" : S.page;
-      return h(T.TripAvatar, {key: id, initials: t.short, label: t.name, color: COLORS[t.color % 6], active: !A.offTrip() && id === S.cur, href: A.href(pg, "", id)});
+      return h(T.TripAvatar, {key: id, initials: A.markOf(t), label: t.name, color: COLORS[t.color % 6], active: !A.offTrip() && id === S.cur, href: A.href(pg, "", id)});
     }),
     h("span", {style: {flex: 1}}),
     h(T.IconButton, {icon: "plus", label: "Yeni gezi", variant: "rail", size: "lg", round: true, onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}),
@@ -707,7 +707,9 @@ A.markDirty = function(){ S.dirty = true; };
 
 /* Gezi simgesi, tıklanmayan hali (başka bir düğmenin içinde kullanmak için) */
 A.shortRange = function(t){ var a = D.fmtDay(t.start), b = D.fmtDay(t.end); return a.short + " – " + b.short; };
-A.TripMark = function(p){ var t = p.t; return h("span", {className: "tp-trip__btn app-tripmark", "aria-hidden": "true", style: {background: "var(--category-" + COLORS[t.color % 6] + "-strong)"}}, t.short); };
+/* gezi simgesinde görünen: seçildiyse bayrak, değilse harfler */
+A.markOf = function(t){ var f = t && t.flag && A.flag(t.flag); return f || (t ? t.short : ""); };
+A.TripMark = function(p){ var t = p.t; return h("span", {className: "tp-trip__btn app-tripmark" + (t.flag ? " is-flag" : ""), "aria-hidden": "true", style: {background: "var(--category-" + COLORS[t.color % 6] + "-strong)"}}, A.markOf(t)); };
 A.AvatarButton = function(p){
   var me = A.me(), sz = p.size || 40, err = React.useState(false);
   return h("button", {type: "button", className: "app-avatar", style: {width: sz, height: sz}, "aria-label": "Profil" + (me.name ? ": " + me.name : ""), title: "Profil",

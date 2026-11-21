@@ -392,7 +392,7 @@ function ProfilePage(){
 A.ProfilePage = ProfilePage;
 A.homeSubmenu = function(){
   var items = S.app.order.map(function(id){ var t = S.app.trips[id]; if(!t) return null;
-    return h(T.NavItem, {key: id, mark: t.short, label: t.name, sub: tripState(t).text, href: A.href("tarihler", "", id)}); }).filter(Boolean);
+    return h(T.NavItem, {key: id, mark: A.markOf(t), label: t.name, sub: tripState(t).text, href: A.href("tarihler", "", id)}); }).filter(Boolean);
   return h(F, null,
     h("div", {className: "app-side__nav"},
       h(T.NavItem, {icon: "home", label: "Ana sayfa", href: "#home", active: S.page === "home"}),
