@@ -1,5 +1,5 @@
 /* Triplanner çevrimdışı katmanı: uygulama dosyaları önce ağdan, olmazsa önbellekten gelir. */
-var VERSION = "c0fdf25b87";
+var VERSION = "c46f67784c";
 var SHELL = ["./","app-core.js","app-dialogs.js","app-harcama.js","app-hazirlik.js","app-home.js","app-tarihler.js","app-ulasim.js","app.css","backend.js","bundle.css","bundle.js","config.js","data.js","gizlilik.html","icons/apple-touch-icon.png","icons/icon-192.png","index.html","kosullar.html","manifest.webmanifest","tokens.css","vendor/Sortable.min.js","vendor/react-dom.production.min.js","vendor/react.production.min.js","vendor/supabase.js","web.css"];
 var CACHE = "tp-shell-" + VERSION, MEDIA = "tp-media-v1", FONTS = "tp-fonts-v1";
 
@@ -14,7 +14,8 @@ self.addEventListener("activate", function(e){
 function timeout(ms){ return new Promise(function(_, rej){ setTimeout(function(){ rej(new Error("timeout")); }, ms); }); }
 function networkFirst(req){
   return caches.open(CACHE).then(function(c){
-    var net = fetch(req).then(function(res){ if(res && res.ok) c.put(req, res.clone()); return res; });
+    /* tarayıcı önbelleğini atla: GitHub Pages dosyaları 10 dakika önbellekte tutuyor, güncelleme gecikmesin */
+    var net = fetch(req, {cache: "no-cache"}).then(function(res){ if(res && res.ok) c.put(req, res.clone()); return res; });
     return Promise.race([net, timeout(4000)]).catch(function(){
       return c.match(req, {ignoreSearch: true}).then(function(hit){ return hit || net; });
     });

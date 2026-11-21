@@ -216,18 +216,29 @@ function fmtNum(n, dec){ var v = Math.round((Number(n) || 0) * (dec ? 100 : 1)) 
 function fmtMoney(n, cur){ return fmtNum(n, n % 1 !== 0) + " " + (cur || "TL"); }
 function toTL(t, amount, cur){ if(!cur || cur === "TL") return amount; var r = t.rate && t.rate[cur]; return r ? amount * r : null; }
 
+/* kim ekledi: kullanıcı kimliği ve o anki görünen adı */
+function byOf(r, o){
+  if(r && typeof r.by === "string" && /^[\w-]{1,64}$/.test(r.by)) o.by = r.by;
+  if(r && r.byName) o.byName = str(r.byName, 40);
+  return o;
+}
+var ACT_KINDS = {expense:1, plan:1, transit:1, check:1, done:1, photo:1, idea:1};
+function normActivity(a){
+  if(!a || typeof a !== "object" || typeof a.id !== "string" || !ACT_KINDS[a.kind]) return null;
+  return byOf(a, {id:a.id.slice(0,40), at:str(a.at,30), kind:a.kind, ref:str(a.ref,40), text:str(a.text,160)});
+}
 function normExpense(e){
   if(!e || typeof e !== "object" || typeof e.id !== "string") return null;
   var amount = num(e.amount); if(!(amount > 0)) return null;
-  return {id:e.id.slice(0,40), title:str(e.title,120), cat: EXP_CATS[e.cat] ? e.cat : "sights", amount:Math.round(amount*100)/100,
+  return byOf(e, {id:e.id.slice(0,40), title:str(e.title,120), cat: EXP_CATS[e.cat] ? e.cat : "sights", amount:Math.round(amount*100)/100,
     currency: CURRENCIES.indexOf(e.currency) > -1 ? e.currency : "TL", day: (e.day === "pre" || /^d\d{8}$/.test(e.day || "")) ? e.day : "pre",
     time:str(e.time,10), source: ["manual","transport","plan","check"].indexOf(e.source) > -1 ? e.source : "manual", ref:str(e.ref,40),
     photos:(Array.isArray(e.photos) ? e.photos : []).filter(function(p){ return typeof p === "string" && /^[\w-]{1,80}$/.test(p); }).slice(0,8),
-    at: str(e.at, 30)};
+    at: str(e.at, 30)});
 }
 function normPhoto(p){
   if(!p || typeof p !== "object" || typeof p.id !== "string" || typeof p.asset !== "string" || !/^[\w-]{1,80}$/.test(p.asset)) return null;
-  return {id:p.id.slice(0,40), asset:p.asset, day:(p.day === "pre" || /^d\d{8}$/.test(p.day || "")) ? p.day : "pre", ref:str(p.ref,40), refKind: ["expense","item"].indexOf(p.refKind) > -1 ? p.refKind : "", note:str(p.note,300), at:str(p.at,30)};
+  return byOf(p, {id:p.id.slice(0,40), asset:p.asset, day:(p.day === "pre" || /^d\d{8}$/.test(p.day || "")) ? p.day : "pre", ref:str(p.ref,40), refKind: ["expense","item"].indexOf(p.refKind) > -1 ? p.refKind : "", note:str(p.note,300), at:str(p.at,30)});
 }
 function photoUrl(asset){ return window.TPB ? window.TPB.photoUrl(asset) : "/_blob/" + asset; }
 
@@ -240,7 +251,7 @@ function normalizeTrip(raw, id){
     var dates = datesBetween(start, end); if(!dates.length) return null;
     var t = {id:id, name:str(raw.name,60) || "Adsız gezi", short:str(raw.short,3), color:(raw.color|0) % 6, start:start, end:end,
       geo: raw.geo === "georgia" ? "georgia" : "", guide:safeLink(raw.guide), days:[], items:{}, removed:[], ideas:[], checklist:[], keyinfo:[],
-      expenses:[], photos:[], rate:{}, budget:0, currency:""};
+      expenses:[], photos:[], rate:{}, budget:0, currency:"", activity:[]};
     if(!t.short) t.short = initials(t.name);
     var items = raw.items && typeof raw.items === "object" ? raw.items : {};
     Object.keys(items).slice(0,1500).forEach(function(k){
@@ -260,6 +271,7 @@ function normalizeTrip(raw, id){
       if(r.fromCode) it.fromCode = str(r.fromCode,5).toUpperCase();
       if(r.toCode) it.toCode = str(r.toCode,5).toUpperCase();
       if(typeof r.flex === "boolean") it.flex = r.flex;
+      byOf(r, it); if(r.at) it.at = str(r.at, 30);
       if(r.ticket && typeof r.ticket === "object" && /^[\w-]{1,80}$/.test(r.ticket.asset || "")) it.ticket = {asset: r.ticket.asset, name: str(r.ticket.name,80) || "Bilet", type: r.ticket.type === "pdf" ? "pdf" : "image"};
       t.items[k] = it;
     });
@@ -275,7 +287,9 @@ function normalizeTrip(raw, id){
     var gids = GROUPS.map(function(g){ return g[0]; });
     (Array.isArray(raw.checklist) ? raw.checklist : []).slice(0,300).forEach(function(c){
       if(!c || typeof c !== "object" || typeof c.id !== "string") return;
-      t.checklist.push({id:c.id.slice(0,40), group: gids.indexOf(c.group) > -1 ? c.group : "canta", title:str(c.title,160), note:str(c.note,600), link:safeLink(c.link), done:!!c.done, due:str(c.due,20)});
+      var ck = byOf(c, {id:c.id.slice(0,40), group: gids.indexOf(c.group) > -1 ? c.group : "canta", title:str(c.title,160), note:str(c.note,600), link:safeLink(c.link), done:!!c.done, due:str(c.due,20)});
+      if(c.done && typeof c.doneBy === "string" && /^[\w-]{1,64}$/.test(c.doneBy)){ ck.doneBy = c.doneBy; ck.doneByName = str(c.doneByName, 40); }
+      t.checklist.push(ck);
     });
     (Array.isArray(raw.keyinfo) ? raw.keyinfo : []).slice(0,12).forEach(function(k){
       if(!k || typeof k !== "object" || typeof k.id !== "string") return;
@@ -283,6 +297,7 @@ function normalizeTrip(raw, id){
     });
     (Array.isArray(raw.expenses) ? raw.expenses : []).slice(0,2000).forEach(function(e){ var x = normExpense(e); if(x) t.expenses.push(x); });
     (Array.isArray(raw.photos) ? raw.photos : []).slice(0,2000).forEach(function(p){ var x = normPhoto(p); if(x) t.photos.push(x); });
+    (Array.isArray(raw.activity) ? raw.activity : []).slice(0,300).forEach(function(a){ var x = normActivity(a); if(x) t.activity.push(x); });
     if(raw.rate && typeof raw.rate === "object") CURRENCIES.forEach(function(c){ var r = num(raw.rate[c]); if(c !== "TL" && r > 0) t.rate[c] = Math.round(r*10000)/10000; });
     var b = num(raw.budget); if(b > 0) t.budget = Math.round(b);
     t.currency = CURRENCIES.indexOf(raw.currency) > -1 && raw.currency !== "TL" ? raw.currency : (t.geo === "georgia" ? "GEL" : "");
