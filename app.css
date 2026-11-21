@@ -118,3 +118,82 @@ a{color:var(--foreground-secondary)}
 .app-phonecard--flush{border-bottom-left-radius:0;border-bottom-right-radius:0}
 @media (min-width:900px){.app-start__choices{grid-template-columns:1fr 1fr}.app-start__choice{flex-direction:column;align-items:flex-start;text-align:left;gap:var(--space-3);padding:var(--space-6)}.app-start__chev{display:none}.app-start{padding:var(--space-8)}}
 @media (prefers-reduced-motion:reduce){.app-start__choice{transition:none}.app-start__choice:active{transform:none}}
+
+/* Ulaşım: bilet kartları */
+.app-tlist{display:flex;flex-direction:column;gap:var(--space-3);max-width:760px}
+.app-tlist__sec{margin:var(--space-2) var(--space-1) 0}
+.app-tlist__sec:first-child{margin-top:0}
+.app-ticket{position:relative;display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-4) var(--space-4) var(--space-3);border-radius:var(--radius-tile);background:var(--background-raised);border:1px solid var(--border-weak);box-shadow:var(--shadow-card,none);cursor:pointer;outline:none;
+  transition:border-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard),opacity var(--duration-base) var(--ease-standard),transform var(--duration-fast) var(--ease-standard)}
+.app-ticket:hover{border-color:var(--border)}
+.app-ticket:active{transform:scale(.99)}
+.app-ticket:focus-visible,.app-flexrow:focus-visible{box-shadow:0 0 0 2px var(--border-focus)}
+.app-ticket.is-next{border-color:var(--border-primary)}
+.app-ticket.is-selected{border-color:var(--border-primary);box-shadow:0 0 0 2px var(--border-primary)}
+.app-ticket.is-past,.app-flexrow.is-past{opacity:.55}
+.app-ticket.is-past.is-selected,.app-flexrow.is-past.is-selected{opacity:.85}
+.app-ticket__top{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+.app-ticket__route{display:grid;grid-template-columns:minmax(0,1fr) minmax(64px,auto) minmax(0,1fr);align-items:start;gap:var(--space-2)}
+.app-ticket__route.is-plain{display:flex;align-items:center;gap:var(--space-3)}
+.app-ticket__end{display:flex;flex-direction:column;min-width:0}
+.app-ticket__end.is-right{align-items:flex-end;text-align:right}
+.app-ticket__big{font-size:22px;line-height:1.15;font-weight:600;color:var(--foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.app-ticket__big.is-code{font-size:34px;font-weight:500;letter-spacing:.02em;line-height:1.05}
+.app-ticket__title{display:block;overflow:hidden;text-overflow:ellipsis}
+.app-ticket__time{font-size:15px;font-weight:600;color:var(--foreground);margin-top:var(--space-1);font-variant-numeric:tabular-nums}
+.app-ticket__time small{font-size:11px;font-weight:500;color:var(--foreground-weak)}
+.app-ticket__line{position:relative;display:flex;flex-direction:column;align-items:center;gap:var(--space-1);padding-top:8px;min-width:64px}
+.app-ticket__line::before{content:"";position:absolute;top:24px;left:0;right:0;border-top:1.5px dashed var(--border);z-index:0}
+.app-ticket__mode{position:relative;z-index:1;flex:none;width:32px;height:32px;border-radius:var(--radius-full);display:grid;place-items:center;background:var(--background-primary-weak);color:var(--foreground-primary)}
+.app-ticket__dur{white-space:nowrap}
+.app-ticket__cut{position:relative;height:0;margin:0 calc(-1 * var(--space-4));border-top:1.5px dashed var(--border-weak)}
+.app-ticket__cut::before,.app-ticket__cut::after{content:"";position:absolute;top:-9px;width:16px;height:16px;border-radius:50%;background:var(--background);border:1px solid var(--border-weak)}
+.app-ticket__cut::before{left:-9px;clip-path:inset(0 0 0 50%)}.app-ticket__cut::after{right:-9px;clip-path:inset(0 50% 0 0)}
+.app-ticket__foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);min-height:24px}
+.app-ticket__foot:empty{display:none}
+.app-ticket__cut:has(+ .app-ticket__foot:empty){display:none}
+.app-ticket__file{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:var(--radius-chip);border:1px solid var(--border-primary);background:var(--background-primary-weak);color:var(--foreground-primary);font:600 13px var(--font-sans);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-ticket__file.is-ghost{border-color:var(--border-weak);background:none;color:var(--foreground-weak);font-weight:500}
+.app-ticket__acts{padding-top:var(--space-1)}
+.app-flexrow{display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-control);border:1px dashed var(--border);color:var(--foreground-weak);cursor:pointer;outline:none;transition:border-color var(--duration-base) var(--ease-standard),background-color var(--duration-base) var(--ease-standard),opacity var(--duration-base) var(--ease-standard)}
+.app-flexrow:hover{background:var(--background-sunken)}
+.app-flexrow.is-selected{border-style:solid;border-color:var(--border-primary);background:var(--background-raised);color:var(--foreground)}
+.app-flexrow__main{display:flex;align-items:center;gap:var(--space-2);min-width:0}
+.app-flexrow__time{font:600 13px var(--font-sans);font-variant-numeric:tabular-nums;min-width:40px}
+.app-flexrow__more{display:flex;flex-direction:column;gap:var(--space-2)}
+.app-ticketfields{padding:var(--space-3);border-radius:var(--radius-tile);background:var(--background-sunken)}
+.app-ticketfile{align-items:center}
+.app-map__label.is-lit{font-weight:600}
+.app-map__leg{animation:app-leg-in var(--duration-slow) var(--ease-enter) both}
+.app-map__pulse{animation:app-pulse 1.8s var(--ease-ambient,ease-in-out) infinite}
+@keyframes app-leg-in{from{opacity:0}to{opacity:1}}
+@keyframes app-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* Telefonda Ulaşım: üstte liste, altta çekilerek büyüyen harita */
+.app-phonebody:has(> .app-tphone){overflow:hidden;display:flex;flex-direction:column}
+.app-tphone{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+.app-tphone__list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.app-tphone__addbar{flex:none;padding:var(--space-2) var(--space-3) var(--space-3)}
+.app-mappane{position:relative;flex:none;overflow:hidden;background:var(--map-sea);border-top:1px solid var(--border-weak);transition:height var(--duration-slow) var(--ease-standard)}
+.app-mappane.is-dragging{transition:none}
+.app-mappane__edge{position:absolute;z-index:3;top:0;left:0;right:0;height:28px;display:grid;place-items:start center;padding-top:7px;touch-action:none;cursor:ns-resize;outline:none;-webkit-tap-highlight-color:transparent}
+.app-mappane__edge:focus-visible .app-mappane__grip{box-shadow:0 0 0 2px var(--border-focus)}
+.app-mappane__grip{width:36px;height:4px;border-radius:2px;background:var(--foreground-weakest,var(--border-strong));opacity:.8}
+.app-mappane__map{position:absolute;inset:0}
+.app-mappane__map .app-map{width:100%;height:100%}
+.app-mappane__add{position:absolute;z-index:4;top:10px;right:10px;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--radius-full);border:1px solid var(--border-weak);background:var(--background-raised);color:var(--foreground);font:600 13px var(--font-sans);box-shadow:var(--shadow-raised,none);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-mappane__sel{position:absolute;z-index:4;left:10px;right:10px;bottom:10px;display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-tile);border:1px solid var(--border-weak);background:var(--background-raised);color:var(--foreground);font:inherit;box-shadow:var(--shadow-raised,none);cursor:pointer;animation:app-leg-in var(--duration-base) var(--ease-enter) both}
+@media (prefers-reduced-motion:reduce){.app-mappane{transition:none}.app-map__pulse,.app-map__leg{animation:none}.app-ticket{transition:none}}
+
+/* Bilet dosyası görüntüleyici */
+.app-ticketview{display:flex;align-items:center;justify-content:center;padding:var(--space-4)}
+.app-ticketview__box{width:min(720px,100%);height:min(900px,100%);display:flex;flex-direction:column;border-radius:var(--radius-dialog);background:var(--background-raised);overflow:hidden;box-shadow:var(--shadow-overlay)}
+.app-ticketview__head{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-3) var(--space-3) var(--space-4);border-bottom:1px solid var(--border-weak)}
+.app-ticketview__body{flex:1;min-height:0;display:grid;place-items:center;background:#fff;overflow:auto}
+.app-ticketview__img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.app-ticketview__pdf{width:100%;height:100%;border:0;background:#fff}
+@media (max-width:899px){.app-ticketview{padding:0}.app-ticketview__box{width:100%;height:100%;border-radius:0;padding-top:env(safe-area-inset-top,0px)}}
+.app-mapwrap--aside{aspect-ratio:5/4;width:100%}
+.app-mapwrap--aside .app-map{width:100%;height:100%}
+.app-ticket__top>.label:first-child{white-space:nowrap;flex:none}
+.app-ticket__top>.label:last-child{min-width:0;flex:0 1 auto}

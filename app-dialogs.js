@@ -59,13 +59,32 @@ function PlanDialog(p){
 
 /* ---------- Ulaşım: 4 adım ---------- */
 var MODE_ITEMS = [["plane","Uçak","plane"],["bus","Otobüs","bus"],["train","Tren","train"],["car","Araç / transfer","car"],["taxi","Taksi / Bolt","car"],["walk","Yürüyüş","walk"],["border","Sınır geçişi","id"]];
+function TicketFile(p){
+  var ref = React.useRef(null), busy = React.useState(false), err = React.useState("");
+  function pick(e){
+    var f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f) return;
+    busy[1](true); err[1]("");
+    A.uploadTicket(f).then(function(r){ busy[1](false); p.onChange(r); }, function(x){ busy[1](false); err[1](x && x.message ? x.message : "Dosya yüklenemedi."); });
+  }
+  var v = p.value;
+  return h("div", {className: "app-stack", style: {gap: "var(--space-2)"}},
+    h("span", {className: "body-sm-strong"}, "Bilet dosyası"),
+    v ? h("div", {className: "app-tile app-ticketfile"}, h("span", {className: "app-icontile"}, h(T.Icon, {name: v.type === "pdf" ? "paperclip" : "image-add", size: 18})),
+        h("span", {className: "body-sm app-ellipsis", style: {flex: 1, minWidth: 0}}, v.name),
+        h(T.IconButton, {icon: "close", label: "Dosyayı kaldır", size: "sm", onClick: function(){ p.onChange(null); }}))
+      : h(T.Button, {icon: busy[0] ? "refresh" : "paperclip", onClick: function(){ if(!busy[0] && ref.current) ref.current.click(); }}, busy[0] ? "Yükleniyor…" : "Fotoğraf ya da PDF ekle"),
+    h("input", {ref: ref, type: "file", accept: "image/*,application/pdf,.pdf", className: "tp-sr", "aria-label": "Bilet dosyası", onChange: pick}),
+    err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style: {margin: 0}}, err[0]) : h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Biniş kartı ya da e-bilet; kapıda göstermek için tam ekran açılır."));
+}
 function TransitSheet(p){
   var t = A.trip(), it = p.id ? t.items[p.id] : null, where = it ? A.whereIs(t, p.id) : (p.day || A.view().day);
   var parts = it && !it.origin && /→/.test(it.title || "") ? it.title.split("→").map(function(s){ return s.trim(); }) : null;
   var f = useForm(it ? {mode: A.modeOf(it), origin: it.origin || (parts ? parts[0] : ""), dest: it.dest || (parts ? parts.slice(1).join(" → ") : ""), title: it.title, day: A.dayById(t, where) ? where : A.view().day,
       time: it.time, end: it.end || "", duration: it.duration || "", amount: it.priceAmount ? D.fmtNum(it.priceAmount, it.priceAmount % 1 !== 0) : "", currency: it.priceCur || (t.currency || "TL"),
-      addExp: !it.noExpense, note: it.note, link: it.link, critical: it.critical}
-    : {mode: "bus", origin: "", dest: "", title: "", day: where, time: "", end: "", duration: "", amount: "", currency: t.currency || "TL", addExp: true, note: "", link: "", critical: false});
+      addExp: !it.noExpense, note: it.note, link: it.link, critical: it.critical,
+      carrier: it.carrier || "", code: it.code || "", seat: it.seat || "", fromCode: it.fromCode || "", toCode: it.toCode || "", flex: A.isFlexTransit(it), flexTouched: typeof it.flex === "boolean", ticket: it.ticket || null}
+    : {mode: "bus", origin: "", dest: "", title: "", day: where, time: "", end: "", duration: "", amount: "", currency: t.currency || "TL", addExp: true, note: "", link: "", critical: false,
+      carrier: "", code: "", seat: "", fromCode: "", toCode: "", flex: false, flexTouched: false, ticket: null});
   var v = f[0], set = f[1];
   var step = React.useState(p.step || 0), err = React.useState(""), dir = React.useState("forward");
   var title = v.title && it && v.title !== (v.origin + " → " + v.dest) ? v.title : ((v.origin || "?") + " → " + (v.dest || "?"));
@@ -79,6 +98,10 @@ function TransitSheet(p){
     var x = it || {id: D.uid("u"), cat: "ulasim"};
     x.cat = "ulasim"; x.mode = v.mode; x.origin = D.str(v.origin.trim(), 80); x.dest = D.str(v.dest.trim(), 80);
     x.title = D.str(it && v.title && v.title !== (parts ? parts.join(" → ") : "") && v.title !== title && !/→/.test(v.title) ? v.title : title, 160);
+    ["carrier", "code", "seat"].forEach(function(k){ var val = D.str(String(v[k] || "").trim(), k === "carrier" ? 60 : (k === "code" ? 24 : 40)); if(val) x[k] = val; else delete x[k]; });
+    ["fromCode", "toCode"].forEach(function(k){ var val = v.mode === "plane" ? String(v[k] || "").trim().toUpperCase().slice(0, 5) : ""; if(val) x[k] = val; else delete x[k]; });
+    if(v.flexTouched || typeof x.flex === "boolean") x.flex = !!v.flex;
+    if(v.ticket) x.ticket = v.ticket; else delete x.ticket;
     x.time = D.str(v.time.trim(), 40); x.end = D.str(v.end.trim(), 20); x.duration = D.str(v.duration.trim(), 40); x.note = D.str(v.note, 800); x.link = fixLink(v.link); x.critical = !!v.critical;
     var amount = D.parseAmount(v.amount);
     if(amount){ x.priceAmount = amount; x.priceCur = v.currency; } else { delete x.priceAmount; delete x.priceCur; }
@@ -91,17 +114,28 @@ function TransitSheet(p){
   }
   var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; });
   var body;
-  if(step[0] === 0) body = h(T.RadioGroup, {label: "Nasıl gidiyorsun?", variant: "tiles", columns: A.isPhone ? 2 : 3, value: v.mode, onChange: function(x){ set("mode", x); },
+  if(step[0] === 0) body = h(T.RadioGroup, {label: "Nasıl gidiyorsun?", variant: "tiles", columns: A.isPhone ? 2 : 3, value: v.mode, onChange: function(x){ set(v.flexTouched ? {mode: x} : {mode: x, flex: A.isFlexTransit({mode: x})}); },
     items: MODE_ITEMS.map(function(m){ return {label: m[1], value: m[0], icon: m[2]}; })});
   else if(step[0] === 1) body = h("div", {className: "app-stack"},
     h(T.TextField, {label: v.mode === "border" ? "Sınır kapısı" : "Nereden", value: v.origin, placeholder: v.mode === "border" ? "Sarp" : "Batum", onChange: function(x){ set("origin", x); err[1](""); }, autoFocus: true}),
     v.mode === "border" ? null : h(T.TextField, {label: "Nereye", value: v.dest, placeholder: "Kutaisi", onChange: function(x){ set("dest", x); err[1](""); }}),
+    v.mode === "plane" ? h("div", {className: "app-two"},
+      h(T.TextField, {label: "Kalkış kodu", optional: true, value: v.fromCode, placeholder: "IST", maxLength: 5, onChange: function(x){ set("fromCode", x.toUpperCase()); }}),
+      h(T.TextField, {label: "Varış kodu", optional: true, value: v.toCode, placeholder: "RZV", maxLength: 5, onChange: function(x){ set("toCode", x.toUpperCase()); }})) : null,
     err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, err[0]) : null,
     h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
     h("div", {className: "app-two"},
       h(T.TextField, {label: "Kalkış", value: v.time, placeholder: "08:40", onChange: function(x){ set("time", x); }, hint: "Ülke saati farklıysa sonuna TR ya da GE yaz."}),
       h(T.TextField, {label: "Varış", optional: true, value: v.end, placeholder: "11:00", onChange: function(x){ set("end", x); }})));
   else if(step[0] === 2) body = h("div", {className: "app-stack"},
+    h(T.Checkbox, {label: "Saati esnek", description: "Taksi, Bolt gibi belli bir bileti olmayan yolculuk. Ulaşım'da sade bir satır olarak durur.", checked: v.flex, onChange: function(x){ set({flex: x, flexTouched: true}); }}),
+    v.flex ? null : h("div", {className: "app-stack app-ticketfields"},
+      h("h3", {className: "label app-muted", style: {margin: 0}}, "Bilet · hepsi isteğe bağlı"),
+      h("div", {className: "app-two"},
+        h(T.TextField, {label: "Firma", value: v.carrier, placeholder: v.mode === "plane" ? "Pegasus" : (v.mode === "train" ? "GR" : "Metro"), onChange: function(x){ set("carrier", x); }}),
+        h(T.TextField, {label: "Sefer no", value: v.code, placeholder: v.mode === "plane" ? "PC 2846" : "1234", onChange: function(x){ set("code", x); }})),
+      h(T.TextField, {label: "Koltuk, peron ya da kapı", value: v.seat, placeholder: v.mode === "plane" ? "14C" : "Peron 7", onChange: function(x){ set("seat", x); }}),
+      h(TicketFile, {value: v.ticket, onChange: function(x){ set("ticket", x); }})),
     h(T.TextField, {label: "Süre", optional: true, value: v.duration, placeholder: "~2,5 saat", onChange: function(x){ set("duration", x); }}),
     h(T.MoneyField, {label: "Bilet fiyatı", optional: true, value: v.amount, currency: v.currency, currencies: D.CURRENCIES, hint: "Gidiş-dönüş tek biletse toplamı yaz.", autoFocus: p.step === 2,
       onChange: function(o){ set({amount: o.value, currency: o.currency}); }}),
@@ -114,6 +148,9 @@ function TransitSheet(p){
     var rows = [["route", D.MODES[v.mode], title], ["calendar", "Gün ve saat", A.dayLabel(t, v.day, true) + (v.time ? " · " + v.time : "") + (v.end ? " → " + v.end : "")],
       ["cash", "Bilet", amount ? D.fmtMoney(amount, v.currency) + (v.addExp ? " · Harcamalar'a eklenecek" : "") : "Fiyat girilmedi"], ["calendar", "Tarihler", "Günün planında saatine göre yerine oturur"]];
     if(v.duration) rows.splice(2, 0, ["clock", "Süre", v.duration]);
+    var tk = [v.carrier, v.code, v.seat].map(function(x){ return String(x || "").trim(); }).filter(Boolean).join(" · ");
+    if(v.flex) rows.splice(1, 0, ["car", "Saati esnek", "Ulaşım'da sade satır olarak görünür"]);
+    else if(tk || v.ticket) rows.splice(1, 0, ["ticket", "Bilet", (tk || "") + (v.ticket ? (tk ? " · " : "") + "dosya ekli" : "")]);
     body = h("div", {className: "app-stack"}, rows.map(function(r, i){
       return h("div", {key: i, className: "app-tile"}, h("span", {className: "app-icontile"}, h(T.Icon, {name: r[0], size: 18})),
         h("div", {style:{minWidth:0}}, h("div", {className: "body-sm-strong"}, r[1]), h("div", {className: "body-sm app-muted"}, r[2])));
@@ -228,6 +265,7 @@ A.Dialogs = function(){
   }
   if(d.kind === "transit") return h(TransitSheet, {id: d.id, day: d.day, step: d.step, key: (d.id || "new") + (d.step || 0)});
   if(d.kind === "check") return h(CheckDialog, {id: d.id, group: d.group});
+  if(d.kind === "ticket") return h(A.TicketView, {id: d.id});
   if(d.kind === "keyinfo") return h(KeyInfoDialog);
   if(d.kind === "expense") return h(T.Sheet, {title: d.id ? "Harcamayı düzenle" : "Harcama ekle", placement: A.isPhone ? "bottom" : "right", onClose: close, direction: "none"},
     h(A.ExpenseForm, {t: t, id: d.id, preset: d.preset, title: false, onDone: close}));

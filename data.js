@@ -254,6 +254,13 @@ function normalizeTrip(raw, id){
       if(r.end) it.end = str(r.end,20);
       var pa = num(r.priceAmount); if(pa > 0){ it.priceAmount = Math.round(pa*100)/100; it.priceCur = CURRENCIES.indexOf(r.priceCur) > -1 ? r.priceCur : "TL"; }
       if(r.noExpense) it.noExpense = true;
+      if(r.carrier) it.carrier = str(r.carrier,60);
+      if(r.code) it.code = str(r.code,24);
+      if(r.seat) it.seat = str(r.seat,40);
+      if(r.fromCode) it.fromCode = str(r.fromCode,5).toUpperCase();
+      if(r.toCode) it.toCode = str(r.toCode,5).toUpperCase();
+      if(typeof r.flex === "boolean") it.flex = r.flex;
+      if(r.ticket && typeof r.ticket === "object" && /^[\w-]{1,80}$/.test(r.ticket.asset || "")) it.ticket = {asset: r.ticket.asset, name: str(r.ticket.name,80) || "Bilet", type: r.ticket.type === "pdf" ? "pdf" : "image"};
       t.items[k] = it;
     });
     var seen = {};

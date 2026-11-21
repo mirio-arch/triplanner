@@ -55,6 +55,7 @@ function shrink(file){
     }, function(){ res(file); });
   });
 }
+A.shrinkImage = shrink;
 A.uploadPhotos = function(t, files, meta){
   return A.getAssets().then(function(assets){
     if(!assets){ A.flash("Fotoğraf yüklenemiyor: bu görünümde yükleme izni yok."); return []; }

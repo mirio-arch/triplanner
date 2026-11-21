@@ -85,8 +85,10 @@ exception when duplicate_object then null; end $$;
 
 -- 5) Fotoğraf deposu (özel; yalnızca giriş yapanlar okur) ----------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('photos', 'photos', false, 10485760, array['image/jpeg','image/png','image/webp','image/heic','image/heif'])
+values ('photos', 'photos', false, 10485760, array['image/jpeg','image/png','image/webp','image/heic','image/heif','application/pdf'])
 on conflict (id) do nothing;
+-- Bilet dosyaları için PDF de kabul edilsin (eski kurulumları da günceller)
+update storage.buckets set allowed_mime_types = array['image/jpeg','image/png','image/webp','image/heic','image/heif','application/pdf'] where id = 'photos';
 
 drop policy if exists triplanner_photos_read   on storage.objects;
 drop policy if exists triplanner_photos_upload on storage.objects;
