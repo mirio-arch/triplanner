@@ -670,6 +670,62 @@ A.Swipe = function(p){
     h("div", {ref: body, className: "app-swipe__body"}, p.children));
 };
 
+/* Tarih seçici: tasarım sisteminin takvim görünümüyle, pencerenin içinde açılır.
+   range: başlangıç–bitiş aralığı (ilk dokunuş başlangıç, ikincisi bitiş); değilse tek gün. */
+var CAL_WD = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+function isoOf(y, m, d){ return y + "-" + ("0" + (m + 1)).slice(-2) + "-" + ("0" + d).slice(-2); }
+function niceDate(iso, yr){ var d = D.parseISO(iso); return d ? d.getUTCDate() + " " + MONTHS[d.getUTCMonth()].slice(0, 3) + (yr ? " " + d.getUTCFullYear() : "") : ""; }
+var calSeq = 0;
+A.DateField = function(p){
+  var range = !!p.range, a = p.start || p.value || "", b = range ? (p.end || "") : "";
+  var open = React.useState(false), id = React.useRef("cal" + (++calSeq)).current;
+  var base = D.parseISO(a || p.month || A.todayISO()) || new Date();
+  var mo = React.useState({y: base.getUTCFullYear(), m: base.getUTCMonth()});
+  var pend = React.useState(null); /* aralıkta ilk dokunuş: bitiş bekleniyor */
+  var s = pend[0] || a, e = pend[0] ? "" : b;
+  function shift(k){ var m = mo[0].m + k, y = mo[0].y + Math.floor(m / 12); mo[1]({y: y, m: ((m % 12) + 12) % 12}); }
+  function pick(iso){
+    if(p.max && iso > p.max) return;
+    if(!range){ p.onChange(iso); open[1](false); return; }
+    if(!pend[0] || iso < pend[0]){ pend[1](iso); return; }
+    pend[1](null); p.onChange(pend[0], iso);
+  }
+  var y = mo[0].y, m = mo[0].m, first = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), today = A.todayISO();
+  var cells = CAL_WD.map(function(w){ return h("span", {key: "w" + w, className: "tp-cal__wd label", "aria-hidden": "true"}, w); });
+  for(var i = 0; i < first; i++) cells.push(h("span", {key: "b" + i}));
+  for(var d = 1; d <= days; d++){
+    (function(d){
+      var iso = isoOf(y, m, d), st = iso === s, en = e && iso === e, inr = s && e && iso > s && iso < e, off = p.max && iso > p.max;
+      cells.push(h("button", {key: d, type: "button", disabled: off || undefined,
+        className: "tp-cal__day body" + (st ? " is-start" : "") + (en ? " is-end" : "") + (st && (!e || en) ? " is-single" : "") + (inr ? " in-range" : "") + (iso === today ? " is-today" : ""),
+        "aria-label": d + " " + MONTHS[m] + " " + y + (st ? (range ? ", başlangıç" : ", seçili") : "") + (en ? ", bitiş" : ""), "aria-pressed": st || en ? "true" : "false",
+        onClick: function(){ pick(iso); }}, d));
+    })(d);
+  }
+  var nDays = a && b ? Math.round((D.parseISO(b) - D.parseISO(a)) / 864e5) + 1 : 0;
+  var shown = range ? (a && b ? niceDate(a, D.parseISO(a).getUTCFullYear() !== D.parseISO(b).getUTCFullYear()) + " – " + niceDate(b, true) + " · " + nDays + " gün" : "")
+    : (a ? niceDate(a, true) : "");
+  var status = range ? (pend[0] ? "Bitiş gününü seç" : (nDays ? nDays + " gün · " + (nDays - 1) + " gece" : "Başlangıç gününü seç")) : "";
+  return h("div", {className: "tp-field app-date" + (open[0] ? " is-open" : "")},
+    p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label) : null,
+    h("button", {type: "button", className: "tp-input tp-trigger body", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id, "aria-labelledby": (p.label ? id + "-l " : "") + id + "-v",
+        onClick: function(){ if(open[0]) pend[1](null); open[1](!open[0]); }},
+      h(T.Icon, {name: "calendar", size: 18}),
+      h("span", {id: id + "-v", className: "tp-trigger__value" + (shown ? "" : " tp-trigger__placeholder")}, shown || p.placeholder || (range ? "Tarihleri seç" : "Tarih seç")),
+      h(T.Icon, {name: "chevron-down", size: 18, className: "tp-muted app-select__chev"})),
+    h(A.Expand, {open: open[0]},
+      h("div", {id: id, className: "tp-cal app-cal", role: "group", "aria-label": (p.label ? (typeof p.label === "string" ? p.label : "Tarih") : "Tarih") + " seç"},
+        h("div", {className: "tp-cal__nav"},
+          h(T.IconButton, {icon: "chevron-left", label: "Önceki ay", size: "sm", onClick: function(){ shift(-1); }}),
+          h(T.IconButton, {icon: "chevron-right", label: "Sonraki ay", size: "sm", onClick: function(){ shift(1); }})),
+        h("div", {className: "tp-cal__month"}, h("div", {className: "tp-cal__title body-strong", "aria-live": "polite"}, MONTHS[m] + " " + y), h("div", {className: "tp-cal__grid"}, cells)),
+        h("div", {className: "tp-cal__foot"},
+          h("span", {className: "body-sm tp-muted", style: {marginRight: "auto"}}, status),
+          a ? h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ pend[1](null); if(range) p.onChange("", ""); else p.onChange(""); }}, "Temizle") : null,
+          h(T.Button, {variant: "primary", size: "sm", onClick: function(){ pend[1](null); open[1](false); }}, "Tamam")))),
+    p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null);
+};
+
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
 A.markDirty = function(){ S.dirty = true; };
 
