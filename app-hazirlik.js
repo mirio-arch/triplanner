@@ -33,6 +33,8 @@ function CheckForm(p){
 A.CheckForm = CheckForm;
 
 /* Telefonda alt bölmenin küçük hali: tek satırda madde ekle */
+var GICON = {belge: "passport", konaklama: "bed", ulasim: "route", canta: "suitcase"};
+var GSHORT = {belge: "Belgeler", konaklama: "Konaklama", ulasim: "Rezervasyon", canta: "Çanta"};
 function QuickCheck(p){
   var t = p.t, st = React.useState(""), g = React.useState(p.group || S.quickGroup || "belge");
   function add(e){
@@ -45,8 +47,9 @@ function QuickCheck(p){
     h("div", {className: "app-quick"},
       h("input", {className: "app-quick__in", value: st[0], placeholder: "Madde ekle…", "aria-label": "Yeni madde", enterKeyHint: "done", onChange: function(e){ st[1](e.target.value); }}),
       h("button", {type: "submit", className: "app-quick__go", "aria-label": "Ekle", disabled: !st[0].trim()}, h(T.Icon, {name: "plus", size: 20}))),
-    h("div", {className: "app-quickchips", role: "group", "aria-label": "Grup"}, D.GROUPS.map(function(x){
-      return h("button", {key: x[0], type: "button", className: "app-quickchip", "aria-pressed": g[0] === x[0] ? "true" : "false", onClick: function(){ g[1](x[0]); }}, x[1]);
+    h("div", {className: "app-grouptiles", role: "group", "aria-label": "Grup"}, D.GROUPS.map(function(x){
+      return h("button", {key: x[0], type: "button", className: "app-grouptile", "aria-pressed": g[0] === x[0] ? "true" : "false", "aria-label": x[1], onClick: function(){ g[1](x[0]); }},
+        h(T.Icon, {name: GICON[x[0]] || "checklist", size: 22}), h("span", null, GSHORT[x[0]] || x[1]));
     })));
 }
 

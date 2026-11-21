@@ -586,3 +586,12 @@ a{color:var(--foreground-secondary)}
 .app-pane__peek{padding:46px var(--space-3) var(--space-4)}
 .app-pane__scroll{padding-top:48px}
 .app-daywheel1 .app-wheel__row small{font-size:13px}
+
+/* Hazırlık bölmesi: grup seçimi büyük karolar */
+.app-grouptiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-2);margin-top:var(--space-3)}
+.app-grouptile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:68px;padding:var(--space-2) 4px;border-radius:var(--radius-tile);border:1px solid var(--border);background:var(--background);color:var(--foreground-weak);font:600 12px var(--font-sans);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color var(--duration-base) var(--ease-standard),border-color var(--duration-base) var(--ease-standard),color var(--duration-base) var(--ease-standard),transform var(--duration-fast) var(--ease-standard)}
+.app-grouptile span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-grouptile .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:.6}
+.app-grouptile:active{transform:scale(.96)}
+.app-grouptile[aria-pressed="true"]{border-color:var(--border-primary);background:var(--background-primary-weak);color:var(--foreground-primary)}
+.app-grouptile[aria-pressed="true"] .tp-icon{--tp-duo-opacity:1}
