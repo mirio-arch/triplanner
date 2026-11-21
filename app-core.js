@@ -119,6 +119,65 @@ A.go = function(page, sub, tripId){ var target = A.href(page, sub, tripId); if(l
 window.addEventListener("hashchange", route);
 A.route = route;
 
+/* ================= Ortak parçalar: ⋯ menüsü ve açılan alan ================= */
+/* ⋯ menüsü kartın dışında, ekranın üstünde açılır: çentikli ya da taşmayı gizleyen kartlarda kesilmez.
+   Aşağıda yer yoksa düğmenin üstüne açılır. */
+A.MoreMenu = function(p){
+  var open = React.useState(false), trig = React.useRef(null), panel = React.useRef(null);
+  var items = (p.items || []).filter(Boolean), width = parseInt(p.menuWidth || "240", 10);
+  function close(back){ open[1](false); if(back && trig.current) trig.current.focus(); }
+  React.useLayoutEffect(function(){
+    if(!open[0] || !trig.current || !panel.current) return;
+    var r = trig.current.getBoundingClientRect(), el = panel.current, vv = window.visualViewport;
+    var vh = vv ? vv.height + vv.offsetTop : window.innerHeight, vw = window.innerWidth, ph = el.offsetHeight;
+    var left = Math.min(Math.max(8, r.right - width), vw - width - 8), up = r.bottom + 4 + ph > vh - 8 && r.top - 4 - ph >= 8;
+    el.style.left = left + "px"; el.style.top = (up ? r.top - 4 - ph : Math.max(8, Math.min(r.bottom + 4, vh - 8 - ph))) + "px";
+    el.style.transformOrigin = (up ? "bottom " : "top ") + (r.right - left > width / 2 ? "right" : "left");
+    var first = el.querySelector("[role=menuitem]"); if(first) first.focus({preventScroll: true});
+    function down(e){ if(!el.contains(e.target) && !trig.current.contains(e.target)) close(false); }
+    function key(e){ if(e.key === "Escape"){ e.preventDefault(); close(true); } }
+    function away(e){ if(!el.contains(e.target)) close(false); }
+    document.addEventListener("pointerdown", down, true); document.addEventListener("keydown", key);
+    window.addEventListener("scroll", away, true); window.addEventListener("resize", away);
+    return function(){ document.removeEventListener("pointerdown", down, true); document.removeEventListener("keydown", key); window.removeEventListener("scroll", away, true); window.removeEventListener("resize", away); };
+  }, [open[0]]);
+  function nav(e){
+    var list = Array.prototype.slice.call(panel.current.querySelectorAll("[role=menuitem]")), i = list.indexOf(document.activeElement);
+    if(e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); var n = list[(i + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length]; if(n) n.focus(); }
+    else if(e.key === "Home" || e.key === "End"){ e.preventDefault(); (e.key === "Home" ? list[0] : list[list.length - 1]).focus(); }
+    else if(e.key === "Tab") close(false);
+  }
+  var root = document.querySelector(".app-root") || document.body;
+  var menu = open[0] && window.ReactDOM ? ReactDOM.createPortal(
+    h("div", {ref: panel, role: "menu", "aria-label": p.ariaLabel, className: "tp-pop__panel app-menu", style: {minWidth: width + "px"}, onKeyDown: nav,
+        onClick: function(e){ e.stopPropagation(); }, onPointerDown: function(e){ e.stopPropagation(); }},
+      items.map(function(it, i){
+        if(it === "-" || it.divider) return h("div", {key: i, role: "separator", className: "tp-menu__sep"});
+        return h("button", {key: i, type: "button", role: "menuitem", className: "tp-option" + (it.danger ? " tp-option--danger" : ""), onClick: function(){ close(true); if(it.onClick) it.onClick(); }},
+          it.icon ? h(T.Icon, {name: it.icon, size: 18}) : null,
+          h("span", {className: "tp-option__text"}, h("span", {className: "body"}, it.label), it.description ? h("span", {className: "body-sm tp-muted"}, it.description) : null));
+      })), root) : null;
+  return h(F, null,
+    h("button", {ref: trig, type: "button", className: "tp-iconbtn tp-iconbtn--" + (p.variant || "ghost") + (p.size === "sm" ? " tp-iconbtn--sm" : ""),
+      "aria-label": p.ariaLabel || "Seçenekler", title: p.ariaLabel || "Seçenekler", "aria-haspopup": "menu", "aria-expanded": open[0] ? "true" : "false",
+      onClick: function(e){ e.stopPropagation(); open[1](!open[0]); }}, h(T.Icon, {name: "more", size: p.size === "sm" ? 18 : 20})),
+    menu);
+};
+
+/* Seçilen kartın altında açılan alan (düğmeler, ayrıntı): yükseklik yumuşakça açılır, kapalıyken odaklanılamaz */
+A.Expand = function(p){
+  var ref = React.useRef(null), open = !!p.open, settled = React.useState(open);
+  React.useEffect(function(){
+    if(ref.current) ref.current.inert = !open;
+    if(!open){ settled[1](false); return; }
+    var tm = setTimeout(function(){ settled[1](true); }, 300);
+    return function(){ clearTimeout(tm); };
+  }, [open]);
+  return h("div", {ref: ref, className: "app-expand" + (open ? " is-open" : "") + (p.className ? " " + p.className : ""), "aria-hidden": open ? undefined : "true",
+      onClick: p.stop ? function(e){ e.stopPropagation(); } : undefined},
+    h("div", {className: "app-expand__in" + (open && settled[0] ? " is-settled" : "")}, h("div", {className: "app-expand__body"}, p.children)));
+};
+
 /* ================= Klavye ================= */
 /* Telefonda klavye açılınca kabuğu görünen alana sığdır: alt menü gizlenir, alt bölme klavyenin hemen üstünde kalır */
 (function(){

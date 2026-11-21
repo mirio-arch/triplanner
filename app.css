@@ -213,7 +213,7 @@ a{color:var(--foreground-secondary)}
 .app-seg{flex:none;display:flex;gap:2px;padding:2px;border-radius:var(--radius-full);background:var(--background-sunken)}
 .app-seg button{width:38px;height:30px;border:0;border-radius:var(--radius-full);background:none;color:var(--foreground-weak);display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color var(--duration-base) var(--ease-standard),color var(--duration-base) var(--ease-standard)}
 .app-seg button[aria-pressed="true"]{background:var(--background-raised);color:var(--foreground-primary);box-shadow:var(--shadow-card,none)}
-.app-dayline{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-1) var(--space-1) 0}
+.app-dayline{display:flex;align-items:flex-start;gap:var(--space-2);padding:var(--space-4) var(--space-1) var(--space-3)}
 .app-dayline__t{margin:0;overflow-wrap:anywhere}
 .app-dayline__s{margin:2px 0 0;display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--space-2);row-gap:2px}
 .app-dayline__night{display:inline-flex;align-items:center;gap:4px;min-width:0}
@@ -623,49 +623,72 @@ a{color:var(--foreground-secondary)}
 .app-glow::after{content:"";position:absolute;width:200px;height:200px;right:-60px;top:-100px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.35),transparent 70%);filter:blur(6px)}
 @media (prefers-reduced-motion:reduce){.app-glow::before{animation:none}}
 
-/* Telefonda plan kartı: kapalıyken saat + başlık, dokununca açılır */
-.app-pcard{position:relative;isolation:isolate;background:var(--background-raised);border:1px solid var(--border-weak);border-radius:var(--radius-card);box-shadow:var(--shadow-card);color:var(--foreground);
-  transition:border-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard)}
-.app-pcard.is-open{z-index:2;border-color:var(--border);box-shadow:var(--shadow-raised,var(--shadow-card))}
-.app-pcard__row{display:flex;align-items:center;gap:var(--space-1);padding:0 var(--space-2) 0 var(--space-1);min-height:58px}
-.app-pcard .tp-card__handle{flex:none;width:24px}
-.app-pcard__main{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0;border:0;background:none;color:inherit;text-align:left;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none;border-radius:8px}
-.app-pcard__main:focus-visible{box-shadow:0 0 0 2px var(--border-focus)}
+/* Ortak: ekranın üstünde açılan ⋯ menüsü */
+.app-menu{position:fixed;z-index:300;top:0;left:0;right:auto;max-width:calc(100vw - 16px)}
+/* Ortak: seçilen kartın altında yumuşakça açılan alan */
+.app-expand{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--duration-base) var(--ease-standard)}
+.app-expand.is-open{grid-template-rows:1fr}
+.app-expand__in{min-height:0;overflow:hidden}
+.app-expand__in.is-settled{overflow:visible}
+.app-expand__body{opacity:0;transition:opacity var(--duration-base) var(--ease-standard)}
+.app-expand.is-open .app-expand__body{opacity:1}
+.app-ticket>.app-expand{margin-top:calc(-1 * var(--space-3));transition:grid-template-rows var(--duration-base) var(--ease-standard),margin-top var(--duration-base) var(--ease-standard)}
+.app-ticket>.app-expand.is-open{margin-top:0}
+@media (prefers-reduced-motion:reduce){.app-expand,.app-expand__body,.app-ticket>.app-expand{transition:none}}
+
+/* Telefonda plan kartı: bilet kartıyla aynı davranış ve seçili görünüm */
+.app-pcard{position:relative;isolation:isolate;display:flex;flex-direction:column;background:var(--background-raised);border:1px solid var(--border-weak);border-radius:var(--radius-card);box-shadow:var(--shadow-card);color:var(--foreground);
+  cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;transition:border-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard),transform var(--duration-fast) var(--ease-standard)}
+.app-pcard:active{transform:scale(.99)}
+.app-pcard:focus-visible{box-shadow:0 0 0 2px var(--border-focus)}
+.app-pcard.is-open{border-color:var(--border-primary);box-shadow:0 0 0 2px var(--border-primary)}
+.app-pcard__row{display:flex;align-items:flex-start;gap:var(--space-2);padding:17px var(--space-3) 17px var(--space-1);min-height:58px;box-sizing:border-box}
+.app-pcard .tp-card__handle{flex:none;width:24px;margin-top:-5px}
 .app-pcard__time{flex:none;width:44px;color:var(--foreground-weak);font-variant-numeric:tabular-nums}
 .app-pcard.is-critical .app-pcard__time{color:var(--foreground-warning);font-weight:600}
-.app-pcard__text{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.app-pcard__text{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .app-pcard__title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-.app-pcard__when{display:inline-flex;align-items:center;gap:5px;font:600 12px/1.2 var(--font-sans);color:var(--foreground-primary)}
-.app-pcard__when .tp-icon{--tp-duo:currentColor}
-.app-pcard__chev{flex:none;color:var(--foreground-weak);transition:transform var(--duration-base) var(--ease-standard)}
-.app-pcard.is-open .app-pcard__chev{transform:rotate(180deg)}
-.app-pcard__more{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--duration-base) var(--ease-standard)}
-.app-pcard.is-open .app-pcard__more{grid-template-rows:1fr}
-.app-pcard__inner{min-height:0;overflow:hidden}
-.app-pcard__inner.is-settled{overflow:visible}
-.app-pcard__pad{display:flex;flex-direction:column;gap:var(--space-3);padding:0 var(--space-3) var(--space-3) 88px;opacity:0;transition:opacity var(--duration-base) var(--ease-standard)}
-.app-pcard.is-open .app-pcard__pad{opacity:1}
+.app-pcard__pad{display:flex;flex-direction:column;gap:var(--space-3);padding:0 var(--space-3) var(--space-3) 36px}
+.app-pcard__pad .app-ticket__acts{padding-top:0}
 .app-pcard__note{margin:0;color:var(--foreground-weak);overflow-wrap:anywhere}
 .app-pcard__meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);color:var(--foreground-weak)}
 .app-pcard__meta .tp-chip{height:24px;padding:0 var(--space-2) 0 6px}
 .app-pcard__extra{display:inline-flex;align-items:center;gap:var(--space-1)}
 .app-pcard__extra .tp-icon{--tp-duo:currentColor}
 .app-pcard__extra.is-warn{color:var(--foreground-warning)}
-.app-pcard__acts{display:flex;align-items:center;gap:var(--space-2)}
-@media (prefers-reduced-motion:reduce){.app-pcard__more,.app-pcard__pad,.app-pcard__chev{transition:none}}
 
 /* koyu kartın içindeki yazı ve düğmeler */
 .app-pcard.is-next,.app-plans .tp-card.is-selected{color:#fff;border-color:transparent;box-shadow:0 10px 28px rgba(13,20,51,.28)}
 .app-plans .tp-card.is-selected{overflow:hidden}
 .app-pcard.is-next .app-pcard__time,.app-plans .tp-card.is-selected .tp-card__time{color:rgba(255,255,255,.8)}
-.app-pcard.is-next .app-pcard__when{color:var(--camgobegi-300,#5eead4)}
-.app-pcard.is-next .app-pcard__chev,.app-pcard.is-next .tp-card__handle,.app-plans .tp-card.is-selected .tp-card__handle{color:rgba(255,255,255,.6)}
+.app-pcard.is-next .tp-card__handle,.app-plans .tp-card.is-selected .tp-card__handle{color:rgba(255,255,255,.6)}
 .app-pcard.is-next .app-pcard__note,.app-pcard.is-next .app-pcard__meta,.app-plans .tp-card.is-selected .tp-card__note,.app-plans .tp-card.is-selected .tp-card__meta{color:rgba(255,255,255,.75)}
 .app-pcard.is-next .tp-chip,.app-plans .tp-card.is-selected .tp-chip{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.22);--cat-fg:#fff;--cat-bg:rgba(255,255,255,.12)}
 .app-pcard.is-next .tp-chip .tp-icon,.app-plans .tp-card.is-selected .tp-chip .tp-icon{--tp-duo:currentColor;color:#fff}
-.app-pcard.is-next .app-pcard__acts>.tp-btn,.app-pcard.is-next .app-pcard__acts>.tp-pop>.tp-iconbtn,.app-plans .tp-card.is-selected .tp-card__actions .tp-iconbtn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
+.app-pcard.is-next .app-ticket__acts .tp-btn,.app-pcard.is-next .app-ticket__acts .tp-iconbtn,.app-plans .tp-card.is-selected .tp-card__actions .tp-iconbtn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:#fff}
 .app-plans .tp-card.is-selected .tp-link{color:#fff}
 .app-plans .tp-card.is-selected::before{opacity:0}
 .app-pcard.is-next .tp-icon,.app-plans .tp-card.is-selected .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor}
 /* Ana sayfa: selamlama kartın üst kenarına yapışmasın */
 .app-phone .app-home__hello{padding:var(--space-3) var(--space-1) 0}
+.app-pcard.is-next.is-open{box-shadow:0 10px 28px rgba(13,20,51,.28),0 0 0 2px rgba(94,234,212,.75)}
+
+/* Telefonda Plan: saatler kartın solunda, nokta ve çizgiyle akan bir sütunda */
+.app-plans.is-flow{gap:0}
+.app-prow{position:relative;display:grid;grid-template-columns:50px minmax(0,1fr);column-gap:18px;padding-bottom:var(--space-3)}
+.app-prow:last-child{padding-bottom:0}
+.app-prow::before{content:"";position:absolute;left:59px;top:0;bottom:0;width:2px;margin-left:-1px;border-radius:1px;background:var(--border-weak)}
+.app-prow:first-child::before{top:29px}
+.app-prow:last-child::before{bottom:auto;height:29px}
+.app-prow:first-child:last-child::before{display:none}
+.app-prow__time{display:flex;flex-direction:column;align-items:flex-start;padding-top:19px;min-width:0}
+.app-prow__t{font:600 14px/20px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--foreground);white-space:nowrap}
+.app-prow__z{font-size:11px;line-height:14px;color:var(--foreground-weak);overflow-wrap:anywhere}
+.app-prow__dot{position:absolute;left:59px;top:29px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;box-sizing:border-box;background:var(--background);border:2px solid var(--border);
+  transition:border-color var(--duration-base) var(--ease-standard),background-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard)}
+.app-prow.is-open .app-prow__dot{border-color:var(--border-primary)}
+.app-prow.is-critical .app-prow__t{color:var(--foreground-warning)}
+.app-prow.is-next .app-prow__t{color:var(--camgobegi-700,#0f766e)}
+[data-theme="dark"] .app-prow.is-next .app-prow__t{color:var(--camgobegi-300,#5eead4)}
+.app-prow.is-next .app-prow__dot{border-color:var(--camgobegi-300,#5eead4);background:var(--camgobegi-300,#5eead4);box-shadow:0 0 0 4px rgba(94,234,212,.22),0 0 12px rgba(94,234,212,.55)}
+.app-prow.app-ghost .app-prow__dot,.app-prow.app-ghost .app-prow__time{opacity:0}

@@ -67,42 +67,35 @@ function NextTag(p){ return h("div", {className: "app-nexttag"}, h(T.Chip, {tone
 A.Glow = function(){ return h("span", {className: "app-glow", "aria-hidden": "true"}); };
 
 var DS_CAT = {food: ["food", "amber"], history: ["landmark", "wine"], museum: ["museum", "violet"], walk: ["walk", "green"], shopping: ["bag", "teal"], stay: ["bed", null], event: ["confetti", "blue"], transit: ["bus", null]};
-/* Telefonda plan kartı: kapalıyken saat ve başlık; dokununca not, bilgiler ve düğmeler yumuşakça açılır */
+/* Telefonda plan kartı, Ulaşım'daki biletle aynı davranır: kartın tamamına dokununca seçilir,
+   altında ayrıntı, Düzenle ve ⋯ açılır; yeniden dokununca kapanır. */
 function PhonePlanCard(p){
-  var t = p.t, it = p.it, id = it.id, open = !!p.open, nx = p.next;
-  var moreRef = React.useRef(null), settled = React.useState(open);
-  React.useEffect(function(){
-    if(moreRef.current) moreRef.current.inert = !open;
-    if(!open){ settled[1](false); return; }
-    var tm = setTimeout(function(){ settled[1](true); }, 280);
-    return function(){ clearTimeout(tm); };
-  }, [open]);
+  var it = p.it, id = it.id, open = !!p.open, nx = p.next;
   var title = it.title || "Adsız plan", ds = DS_CAT[D.CAT_TO_DS[it.cat]] || ["dot", null];
   var items = [it.link ? {label: "Bilgi", icon: "external", onClick: function(){ window.open(it.link, "_blank", "noopener"); }} : null,
-    it.cat === "ulasim" ? {label: "Ulaşımda gör", icon: "ticket", onClick: function(){ A.go("ulasim"); }} : null,
+    it.cat === "ulasim" ? {label: "Ulaşımdaki karta git", icon: "ticket", onClick: function(){ var v = A.view(); v.transit = id; A.saveViews(); A.go("ulasim"); }} : null,
     A.chatApi && A.chatApi() ? {label: "Sohbette bahset", icon: "share", onClick: function(){ A.openChat({k: "plan", id: id, l: D.str(title, 80)}); }} : null,
-    {label: "Plandan çıkar", icon: "close", description: "Fikirler listesine gider", onClick: p.onRemove}].filter(Boolean);
-  return h("article", {className: "app-pcard" + (open ? " is-open" : "") + (nx ? " is-next" : "") + (it.critical ? " is-critical" : ""), "data-id": id},
+    {label: "Plandan çıkar", icon: "close", description: "Fikirler listesine gider", onClick: p.onRemove}];
+  function stop(e){ e.stopPropagation(); }
+  return h("article", {className: "app-pcard" + (open ? " is-open" : "") + (nx ? " is-next" : "") + (it.critical ? " is-critical" : ""), "data-id": id,
+      role: "button", tabIndex: 0, "aria-expanded": open ? "true" : "false", onClick: p.onToggle,
+      onKeyDown: function(e){ if(e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); p.onToggle(); } }},
     nx ? h(A.Glow) : null,
     h("div", {className: "app-pcard__row"},
-      h("button", {type: "button", className: "tp-card__handle", "aria-label": "Sürükleyerek taşı: " + title}, h(T.Icon, {name: "grip", size: 18})),
-      h("button", {type: "button", className: "app-pcard__main", "aria-expanded": open ? "true" : "false", onClick: p.onToggle},
-        h("span", {className: "app-pcard__time time"}, it.time || "—"),
-        h("span", {className: "app-pcard__text"},
-          h("span", {className: "app-pcard__title body-strong"}, title),
-          nx ? h("span", {className: "app-pcard__when"}, h(T.Icon, {name: "clock", size: 14}), "Sıradaki · " + whenText(nx)) : null),
-        h(T.Icon, {name: "chevron-down", size: 18, className: "app-pcard__chev"}))),
-    h("div", {className: "app-pcard__more", ref: moreRef, "aria-hidden": open ? undefined : "true"},
-      h("div", {className: "app-pcard__inner" + (open && settled[0] ? " is-settled" : "")},
-        h("div", {className: "app-pcard__pad"},
-          it.note ? h("p", {className: "app-pcard__note body-sm"}, it.note) : null,
-          h("div", {className: "app-pcard__meta body-sm"},
-            h(T.Chip, {icon: ds[0], category: ds[1]}, D.CATS[it.cat]),
-            p.extra ? h("span", {className: "app-pcard__extra"}, h(T.Icon, {name: "cash", size: 16}), p.extra) : null,
-            it.critical ? h("span", {className: "app-pcard__extra is-warn"}, h(T.Icon, {name: "warning", size: 16}), "Kesin saat") : null),
-          h("div", {className: "app-pcard__acts"},
-            h(T.Button, {size: "sm", icon: "edit", onClick: function(){ S.dialog = {kind: "plan", id: id}; A.render(); }}, "Düzenle"),
-            h(T.Dropdown, {icon: "more", ariaLabel: "Diğer seçenekler: " + title, size: "sm", variant: "outline", align: "right", menuWidth: "220px", items: items}))))));
+      h("button", {type: "button", className: "tp-card__handle", "aria-label": "Sürükleyerek taşı: " + title, onClick: stop}, h(T.Icon, {name: "grip", size: 18})),
+      h("span", {className: "app-pcard__text"},
+        h("span", {className: "app-pcard__title body-strong"}, title),
+        nx ? h("span", {className: "app-pcard__when"}, h(T.Chip, {tone: "primary", icon: "clock"}, "Sıradaki · " + whenText(nx))) : null)),
+    h(A.Expand, {open: open},
+      h("div", {className: "app-pcard__pad"},
+        it.note ? h("p", {className: "app-pcard__note body-sm"}, it.note) : null,
+        h("div", {className: "app-pcard__meta body-sm"},
+          h(T.Chip, {icon: ds[0], category: ds[1]}, D.CATS[it.cat]),
+          p.extra ? h("span", {className: "app-pcard__extra"}, h(T.Icon, {name: "cash", size: 16}), p.extra) : null,
+          it.critical ? h("span", {className: "app-pcard__extra is-warn"}, h(T.Icon, {name: "warning", size: 16}), "Kesin saat") : null),
+        h("div", {className: "app-ticket__acts", onClick: stop},
+          h(T.Button, {size: "sm", icon: "edit", onClick: function(){ S.dialog = {kind: "plan", id: id}; A.render(); }}, "Düzenle"),
+          h(A.MoreMenu, {ariaLabel: "Diğer seçenekler: " + title, size: "sm", variant: "outline", menuWidth: "240px", items: items})))));
 }
 
 function PlanList(p){
@@ -112,14 +105,23 @@ function PlanList(p){
     var moved = ids.splice(from, 1)[0]; ids.splice(to, 0, moved); day.items = ids; A.commit();
   }, [day.id, day.items.length]);
   var ids = day.items.filter(function(id){ return t.items[id]; }), nx = A.nextPlan(t);
-  return h("div", {className: "app-plans", ref: ref}, ids.map(function(id){
+  return h("div", {className: "app-plans" + (A.isPhone ? " is-flow" : ""), ref: ref}, ids.map(function(id){
     var it = t.items[id], dsCat = D.CAT_TO_DS[it.cat];
     var extra = it.cat === "ulasim" && it.priceAmount ? A.money(t, it.priceAmount, it.priceCur) : null;
     var exp = t.expenses.filter(function(e){ return e.ref === id && e.source === "plan"; });
     if(!extra && exp.length) extra = exp.map(function(e){ return D.fmtMoney(e.amount, e.currency); }).join(" + ");
-    if(A.isPhone) return h(PhonePlanCard, {key: id, t: t, it: it, extra: extra, next: nx && nx.id === id ? nx : null, open: S.planOpen === id,
-      onToggle: function(){ S.planOpen = S.planOpen === id ? null : id; A.render(); },
-      onRemove: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }});
+    if(A.isPhone){
+      /* saat kartın dışında, soldaki akışta: saat + dilim, nokta ve çizgi */
+      var isNext = nx && nx.id === id, tm = /^(~?\s*\d{1,2}[:.]\d{2})\s*(.*)$/.exec(it.time || "");
+      return h("div", {key: id, className: "app-prow" + (isNext ? " is-next" : "") + (S.planOpen === id ? " is-open" : "") + (it.critical ? " is-critical" : "")},
+        h("div", {className: "app-prow__time"},
+          h("span", {className: "app-prow__t"}, tm ? tm[1].replace(/\s+/g, "") : (it.time ? "" : "—")),
+          tm && tm[2] ? h("span", {className: "app-prow__z"}, tm[2]) : (!tm && it.time ? h("span", {className: "app-prow__z"}, it.time) : null),
+          h("span", {className: "app-prow__dot", "aria-hidden": "true"})),
+        h(PhonePlanCard, {it: it, extra: extra, next: isNext ? nx : null, open: S.planOpen === id,
+          onToggle: function(){ S.planOpen = S.planOpen === id ? null : id; A.render(); },
+          onRemove: function(){ if(S.planOpen === id) S.planOpen = null; removeToSide(t, id); }}));
+    }
     return h(T.PlanCard, {key: id, dataId: id, time: it.time || "—", title: it.title || "Adsız plan", note: it.note, category: dsCat,
       categoryLabel: D.CATS[it.cat], link: it.link ? "Bilgi" : undefined, href: it.link || undefined, extra: extra || (it.critical ? "Kesin saat" : undefined), extraIcon: extra ? "cash" : (it.critical ? "warning" : undefined),
       critical: it.critical, compact: A.isPhone, selected: nx && nx.id === id,

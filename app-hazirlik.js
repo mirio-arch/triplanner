@@ -74,7 +74,7 @@ function CheckRow(p){
     h("label", {htmlFor: id, className: "tp-checkitem__main"},
       h("span", {className: "tp-check__box", "aria-hidden": "true"}, h(T.Icon, {name: "check", size: 14, strokeWidth: 2.5})),
       h("span", {className: "tp-check__text"}, h("span", {className: "body-strong tp-checkitem__title"}, c.title || "Adsız madde"), note ? h("span", {className: "body-sm tp-muted"}, note) : null)),
-    h("div", {className: "tp-checkitem__actions"}, h(T.Dropdown, {icon: "more", ariaLabel: "Seçenekler: " + (c.title || ""), size: "sm", align: "right", menuWidth: "180px", items: items})));
+    h("div", {className: "tp-checkitem__actions"}, h(A.MoreMenu, {ariaLabel: "Seçenekler: " + (c.title || ""), size: "sm", menuWidth: "240px", items: items})));
 }
 /* Telefonda grup kartı: dokununca grubun sayfası açılır */
 function GroupCard(p){
