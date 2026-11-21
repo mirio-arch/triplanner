@@ -580,3 +580,8 @@ a{color:var(--foreground-secondary)}
 .app-daywheel__month .app-wheel__band{border-radius:0 var(--radius-control) var(--radius-control) 0}
 .app-daywheel__day .app-wheel__row{justify-content:flex-end;padding-right:var(--space-3)}
 .app-daywheel__month .app-wheel__row{justify-content:flex-start;padding-left:var(--space-3)}
+/* Alt bölme: tutamak ve kapat için ayrı bir üst satır; içerik ondan sonra başlar */
+.app-pane__edge{height:40px;padding-top:9px}
+.app-pane__close{top:5px;right:8px}
+.app-pane__peek{padding:46px var(--space-3) var(--space-4)}
+.app-pane__scroll{padding-top:48px}
