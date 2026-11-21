@@ -146,7 +146,7 @@ function TransitSheet(p){
   else {
     var amount = D.parseAmount(v.amount);
     var rows = [["route", D.MODES[v.mode], title], ["calendar", "Gün ve saat", A.dayLabel(t, v.day, true) + (v.time ? " · " + v.time : "") + (v.end ? " → " + v.end : "")],
-      ["cash", "Bilet", amount ? D.fmtMoney(amount, v.currency) + (v.addExp ? " · Harcamalar'a eklenecek" : "") : "Fiyat girilmedi"], ["calendar", "Tarihler", "Günün planında saatine göre yerine oturur"]];
+      ["cash", "Bilet", amount ? D.fmtMoney(amount, v.currency) + (v.addExp ? " · Harcamalar'a eklenecek" : "") : "Fiyat girilmedi"], ["calendar", "Plan", "Günün planında saatine göre yerine oturur"]];
     if(v.duration) rows.splice(2, 0, ["clock", "Süre", v.duration]);
     var tk = [v.carrier, v.code, v.seat].map(function(x){ return String(x || "").trim(); }).filter(Boolean).join(" · ");
     if(v.flex) rows.splice(1, 0, ["car", "Saati esnek", "Ulaşım'da sade satır olarak görünür"]);

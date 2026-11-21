@@ -32,6 +32,7 @@ function durMin(s){
   var v = (m ? parseFloat(m[1]) * 60 : 0) + (n ? +n[1] : 0); return v || 0;
 }
 function clock(s){ var x = hm(s); return x ? String(x[0]).padStart(2, "0") + ":" + String(x[1]).padStart(2, "0") : ""; }
+A.timeAt = at; A.durMin = durMin; A.clockOf = clock;
 function entries(t){
   var out = [], now = Date.now();
   t.days.forEach(function(d, di){

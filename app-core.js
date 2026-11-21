@@ -83,7 +83,7 @@ A.restore = function(json){ var t = D.normalizeTrip(JSON.parse(json), S.cur); if
 /* ================= Yönlendirme ================= */
 var PAGES = A.PAGES = ["hazirlik","tarihler","ulasim","harcamalar","galeri"];
 A.PAGE_INFO = {
-  hazirlik: {label:"Hazırlık", icon:"checklist"}, tarihler: {label:"Tarihler", icon:"calendar"}, ulasim: {label:"Ulaşım", icon:"route"},
+  hazirlik: {label:"Hazırlık", icon:"checklist"}, tarihler: {label:"Plan", icon:"calendar"}, ulasim: {label:"Ulaşım", icon:"route"},
   harcamalar: {label:"Harcamalar", icon:"wallet"}, galeri: {label:"Galeri", icon:"gallery"}
 };
 A.href = function(page, sub, tripId){ return "#" + (tripId || S.cur) + "-" + page + (sub ? "-" + sub : ""); };
@@ -121,6 +121,12 @@ A.Section = function(p){
     p.children);
 };
 A.PageHead = function(p){
+  if(A.isPhone){
+    /* telefonda sayfa adı alt menüde zaten yazıyor: başlık yalnızca ekran okuyucu için */
+    var r = p.phoneRight !== undefined ? p.phoneRight : p.right;
+    return h("header", {className: "app-pagehead app-pagehead--phone" + (r ? "" : " is-bare")},
+      h("h1", {className: "tp-sr"}, p.title), r ? h("div", {className: "app-pagehead__phone"}, r) : null);
+  }
   return h("header", {className: "app-pagehead"},
     h("div", {style:{flex:"1 1 320px", minWidth:0}},
       h("h1", {className: A.isPhone ? "heading" : "page-title", style:{margin:0}}, p.title),
