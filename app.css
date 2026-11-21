@@ -958,3 +958,60 @@ a{color:var(--foreground-secondary)}
 /* ana sayfa: yeni gezi düğmesi ekranın altına yapışmasın */
 .app-homewrap>.app-fab{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
 .app-homewrap .app-tphone__list{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+
+/* ============ Açık tema: koyu "ışıklı" kartların açık sürümü ============ */
+[data-theme="light"]{--lt-ink:#0d1433;--lt-weak:rgba(13,20,51,.62);--lt-line:rgba(13,20,51,.14);
+  --lt-aurora:radial-gradient(120% 90% at 0% 0%,rgba(45,212,191,.30),transparent 58%),radial-gradient(110% 100% at 100% 100%,rgba(139,92,246,.26),transparent 62%),linear-gradient(160deg,#f7f8ff,#eef0fb)}
+/* sıradaki bilet */
+[data-theme="light"] .app-ticket.is-next{color:var(--lt-ink);background:var(--lt-aurora);box-shadow:0 8px 22px rgba(76,29,149,.12),0 0 0 1px rgba(124,58,237,.12) inset}
+[data-theme="light"] .app-ticket.is-next::before{filter:invert(1);opacity:.35}
+[data-theme="light"] .app-ticket.is-next::after{background:radial-gradient(circle,rgba(45,212,191,.4),transparent 70%)}
+[data-theme="light"] .app-ticket.is-next.is-selected{box-shadow:0 8px 22px rgba(76,29,149,.12),0 0 0 2px var(--border-primary)}
+[data-theme="light"] .app-ticket.is-next .label,[data-theme="light"] .app-ticket.is-next .app-muted,[data-theme="light"] .app-ticket.is-next .app-ticket__time small,[data-theme="light"] .app-ticket.is-next .app-ticket__dur{color:var(--lt-weak)}
+[data-theme="light"] .app-ticket.is-next .app-ticket__big,[data-theme="light"] .app-ticket.is-next .app-ticket__time,[data-theme="light"] .app-ticket.is-next .app-ticket__title{color:var(--lt-ink)}
+[data-theme="light"] .app-ticket.is-next .app-ticket__mode{background:#fff;color:var(--foreground-primary);box-shadow:0 0 18px rgba(45,212,191,.5)}
+[data-theme="light"] .app-ticket.is-next .app-ticket__line::before{border-top-color:rgba(13,20,51,.22)}
+[data-theme="light"] .app-ticket.is-next .app-ticket__cut{border-top-color:var(--lt-line)}
+[data-theme="light"] .app-ticket.is-next .tp-chip{background:rgba(255,255,255,.75);color:var(--lt-ink);border-color:var(--lt-line)}
+[data-theme="light"] .app-ticket.is-next .tp-chip .tp-icon{color:var(--foreground-primary)}
+[data-theme="light"] .app-ticket.is-next .app-ticket__file{background:#fff;border-color:rgba(124,58,237,.3);color:var(--foreground-primary)}
+[data-theme="light"] .app-ticket.is-next .app-ticket__acts .tp-btn,[data-theme="light"] .app-ticket.is-next .app-ticket__acts .tp-iconbtn{background:rgba(255,255,255,.8);border-color:var(--lt-line);color:var(--lt-ink)}
+/* sıradaki plan */
+[data-theme="light"] .app-glow{background:var(--lt-aurora)}
+[data-theme="light"] .app-glow::before{filter:invert(1);opacity:.32}
+[data-theme="light"] .app-glow::after{background:radial-gradient(circle,rgba(45,212,191,.38),transparent 70%)}
+[data-theme="light"] .app-pcard.is-next,[data-theme="light"] .app-plans .tp-card.is-selected{color:var(--lt-ink);box-shadow:0 8px 22px rgba(76,29,149,.12),0 0 0 1px rgba(124,58,237,.12) inset}
+[data-theme="light"] .app-pcard.is-next.is-open{box-shadow:0 8px 22px rgba(76,29,149,.12),0 0 0 2px var(--border-primary)}
+[data-theme="light"] .app-pcard.is-next .tp-card__handle,[data-theme="light"] .app-plans .tp-card.is-selected .tp-card__handle{color:rgba(13,20,51,.4)}
+[data-theme="light"] .app-plans .tp-card.is-selected .tp-card__time{color:var(--lt-weak)}
+[data-theme="light"] .app-pcard.is-next .app-pcard__note,[data-theme="light"] .app-pcard.is-next .app-pcard__meta,[data-theme="light"] .app-plans .tp-card.is-selected .tp-card__note,[data-theme="light"] .app-plans .tp-card.is-selected .tp-card__meta{color:var(--lt-weak)}
+[data-theme="light"] .app-pcard.is-next .tp-chip,[data-theme="light"] .app-plans .tp-card.is-selected .tp-chip{background:rgba(255,255,255,.75);color:var(--lt-ink);border-color:var(--lt-line);--cat-fg:var(--lt-ink);--cat-bg:rgba(255,255,255,.75)}
+[data-theme="light"] .app-pcard.is-next .tp-chip .tp-icon,[data-theme="light"] .app-plans .tp-card.is-selected .tp-chip .tp-icon{color:var(--foreground-primary)}
+[data-theme="light"] .app-pcard.is-next .app-ticket__acts .tp-btn,[data-theme="light"] .app-pcard.is-next .app-ticket__acts .tp-iconbtn,[data-theme="light"] .app-plans .tp-card.is-selected .tp-card__actions .tp-iconbtn{background:rgba(255,255,255,.8);border-color:var(--lt-line);color:var(--lt-ink)}
+[data-theme="light"] .app-pcard.is-next .app-pcard__cat{background:#fff;color:var(--foreground-primary)}
+[data-theme="light"] .app-plans .tp-card.is-selected .tp-link{color:var(--foreground-primary)}
+/* tatil fırsatları */
+[data-theme="light"] .app-deal{color:var(--lt-ink);background:radial-gradient(120% 90% at 0% 0%,rgba(var(--tone),.34),transparent 58%),radial-gradient(100% 90% at 100% 100%,rgba(139,92,246,.18),transparent 62%),linear-gradient(160deg,#f8f9ff,#eef0fb);box-shadow:0 8px 22px rgba(76,29,149,.10),0 0 0 1px rgba(13,20,51,.06) inset}
+[data-theme="light"] .app-deal::before{filter:invert(1);opacity:.3}
+[data-theme="light"] .app-deal__art{color:rgba(13,20,51,.22);filter:none}
+[data-theme="light"] .app-deal__name,[data-theme="light"] .app-deal__len{color:var(--lt-ink)}
+[data-theme="light"] .app-deal__len strong{text-shadow:none}
+[data-theme="light"] .app-deal__dates,[data-theme="light"] .app-deal__len small,[data-theme="light"] .app-deal__clash{color:var(--lt-weak)}
+[data-theme="light"] .app-deal__how{color:color-mix(in srgb,rgb(var(--tone)) 45%,#0d1433)}
+[data-theme="light"] .app-deal__idea{background:rgba(255,255,255,.8);border-color:var(--lt-line);color:var(--lt-ink)}
+[data-theme="light"] .app-deal__idea:hover{background:#fff;border-color:rgba(var(--tone),.9)}
+/* Özet: toplam kartı */
+[data-theme="light"] .app-widget.tp-aurora-card{background:var(--lt-aurora);border-color:rgba(124,58,237,.12);color:var(--lt-ink);
+  --foreground-on-shell:var(--lt-ink);--foreground-on-shell-weak:var(--lt-weak);--background-on-shell:rgba(255,255,255,.7);--background-on-shell-strong:rgba(13,20,51,.10);--border-on-shell:var(--lt-line);--background-icon:rgba(255,255,255,.7)}
+[data-theme="light"] .app-widget .tp-legend,[data-theme="light"] .app-widget .tp-legend *{color:var(--lt-ink)}
+/* gezi kapağı (Gürcistan çizimi): gündüz renkleri; diğer kapaklar biraz açık */
+[data-theme="light"] .app-cover{background:#e9e7fb}
+[data-theme="light"] .app-cover__art .gs1{stop-color:#99f6e4}
+[data-theme="light"] .app-cover__art .gs2{stop-color:#c7d2fe}
+[data-theme="light"] .app-cover__art .gs3{stop-color:#ddd6fe}
+[data-theme="light"] .app-cover__art .g-star{opacity:0}
+[data-theme="light"] .app-cover__art .g-m1{fill:#8b5cf6;opacity:.45}
+[data-theme="light"] .app-cover__art .g-m2{fill:#6d28d9;opacity:.55}
+[data-theme="light"] .app-cover__art .g-tower{fill:#4c1d95}
+[data-theme="light"] .app-cover__art .g-ground{fill:#5b21b6;opacity:.85}
+[data-theme="light"] .app-cover__art.is-generic{filter:saturate(.85) brightness(1.35)}

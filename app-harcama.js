@@ -331,7 +331,7 @@ function Harcamalar(p){
         var on = x[1] === "ozet" ? sub === "ozet" : sub !== "ozet";
         return h("a", {key: x[0], role: "tab", "aria-selected": on ? "true" : "false", href: A.href("harcamalar", x[1]), className: "app-utab" + (on ? " is-on" : "")}, x[0], x[2] ? h("span", {className: "app-utab__n"}, x[2]) : null);
       })),
-    h("div", {className: "app-chips"}, h("a", {href: A.href("harcamalar"), className: "app-chiplink"}, h(T.Chip, {tone: !sub || sub === "ozet" ? "tertiary" : "outline"}, "Tümü, " + t.expenses.length)),
+    h("div", {className: "app-chips"}, h("a", {href: A.href("harcamalar"), className: "app-chiplink"}, h(T.Chip, {tone: !sub || sub === "ozet" ? "tertiary" : "outline"}, "Tümü " + t.expenses.length)),
       D.EXP_ORDER.map(function(c){ return h("a", {key: c, href: A.href("harcamalar", c), className: "app-chiplink"}, h(T.Chip, {tone: sub === c ? "tertiary" : "outline", icon: D.EXP_ICON[c]}, D.EXP_CATS[c])); }))) : null;
   if(sub === "ozet"){
     var sh = shares(st);

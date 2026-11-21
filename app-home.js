@@ -86,24 +86,24 @@ function GeorgiaArt(){
   /* Batum kıyısı, Alfabe Kulesi ve arkada Kafkaslar */
   return h("svg", {className: "app-cover__art", viewBox: "0 0 320 200", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true"},
     h("defs", null,
-      h("linearGradient", {id: "gsky", x1: 0, y1: 0, x2: 1, y2: 1}, h("stop", {offset: 0, stopColor: "#0f766e"}), h("stop", {offset: .55, stopColor: "#1e1b4b"}), h("stop", {offset: 1, stopColor: "#6d28d9"})),
+      h("linearGradient", {id: "gsky", x1: 0, y1: 0, x2: 1, y2: 1}, h("stop", {offset: 0, stopColor: "#0f766e", className: "gs1"}), h("stop", {offset: .55, stopColor: "#1e1b4b", className: "gs2"}), h("stop", {offset: 1, stopColor: "#6d28d9", className: "gs3"})),
       h("radialGradient", {id: "gsun", cx: .78, cy: .28, r: .35}, h("stop", {offset: 0, stopColor: "#5eead4", stopOpacity: .65}), h("stop", {offset: 1, stopColor: "#5eead4", stopOpacity: 0}))),
     h("rect", {width: 320, height: 200, fill: "url(#gsky)"}),
     h("rect", {width: 320, height: 200, fill: "url(#gsun)"}),
-    [[30, 40], [70, 22], [120, 34], [210, 18], [260, 46], [300, 26], [160, 14]].map(function(p, i){ return h("circle", {key: i, cx: p[0], cy: p[1], r: i % 3 ? .9 : 1.4, fill: "#fff", opacity: .7}); }),
-    h("path", {d: "M0 122 L40 96 L62 108 L98 74 L120 90 L150 62 L176 86 L204 70 L236 94 L262 80 L292 100 L320 88 V200 H0Z", fill: "#312e81", opacity: .75}),
+    [[30, 40], [70, 22], [120, 34], [210, 18], [260, 46], [300, 26], [160, 14]].map(function(p, i){ return h("circle", {key: i, className: "g-star", cx: p[0], cy: p[1], r: i % 3 ? .9 : 1.4, fill: "#fff", opacity: .7}); }),
+    h("path", {d: "M0 122 L40 96 L62 108 L98 74 L120 90 L150 62 L176 86 L204 70 L236 94 L262 80 L292 100 L320 88 V200 H0Z", fill: "#312e81", opacity: .75, className: "g-m1"}),
     h("path", {d: "M98 74 L106 80 L100 81 L92 78Z M150 62 L159 70 L152 71 L143 67Z M204 70 L211 76 L205 77 L198 74Z", fill: "#e0e7ff", opacity: .55}),
-    h("path", {d: "M0 140 L50 116 L90 130 L140 108 L190 128 L240 112 L320 132 V200 H0Z", fill: "#1e1b4b", opacity: .9}),
+    h("path", {d: "M0 140 L50 116 L90 130 L140 108 L190 128 L240 112 L320 132 V200 H0Z", fill: "#1e1b4b", opacity: .9, className: "g-m2"}),
     /* Alfabe Kulesi */
     h("g", {transform: "translate(226 72)"},
-      h("rect", {x: -3, y: 0, width: 6, height: 82, rx: 3, fill: "#0b1030"}),
+      h("rect", {x: -3, y: 0, width: 6, height: 82, rx: 3, fill: "#0b1030", className: "g-tower"}),
       Array.apply(null, Array(9)).map(function(_, i){ return h("path", {key: i, d: "M-7 " + (8 + i * 8) + " Q0 " + (3 + i * 8) + " 7 " + (8 + i * 8), stroke: "#5eead4", strokeWidth: 1.2, fill: "none", opacity: .85}); }),
       h("circle", {cx: 0, cy: -2, r: 6, fill: "none", stroke: "#c4b5fd", strokeWidth: 1.6}), h("circle", {cx: 0, cy: -2, r: 2, fill: "#c4b5fd"})),
     /* dönme dolap */
     h("g", {transform: "translate(268 128)", stroke: "#a5b4fc", strokeWidth: 1, fill: "none", opacity: .8},
       h("circle", {r: 16}), [0, 45, 90, 135].map(function(a){ return h("line", {key: a, x1: -16 * Math.cos(a * Math.PI / 180), y1: -16 * Math.sin(a * Math.PI / 180), x2: 16 * Math.cos(a * Math.PI / 180), y2: 16 * Math.sin(a * Math.PI / 180)}); }),
       h("path", {d: "M-6 26 L0 0 L6 26"})),
-    h("path", {d: "M0 160 Q40 150 80 156 T160 154 T240 158 T320 152 V200 H0Z", fill: "#0b1030"}),
+    h("path", {d: "M0 160 Q40 150 80 156 T160 154 T240 158 T320 152 V200 H0Z", fill: "#0b1030", className: "g-ground"}),
     [168, 178, 188].map(function(y, i){ return h("path", {key: y, d: "M" + (10 + i * 14) + " " + y + " q14 -5 28 0 t28 0", stroke: "#5eead4", strokeWidth: 1, fill: "none", opacity: .45 - i * .1}); }));
 }
 var ART_COLORS = {wine: ["#9d174d", "#4c1d95"], blue: ["#1d4ed8", "#312e81"], green: ["#047857", "#1e3a8a"], amber: ["#b45309", "#7c2d12"], teal: ["#0f766e", "#312e81"], violet: ["#6d28d9", "#1e1b4b"]};
@@ -111,7 +111,7 @@ function GenericArt(p){
   var t = p.t, c = ART_COLORS[A.COLORS[t.color % 6]] || ART_COLORS.teal, r = rnd(t.id), gid = "gc" + t.id;
   var peaks = [], x = 0; while(x < 320){ var w = 30 + r() * 50; peaks.push([x + w / 2, 70 + r() * 50]); x += w; }
   var ridge = "M0 140 " + peaks.map(function(q){ return "L" + q[0].toFixed(0) + " " + q[1].toFixed(0); }).join(" ") + " L320 140 V200 H0Z";
-  return h("svg", {className: "app-cover__art", viewBox: "0 0 320 200", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true"},
+  return h("svg", {className: "app-cover__art is-generic", viewBox: "0 0 320 200", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true"},
     h("defs", null, h("linearGradient", {id: gid, x1: 0, y1: 0, x2: 1, y2: 1}, h("stop", {offset: 0, stopColor: c[0]}), h("stop", {offset: 1, stopColor: c[1]}))),
     h("rect", {width: 320, height: 200, fill: "url(#" + gid + ")"}),
     h("circle", {cx: 60 + r() * 200, cy: 50, r: 22, fill: "#fff", opacity: .18}),
@@ -256,16 +256,17 @@ function Home(){
     A.isPhone ? h("div", {className: "app-home__hello"}, h("h1", {className: "page-title", style: {margin: 0}}, hello)) : null,
     h("section", {id: "home-trips", className: "app-home__sec", "aria-labelledby": "home-trips-h"},
       h("div", {className: "app-row"}, h("h2", {id: "home-trips-h", className: "section-title", style: {margin: 0, flex: 1}}, "Gezilerin"),
-        trips.length && !A.isPhone ? h(T.Button, {size: "sm", variant: "primary", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi") : null),
+        !A.isPhone ? h(T.Button, {size: "sm", variant: "primary", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi") : null),
       trips.length ? h("div", {className: "app-hometrips"}, trips.map(function(t){ return h(TripCard, {key: t.id, t: t}); }))
-        : h(A.StartChoices)),
+        : h("div", {className: "app-card app-homeempty"}, h(T.EmptyState, {illustration: "trip", size: "sm", headingLevel: 3, title: "Henüz gezin yok",
+            text: (A.isPhone ? "Sağ alttaki Yeni gezi ile başla." : "Yeni gezi ile başla.") + " Yurt içi de olur, yurt dışı da; aşağıdaki tatil fırsatlarından birine dokunarak da açabilirsin."}))),
     deals.length ? h("section", {id: "home-deals", className: "app-home__sec", "aria-labelledby": "home-deals-h"},
       h("h2", {id: "home-deals-h", className: "section-title", style: {margin: 0}}, "Tatil fırsatları"),
       h("div", {className: "app-deals"}, deals.map(function(x, i){ return h(DealCard, {key: x.key, d: x, i: i}); }))) : null);
   /* telefonda yeni gezi: diğer sayfalardaki gibi sağ altta yüzen düğme */
   if(A.isPhone) return h("div", {className: "app-tphone app-homewrap"},
     h("div", {className: "app-tphone__list", "data-scroll": true}, body),
-    trips.length ? h("button", {type: "button", className: "app-fab", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, h(T.Icon, {name: "plus", size: 20}), h("span", null, "Yeni gezi")) : null);
+    h("button", {type: "button", className: "app-fab", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, h(T.Icon, {name: "plus", size: 20}), h("span", null, "Yeni gezi")));
   return h(F, null, head, h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
 }
 A.Home = Home;

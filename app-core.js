@@ -198,13 +198,34 @@ A.Expand = function(p){
     if(!typing) base = Math.max(base, vv.height);
     var full = Math.max(base, window.innerHeight), kb = full - vv.height;
     if(kb > 120 && typing && window.innerWidth < 900 && (vv.scale || 1) < 1.05){
+      var was = root.classList.contains("kbd"), h0 = root.style.getPropertyValue("--vvh");
       root.classList.add("kbd");
       root.style.setProperty("--vvh", Math.round(vv.height) + "px"); root.style.setProperty("--vvt", Math.round(vv.offsetTop) + "px");
+      /* klavye açıldı ya da görünen alan değişti: yazılan alan klavyenin üstünde görünsün */
+      if(!was || h0 !== Math.round(vv.height) + "px") reveal(document.activeElement);
     } else if(root.classList.contains("kbd")){ root.classList.remove("kbd"); root.style.removeProperty("--vvh"); root.style.removeProperty("--vvt"); }
   }
+  /* odaktaki alanı, içinde bulunduğu kayan alanda görünür yere getirir (pencereyi değil, kutuyu kaydırır) */
+  function reveal(el){
+    if(!el || !el.getBoundingClientRect) return;
+    requestAnimationFrame(function(){ setTimeout(function(){
+      if(document.activeElement !== el) return;
+      var sc = el.parentNode;
+      while(sc && sc !== document.body){ var cs = getComputedStyle(sc); if(/(auto|scroll)/.test(cs.overflowY) && sc.scrollHeight > sc.clientHeight + 1) break; sc = sc.parentNode; }
+      if(!sc || sc === document.body) return;
+      var r = el.getBoundingClientRect(), b = sc.getBoundingClientRect(), pad = 16;
+      /* altta sabit düğme alanı varsa onun üstünde kalsın */
+      var foot = sc.querySelector(":scope .app-stickyfoot"), fh = foot && getComputedStyle(foot).position === "sticky" ? foot.offsetHeight : 0;
+      if(r.bottom > b.bottom - fh - pad) sc.scrollTop += r.bottom - (b.bottom - fh - pad);
+      else if(r.top < b.top + pad) sc.scrollTop -= (b.top + pad) - r.top;
+    }, 60); });
+  }
+  A.revealField = reveal;
   function soon(){ if(!raf) raf = requestAnimationFrame(fit); }
   vv.addEventListener("resize", soon); vv.addEventListener("scroll", soon); window.addEventListener("resize", soon);
-  document.addEventListener("focusin", function(){ soon(); setTimeout(soon, 120); setTimeout(soon, 400); });
+  document.addEventListener("focusin", function(e){ soon(); setTimeout(soon, 120); setTimeout(soon, 400);
+    /* klavye zaten açıkken başka alana geçilince de görünür yere gelsin */
+    if(root.classList.contains("kbd")) reveal(e.target); });
   document.addEventListener("focusout", function(){ setTimeout(soon, 120); });
 })();
 
