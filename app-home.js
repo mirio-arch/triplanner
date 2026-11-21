@@ -181,7 +181,7 @@ function DealCard(p){
     h("div", {className: "app-deal__head"},
       h("div", {style: {flex: 1, minWidth: 0}}, h("h3", {className: "heading app-deal__name"}, d.name), h("span", {className: "app-deal__dates"}, fmtSpan(d.a, d.b))),
       h("span", {className: "app-deal__len"}, h("strong", null, d.len), h("small", null, "gün"))),
-    h("span", {className: "app-deal__how"}, d.leave ? leaveText(d.leave) + " izinle" : "İzin almadan", p.clash ? h("span", {className: "app-deal__clash"}, " · gezin var") : null),
+    h("span", {className: "app-deal__how"}, d.leave ? leaveText(d.leave) + " izinle" : "İzin almadan"),
     d.ideas.length ? h("div", {className: "app-deal__ideas"}, d.ideas.map(function(x){
       return h("button", {key: x[0], type: "button", className: "app-deal__idea", title: x[1] + " · " + x[2], onClick: function(){ start(x[0]); }}, x[0]);
     })) : null);
@@ -233,7 +233,8 @@ function Home(){
   if(B && !B.loaded) return h("div", {className: "app-empty"}, h("p", {className: "body app-muted"}, "Geziler yükleniyor…"));
   var trips = S.app.order.map(function(id){ return S.app.trips[id]; }).filter(Boolean)
     .sort(function(a, b){ var x = tripState(a), y = tripState(b); return (x.kind === "past") - (y.kind === "past") || x.n - y.n; });
-  var deals = A.holidayDeals();
+  /* zaten gezisi olan tatil dönemleri önerilmez */
+  var deals = A.holidayDeals().filter(function(x){ return !trips.some(function(t){ return !(t.end < x.a || t.start > x.b); }); });
   var d = D.fmtDay(A.todayISO());
   var head = A.isPhone ? null : h("header", {className: "app-pagehead"},
     h("div", {style: {flex: "1 1 320px", minWidth: 0}}, h("h1", {className: "page-title", style: {margin: 0}}, name ? "Merhaba " + name : "Ana sayfa"),
@@ -247,10 +248,7 @@ function Home(){
         : h(A.StartChoices)),
     deals.length ? h("section", {id: "home-deals", className: "app-home__sec", "aria-labelledby": "home-deals-h"},
       h("h2", {id: "home-deals-h", className: "section-title", style: {margin: 0}}, "Tatil fırsatları"),
-      h("div", {className: "app-deals"}, deals.map(function(x, i){
-        var c = trips.find(function(t){ return !(t.end < x.a || t.start > x.b); });
-        return h(DealCard, {key: x.key, d: x, i: i, clash: c ? c.name : ""});
-      }))) : null);
+      h("div", {className: "app-deals"}, deals.map(function(x, i){ return h(DealCard, {key: x.key, d: x, i: i}); }))) : null);
   return h(F, null, head, A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
 }
 A.Home = Home;
