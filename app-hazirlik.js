@@ -31,6 +31,24 @@ function CheckForm(p){
 }
 A.CheckForm = CheckForm;
 
+/* Telefonda alt bölmenin küçük hali: tek satırda madde ekle */
+function QuickCheck(p){
+  var t = p.t, st = React.useState(""), g = React.useState(S.quickGroup || "belge");
+  function add(e){
+    e.preventDefault(); var title = st[0].trim(); if(!title) return;
+    var n = {id: D.uid("k"), group: g[0], title: D.str(title, 160), note: "", link: "", done: false, due: ""};
+    t.checklist.push(n); S.justAdded = n.id; S.quickGroup = g[0]; A.commit(); st[1]("");
+    A.flash("“" + title + "” eklendi.");
+  }
+  return h("form", {onSubmit: add},
+    h("div", {className: "app-quick"},
+      h("input", {className: "app-quick__in", value: st[0], placeholder: "Madde ekle…", "aria-label": "Yeni madde", enterKeyHint: "done", onChange: function(e){ st[1](e.target.value); }}),
+      h("button", {type: "submit", className: "app-quick__go", "aria-label": "Ekle", disabled: !st[0].trim()}, h(T.Icon, {name: "plus", size: 20}))),
+    h("div", {className: "app-quickchips", role: "group", "aria-label": "Grup"}, D.GROUPS.map(function(x){
+      return h("button", {key: x[0], type: "button", className: "app-quickchip", "aria-pressed": g[0] === x[0] ? "true" : "false", onClick: function(){ g[1](x[0]); }}, x[1]);
+    })));
+}
+
 function Hazirlik(p){
   var t = p.t;
   var total = t.checklist.length, done = t.checklist.filter(function(c){ return c.done; }).length;
@@ -56,8 +74,8 @@ function Hazirlik(p){
   var aside = h(F, null,
     h("div", null, h("h2", {className: "heading", style:{margin:0}}, "Madde ekle"), h("p", {className: "body-sm app-muted", style:{margin:0}}, "Belge, rezervasyon ya da çantaya girecek bir şey.")),
     h(CheckForm, {t: t, key: "new"}));
-  return h(A.Layout, {head: head, aside: aside, asideLabel: "Madde ekle", phoneAside: false}, body,
-    A.isPhone ? h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ S.dialog = {kind: "check", group: "belge"}; A.render(); }}, "Madde ekle") : null);
+  return h(A.Layout, {head: head, aside: aside, asideLabel: "Madde ekle", phoneAside: false,
+    pane: A.isPhone ? {id: "hazirlik", label: "Madde ekle", fab: {icon: "plus", label: "Madde"}, peek: h(QuickCheck, {t: t}), full: aside} : null}, body);
 }
 
 function Submenu(t){

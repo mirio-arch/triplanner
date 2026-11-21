@@ -71,9 +71,9 @@ A.commit = function(tripId){
   if(t) D.syncTransportExpenses(t);
   sync.schedule(tripId || S.cur); A.render();
 };
-A.flash = function(text, undo){
+A.flash = function(text, undo, label){
   clearTimeout(A._toastTimer);
-  S.toast = {text: text, undo: undo, at: Date.now()};
+  S.toast = {text: text, undo: undo, label: label, at: Date.now()};
   A._toastTimer = setTimeout(function(){ S.toast = null; A.render(); }, undo ? 6000 : 3200);
   A.render();
 };
@@ -239,7 +239,7 @@ function Root(){
   var Page = t && A.pages[S.page] ? A.pages[S.page].view : null;
   var content = t ? (Page ? h(Page, {t: t, v: A.view()}) : null) : h(A.EmptyApp);
   var overlay = A.Dialogs ? h(A.Dialogs) : null;
-  var toast = S.toast ? h("div", {className: "app-toastwrap"}, h(T.Toast, {key: S.toast.at, text: S.toast.text, actionLabel: S.toast.undo ? "Geri al" : undefined, onAction: S.toast.undo ? function(){ var u = S.toast.undo; S.toast = null; u(); } : undefined})) : null;
+  var toast = S.toast ? h("div", {className: "app-toastwrap"}, h(T.Toast, {key: S.toast.at, text: S.toast.text, actionLabel: S.toast.undo ? (S.toast.label || "Geri al") : undefined, onAction: S.toast.undo ? function(){ var u = S.toast.undo; S.toast = null; u(); } : undefined})) : null;
   if(phone){
     return h("div", {"data-theme": A.dark ? "dark" : "light", className: "app-root"},
       h("div", {className: "tp-shell app-phone"}, h(PhoneHeader),
@@ -280,10 +280,64 @@ A.EmptyApp = function(){
 };
 
 /* Ana içerik iskeleti: başlık, kayan gövde, sağ kart */
+/* Telefonda sağ kartın yeri: kapalıyken yüzen düğme; açılınca alttan gelen,
+   kenarından çekilerek küçük / yarım / tam boya getirilen bölme. */
+A.PhonePane = function(p){
+  var v = A.view(), boxRef = React.useRef(null), peekRef = React.useRef(null), st = React.useRef(null);
+  v.panes = v.panes || {};
+  var snap = ["s", "h", "f"].indexOf(v.panes[p.id]) > -1 ? v.panes[p.id] : "c";
+  var size = React.useState({H: 600, S: 140}), drag = React.useState(null), leaving = React.useState(false);
+  React.useEffect(function(){
+    var box = boxRef.current && boxRef.current.parentNode; if(!box) return;
+    function m(){ var pk = peekRef.current; size[1](function(o){ var n = {H: box.clientHeight, S: pk ? pk.offsetHeight + 30 : o.S}; return n.H === o.H && n.S === o.S ? o : n; }); }
+    m(); if(!window.ResizeObserver) return;
+    var ro = new ResizeObserver(m); ro.observe(box); if(peekRef.current) ro.observe(peekRef.current);
+    return function(){ ro.disconnect(); };
+  }, [snap === "c", snap === "s"]);
+  function setSnap(x){ v.panes[p.id] = x; A.saveViews(); A.render(); }
+  function close(){ leaving[1](true); setTimeout(function(){ leaving[1](false); setSnap("c"); }, 220); }
+  if(snap === "c"){
+    return h("button", {ref: boxRef, type: "button", className: "app-fab", onClick: function(){ setSnap("s"); }, "aria-label": p.fab.aria || p.fab.label},
+      h(T.Icon, {name: p.fab.icon || "plus", size: 20}), h("span", null, p.fab.label),
+      p.fab.count ? h("span", {className: "app-fab__count"}, p.fab.count) : null);
+  }
+  var H = size[0].H, S0 = Math.min(size[0].S, Math.round(H * .45)), heights = {s: S0, h: Math.max(S0 + 60, Math.round(H * .55)), f: H};
+  var height = drag[0] ? drag[0].cur : heights[snap];
+  var showFull = drag[0] ? height > S0 + 48 : snap !== "s";
+  function down(e){ if(e.button !== undefined && e.button !== 0) return; st.current = {y: e.clientY, h0: heights[snap], moved: false}; try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(x){} }
+  function move(e){ var s = st.current; if(!s) return; var dy = s.y - e.clientY; if(Math.abs(dy) > 5) s.moved = true; if(s.moved) drag[1]({cur: Math.max(40, Math.min(H, s.h0 + dy))}); }
+  function up(){
+    var s = st.current; st.current = null; if(!s) return;
+    if(!s.moved){ drag[1](null); setSnap(snap === "h" ? "s" : "h"); return; }
+    var cur = drag[0] ? drag[0].cur : heights[snap]; drag[1](null);
+    if(cur < S0 - 40){ close(); return; }
+    var best = "s"; ["s", "h", "f"].forEach(function(k){ if(Math.abs(heights[k] - cur) < Math.abs(heights[best] - cur)) best = k; });
+    setSnap(best);
+  }
+  function key(e){
+    var order = ["s", "h", "f"], i = order.indexOf(snap);
+    if(e.key === "ArrowUp"){ e.preventDefault(); setSnap(order[Math.min(2, i + 1)]); }
+    else if(e.key === "ArrowDown"){ e.preventDefault(); if(i === 0) close(); else setSnap(order[i - 1]); }
+    else if(e.key === "Enter" || e.key === " "){ e.preventDefault(); setSnap(snap === "h" ? "s" : "h"); }
+    else if(e.key === "Escape"){ e.preventDefault(); close(); }
+  }
+  return h("section", {ref: boxRef, className: "app-pane" + (drag[0] ? " is-dragging" : "") + (leaving[0] ? " is-leaving" : "") + (showFull ? " is-full" : ""), "aria-label": p.label, style: {height: height + "px"}},
+    h("div", {className: "app-pane__edge", role: "slider", tabIndex: 0, "aria-label": p.label + " boyutu", "aria-valuemin": 0, "aria-valuemax": 2,
+        "aria-valuenow": ["s", "h", "f"].indexOf(snap), "aria-valuetext": {s: "küçük", h: "yarım", f: "tam"}[snap],
+        onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up, onKeyDown: key}, h("span", {className: "app-mappane__grip"})),
+    h("div", {className: "app-pane__close"}, h(T.IconButton, {icon: "close", label: p.label + " kapansın", size: "sm", onClick: close})),
+    showFull ? h("div", {className: "app-pane__scroll"}, p.full)
+      : h("div", {ref: peekRef, className: "app-pane__peek"}, p.peek));
+};
+
 A.Layout = function(p){
   var aside = p.aside ? h("aside", {className: "tp-panel-surface app-aside", "aria-label": p.asideLabel || "Kenar"}, p.aside) : null;
   if(A.isPhone){
-    return h(F, null, p.head, h("div", {className: "app-phonepage"}, p.children, p.phoneAside === false ? null : (p.aside ? h("div", {className: "app-phoneaside"}, p.aside) : null)));
+    var page = h("div", {className: "app-phonepage"}, p.children, p.pane || p.phoneAside === false ? null : (p.aside ? h("div", {className: "app-phoneaside"}, p.aside) : null));
+    if(p.pane) return h("div", {className: "app-tphone has-pane"},
+      h("div", {className: "app-tphone__list", "data-scroll": true}, p.head, page),
+      h(A.PhonePane, Object.assign({key: p.pane.id}, p.pane)));
+    return h(F, null, p.head, page);
   }
   return h(F, null, p.head,
     h("div", {className: "tp-shellbody app-body", "data-scroll": true},

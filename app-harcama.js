@@ -236,14 +236,44 @@ function dayItems(t, st, cat){
 }
 function ticks(max){ var step = max > 8000 ? 4000 : (max > 4000 ? 2000 : (max > 1500 ? 1000 : 500)); var out = [0]; for(var v = step; v < max + step; v += step) out.push(v); return out; }
 
+/* Telefonda alt bölmenin küçük hali: tutar + ne için, tek dokunuşla ekle */
+var GUESS = [[/taksi|bolt|otobüs|marş|marsh|tren|bilet|uçak|transfer|metro|yakıt|benzin/i, "transport"], [/otel|airbnb|ev |hostel|konaklama|apart/i, "stay"],
+  [/müze|giriş|kale|mağara|teleferik|tur\b|rehber|bahçe/i, "sights"], [/harç|vize|sigorta|pasaport|ceza/i, "fees"], [/hediye|market|alışveriş|çurçhela|şarap|baharat|magnet/i, "shopping"]];
+function guessCat(s){ for(var i = 0; i < GUESS.length; i++){ if(GUESS[i][0].test(s)) return GUESS[i][1]; } return "food"; }
+function QuickExpense(p){
+  var t = p.t, b = blank(t), st = React.useState({amount: "", title: "", currency: S.quickCur || b.currency}), err = React.useState("");
+  var f = st[0];
+  function add(e){
+    e.preventDefault();
+    var amount = D.parseAmount(f.amount); if(!amount){ err[1]("Tutarı yaz."); return; }
+    var title = f.title.trim(), cat = guessCat(title);
+    var x = {id: D.uid("x"), source: "manual", at: new Date().toISOString(), title: D.str(title || D.EXP_CATS[cat], 120), amount: amount, currency: f.currency, cat: cat, day: b.day, time: "", ref: "", photos: []};
+    t.expenses.push(x); S.newExp = x.id; S.quickCur = f.currency; A.commit();
+    st[1]({amount: "", title: "", currency: f.currency}); err[1]("");
+    A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
+  }
+  var cur = t.currency || "GEL", rate = t.rate[cur], st2 = stats(t);
+  var line = [rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince fotoğraf ve kategori"].filter(Boolean).join(" · ");
+  return h("form", {onSubmit: add, noValidate: true},
+    h("div", {className: "app-quick"},
+      h("input", {className: "app-quick__in app-quick__in--amount", value: f.amount, placeholder: "0", inputMode: "decimal", "aria-label": "Tutar", onChange: function(e){ st[1](Object.assign({}, f, {amount: e.target.value})); err[1](""); }}),
+      h("select", {className: "app-quick__cur", value: f.currency, "aria-label": "Para birimi", onChange: function(e){ st[1](Object.assign({}, f, {currency: e.target.value})); }}, D.CURRENCIES.map(function(c){ return h("option", {key: c, value: c}, c); })),
+      h("input", {className: "app-quick__in", value: f.title, placeholder: "Ne için?", "aria-label": "Ne için", enterKeyHint: "done", onChange: function(e){ st[1](Object.assign({}, f, {title: e.target.value})); }}),
+      h("button", {type: "submit", className: "app-quick__go", "aria-label": "Harcamayı ekle"}, h(T.Icon, {name: "plus", size: 20}))),
+    err[0] ? h("p", {className: "app-peekline tp-field__error", role: "alert"}, err[0]) : h("p", {className: "app-peekline"}, line));
+}
+function PaneFull(p){
+  return h(F, null, h(ExpenseForm, {key: "pane-new", t: p.t, preset: S.expPreset, title: false}), h("hr", {className: "app-hr"}), h(RateBox, {t: p.t}));
+}
+
 function Harcamalar(p){
   var t = p.t, v = p.v, sub = S.sub;
   var period = v.period || "Tümü";
   var st = stats(t, function(e){ return inPeriod(e, period); });
   var aside = h(Aside, {t: t, v: v});
   var right = h(F, null, A.todayDayId(t) ? h(T.Chip, {tone: "tertiary", icon: "calendar"}, "Bugün " + D.fmtDay(A.todayISO()).short + " · gezinin " + (A.dayIndex(t, A.todayDayId(t)) + 1) + ". günü") : null, periodTabs(v));
+  var pane = A.isPhone ? {id: "harcama", label: "Harcama ekle", fab: {icon: "plus", label: "Harcama"}, peek: h(QuickExpense, {t: t}), full: h(PaneFull, {t: t})} : null;
   var phoneTabs = A.isPhone ? h(F, null,
-    h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ S.dialog = {kind: "expense"}; A.render(); }}, "Harcama ekle"),
     h(T.Tabs, {key: sub || "liste", label: "Görünüm", full: true, value: sub === "ozet" ? "Özet" : "Liste", items: [{label: "Liste", count: t.expenses.length}, "Özet"], onChange: function(l){ A.go("harcamalar", l === "Özet" ? "ozet" : ""); }}),
     h("div", {className: "app-chips"}, h("a", {href: A.href("harcamalar"), className: "app-chiplink"}, h(T.Chip, {tone: !sub || sub === "ozet" ? "tertiary" : "outline"}, "Tümü · " + t.expenses.length)),
       D.EXP_ORDER.map(function(c){ return h("a", {key: c, href: A.href("harcamalar", c), className: "app-chiplink"}, h(T.Chip, {tone: sub === c ? "tertiary" : "outline", icon: D.EXP_ICON[c]}, D.EXP_CATS[c])); }))) : null;
@@ -260,7 +290,7 @@ function Harcamalar(p){
           h(T.Chip, {icon: "calendar"}, nd + " günde " + D.fmtMoney(Math.round(trip.total), "TL")), h(T.Chip, {icon: "chart"}, "Günde ortalama " + D.fmtMoney(Math.round(trip.total / nd), "TL"))),
         h(T.DaySpend, {key: t.expenses.length, items: ds, ticks: ticks(max), reference: Math.round(trip.total / nd), referenceLabel: "Ortalama", height: 150})) : null,
       !st.list.length ? h(ExpenseList, {t: t, st: st}) : null);
-    return h(A.Layout, {head: head, aside: aside, phoneAside: false}, body);
+    return h(A.Layout, {head: head, aside: aside, phoneAside: false, pane: pane}, body);
   }
   if(D.EXP_CATS[sub]){
     var cs = stats(t, function(e){ return e.cat === sub && inPeriod(e, period); });
@@ -276,12 +306,12 @@ function Harcamalar(p){
         h("div", {className: "app-row app-row--wrap"}, h(T.Chip, {icon: "chart"}, "Toplamın %" + share + "’i"), nd2 ? h(T.Chip, {icon: "calendar"}, "Günde ort. " + D.fmtMoney(Math.round(trip2.total / nd2), "TL")) : null),
         biggest ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "En büyük: " + biggest.title + ", " + D.fmtMoney(biggest.amount, biggest.currency) + ".") : null),
       nd2 ? h("div", {className: "app-katsum__chart", style: {"--chart-single": "var(--chart-" + sub + ")"}}, h(T.ColumnChart, {label: "Günlere göre " + D.EXP_CATS[sub], items: ds2, ticks: ticks(max2), height: 132, shape: "pill", mono: true})) : null) : null;
-    return h(A.Layout, {head: head2, aside: aside, phoneAside: false}, phoneTabs, summary,
+    return h(A.Layout, {head: head2, aside: aside, phoneAside: false, pane: pane}, phoneTabs, summary,
       h("h2", {className: "section-title", style:{margin:0}}, D.EXP_CATS[sub] + " harcamaları"),
       h(ExpenseList, {t: t, st: cs, emptyTitle: "Bu kategoride harcama yok", emptyText: "Harcama eklerken kategori olarak " + D.EXP_CATS[sub] + " seç."}));
   }
   var head3 = h(A.PageHead, {title: "Harcamalar", desc: A.isPhone ? null : (st.list.length ? "Toplam " + D.fmtMoney(Math.round(st.total), "TL") + " · " + st.list.length + " harcama. " : "") + "Ulaşım’da girdiğin bilet fiyatları ve plana bağladığın harcamalar buraya kendiliğinden düşer.", right: A.isPhone ? null : right});
-  return h(A.Layout, {head: head3, aside: aside, phoneAside: false}, phoneTabs,
+  return h(A.Layout, {head: head3, aside: aside, phoneAside: false, pane: pane}, phoneTabs,
     h("div", {className: "app-row"}, h("h2", {className: "section-title", style:{margin:0, flex:1}}, "Tüm harcamalar"), A.isPhone ? null : null),
     h(ExpenseList, {t: t, st: st}));
 }

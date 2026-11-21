@@ -143,6 +143,22 @@ function DayLine(p){
     h(T.IconButton, {icon: "edit", label: "Günü düzenle", size: "sm", onClick: function(){ S.dayEdit = true; A.render(); }}));
 }
 
+/* Telefonda alt bölmenin küçük hali: yana kayan fikirler */
+function IdeaStrip(p){
+  var t = p.t, v = p.v, ids = t.removed.concat(t.ideas).filter(function(id){ return t.items[id]; });
+  if(!ids.length) return h(F, null, h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Kenar listen boş. Gitmek istediğin ama güne koymadığın yerleri buraya yaz."),
+    h("div", {style: {marginTop: "var(--space-2)"}}, h(T.Button, {size: "sm", icon: "plus", onClick: function(){ S.dialog = {kind: "plan", newIn: "ideas"}; A.render(); }}, "Öneri ekle")));
+  return h(F, null,
+    h("div", {className: "app-ideastrip", role: "list", "aria-label": "Kenar listesi"}, ids.slice(0, 20).map(function(id){
+      var it = t.items[id], target = it.from && A.dayById(t, it.from) ? it.from : v.day;
+      return h("div", {key: id, role: "listitem", className: "app-ideachip"},
+        h("span", {className: "app-ideachip__t"}, it.title || "Adsız"),
+        h("span", {className: "app-ideachip__n"}, it.note || D.CATS[it.cat] || ""),
+        h("button", {type: "button", className: "app-ideachip__add", onClick: function(){ addToDay(t, id, target); }}, h(T.Icon, {name: "plus", size: 14}), A.dayLabel(t, target) + " planına"));
+    })),
+    h("p", {className: "app-peekline"}, (t.removed.length ? t.removed.length + " çıkardığın · " : "") + t.ideas.length + " öneri · yukarı çekince arama ve tamamı"));
+}
+
 function SideList(p){
   var t = p.t, v = p.v, day = A.dayById(t, v.day);
   var dayNames = t.days.map(function(d){ return A.dayLabel(t, d.id); });
@@ -191,7 +207,10 @@ function Tarihler(p){
     return h(A.Layout, {head: head}, h("div", {className: "app-withtoggle"}, h("div", {className: "app-colmain"}, main),
       h(T.SidePanel, {open: false, title: "Kenar listesi", count: t.removed.length + t.ideas.length || undefined, onToggle: function(){ v.panel = true; A.saveViews(); A.render(); }})));
   }
-  return h(A.Layout, {head: head, aside: h(SideList, {t: t, v: v}), asideLabel: "Kenar listesi"}, main);
+  var n = t.removed.length + t.ideas.length;
+  return h(A.Layout, {head: head, aside: h(SideList, {t: t, v: v}), asideLabel: "Kenar listesi",
+    pane: A.isPhone ? {id: "plan", label: "Kenar listesi", fab: {icon: "sparkle", label: "Fikirler", count: n || null, aria: "Kenar listesi, " + n + " fikir"},
+      peek: h(IdeaStrip, {t: t, v: v}), full: h(SideList, {t: t, v: v})} : null}, main);
 }
 
 function Submenu(t){
