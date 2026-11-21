@@ -536,7 +536,7 @@ a{color:var(--foreground-secondary)}
 .app-phonenav .tp-bottomnav__item{color:var(--foreground-on-shell-weak,rgba(255,255,255,.6));transition:color var(--duration-base) var(--ease-standard)}
 .app-phonenav .tp-bottomnav__item .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:.55;--icon-accent:currentColor;color:currentColor}
 .app-phonenav .tp-bottomnav__item.is-active{color:var(--camgobegi-300,#5eead4);font-weight:600}
-.app-phonenav .tp-bottomnav__badge{background:#3b3f73;color:#fff;font-weight:700;min-width:16px;height:16px;font-size:10px;top:-1px;right:8px;box-shadow:none}
+.app-phonenav .tp-bottomnav__badge{background:var(--camgobegi-300,#5eead4);color:#0b1030;font-weight:700;min-width:16px;height:16px;font-size:10px;top:-1px;right:8px;box-shadow:none}
 .app-phonenav .tp-bottomnav__item.is-active .tp-bottomnav__badge{background:var(--camgobegi-300,#5eead4);color:#0b1030}
 .app-phonenav .tp-bottomnav__item.is-active .tp-icon{--tp-duo-opacity:1}
 .app-phonenav .tp-bottomnav__item.is-active .tp-bottomnav__icon,.app-phonenav .tp-bottomnav__icon{background:none;animation:none}
@@ -667,3 +667,5 @@ a{color:var(--foreground-secondary)}
 .app-plans .tp-card.is-selected .tp-link{color:#fff}
 .app-plans .tp-card.is-selected::before{opacity:0}
 .app-pcard.is-next .tp-icon,.app-plans .tp-card.is-selected .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor}
+/* Ana sayfa: selamlama kartın üst kenarına yapışmasın */
+.app-phone .app-home__hello{padding:var(--space-3) var(--space-1) 0}
