@@ -361,9 +361,8 @@ function PhotoPeek(p){
     up[1](true);
     A.uploadPhotos(t, files, {day: v.galDay}).then(function(ps){ up[1](false); if(ps.length){ A.commit(); A.flash(ps.length + " fotoğraf " + A.dayLabel(t, v.galDay) + " gününe eklendi."); } });
   }
-  var opts = [["pre", "Yola çıkmadan", ""]].concat(t.days.map(function(d){ var f = D.fmtDay(d.date); return [d.id, f.short + " " + f.wd, A.dayTitle(t, d)]; }));
   return h(F, null,
-    h(A.Wheel, {label: "Hangi güne", options: opts, value: v.galDay, onChange: function(x){ v.galDay = x; A.saveViews(); }}),
+    h(A.DayWheel, {t: t, value: v.galDay, onChange: function(x){ v.galDay = x; A.saveViews(); A.render(); }}),
     h("div", {style: {marginTop: "var(--space-3)"}}, h(T.Button, {variant: "primary", full: true, icon: up[0] ? "refresh" : "image-add", onClick: function(){ if(!up[0] && ref.current) ref.current.click(); }}, up[0] ? "Yükleniyor…" : "Fotoğraf seç")),
     h("input", {ref: ref, type: "file", accept: "image/*", multiple: true, className: "tp-sr", "aria-label": "Fotoğraf seç", onChange: pick}),
     p.tip ? h("p", {className: "app-peekline"}, "Seçtiğin güne eklenir. Harcamaya bağlamak için Harcamalar'dan ekle.") : null);

@@ -565,3 +565,18 @@ a{color:var(--foreground-secondary)}
 .app-pane__edge{height:32px}
 .app-pane__peek{padding:36px var(--space-3) var(--space-3)}
 .app-pane__scroll{padding-top:38px}
+
+/* Kompakt tekerlek: 3 satır, sayılar */
+.app-wheel--compact{height:120px;margin:0}
+.app-wheel--compact .app-wheel__band{top:40px}
+.app-wheel--compact .app-wheel__list{padding:40px 0;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 35%,#000 65%,transparent);mask-image:linear-gradient(to bottom,transparent,#000 35%,#000 65%,transparent)}
+.app-wheel--compact .app-wheel__row{font-size:17px;font-variant-numeric:tabular-nums}
+.app-wheel--compact .app-wheel__row.is-on{font-size:20px}
+.app-wheel--compact .app-wheel__row small{max-width:none}
+.app-daywheel{display:flex;flex-direction:column;gap:var(--space-2)}
+.app-daywheel__cols{position:relative;display:grid;grid-template-columns:1fr 1.4fr;gap:0}
+.app-daywheel__cols .app-wheel__band{border-radius:0}
+.app-daywheel__day .app-wheel__band{border-radius:var(--radius-control) 0 0 var(--radius-control)}
+.app-daywheel__month .app-wheel__band{border-radius:0 var(--radius-control) var(--radius-control) 0}
+.app-daywheel__day .app-wheel__row{justify-content:flex-end;padding-right:var(--space-3)}
+.app-daywheel__month .app-wheel__row{justify-content:flex-start;padding-left:var(--space-3)}
