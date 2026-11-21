@@ -472,7 +472,7 @@ function Sidebar(){
 }
 A.Submenu = function(p){
   return h("div", {className: "app-side__sub"}, (p.sections || [{title: p.title, items: p.children}]).map(function(s, i){
-    return h(F, {key: i}, h("h2", {className: "label app-side__subhead", style: i ? {marginTop: "var(--space-5)"} : null}, s.title), s.items);
+    return h(F, {key: i}, h("h2", {className: "label app-side__subhead", style: i ? {marginTop: "var(--space-6)"} : null}, s.title), s.items);
   }));
 };
 
