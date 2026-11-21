@@ -237,7 +237,7 @@ function Root(){
   if(phone){
     return h("div", {"data-theme": A.dark ? "dark" : "light", className: "app-root"},
       h("div", {className: "tp-shell app-phone"}, h(PhoneHeader),
-        h("div", {className: "tp-phonecard app-phonecard"}, h("div", {className: "app-phonebody", "data-scroll": true}, content)),
+        h("div", {className: "tp-phonecard app-phonecard" + (t ? "" : " app-phonecard--flush")}, h("div", {className: "app-phonebody", "data-scroll": true}, content)),
         h(PhoneNav)), overlay, toast);
   }
   return h("div", {"data-theme": A.dark ? "dark" : "light", className: "app-root"},
@@ -247,13 +247,30 @@ function Root(){
 A.Root = Root;
 
 A.EmptyApp = function(){
-  if(window.TPB && !window.TPB.loaded) return h("div", {className: "app-empty"}, h("p", {className: "body app-muted"}, "Geziler yükleniyor…"));
-  return h("div", {className: "app-empty"}, h(T.EmptyState, {illustration: "trip", title: "Henüz gezi yok", text: "Adını ve tarihlerini gir; her gün için bir sayfa açılır."},
-    h(T.Button, {variant: "primary", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi"),
-    window.TPB ? h(T.Button, {variant: "secondary", icon: "calendar", onClick: function(){
-      var n = D.seedGeorgia(); n.id = D.uid("t"); S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); A.go("tarihler", "", n.id);
-    }}, "Gürcistan Yılbaşı planıyla başla") : null),
-    window.TPB ? h("div", {style:{marginTop:"var(--space-5)", textAlign:"center"}}, h(window.TPB.Account)) : null);
+  var B = window.TPB;
+  if(B && !B.loaded) return h("div", {className: "app-empty"}, h("p", {className: "body app-muted"}, "Geziler yükleniyor…"));
+  var name = B && B.firstName ? B.firstName() : "", email = B && B.session ? B.session.user.email : "";
+  function startNew(){ S.dialog = {kind: "trip-new"}; A.render(); }
+  function startSeed(){
+    var n = D.seedGeorgia(); n.id = D.uid("t"); S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); A.go("tarihler", "", n.id);
+  }
+  function choice(key, onClick, lead, title, text){
+    return h("button", {key: key, type: "button", className: "app-start__choice", onClick: onClick},
+      lead, h("span", {className: "app-start__text"}, h("span", {className: "heading"}, title), h("span", {className: "body-sm app-muted"}, text)),
+      h(T.Icon, {name: "chevron-right", size: 20, className: "app-start__chev"}));
+  }
+  return h("div", {className: "app-start"},
+    h("div", {className: "app-start__inner"},
+      h("div", {className: "app-start__art"}, h(T.Illustration, {name: "trip"})),
+      h("h1", {className: "page-title app-start__title"}, name ? "Merhaba " + name + "!" : "İlk gezini planlayalım"),
+      h("p", {className: "body app-muted app-start__lead"}, name ? "İlk gezini planlayalım: boş bir geziyle başla ya da hazır planı kullan." : "Adını ve tarihlerini gir; her gün için bir sayfa açılır."),
+      h("div", {className: "app-start__choices"},
+        choice("new", startNew, h("span", {className: "app-start__icon"}, h(T.Icon, {name: "plus", size: 22})), "Yeni gezi", "Adını ve tarihlerini gir; her gün için bir sayfa açılır."),
+        B ? choice("seed", startSeed, h("span", {className: "app-start__avatar", "aria-hidden": "true"}, "GE"), "Gürcistan Yılbaşı", "30 Ara – 3 Oca · Batum ve Kutaisi. Günlük planlar, ulaşım ve hazırlık listesi hazır.") : null),
+      B ? h("div", {className: "app-start__note"},
+        h(T.Icon, {name: "share", size: 18}),
+        h("p", {className: "body-sm", style: {margin: 0}}, "Bir arkadaşın seni geziye eklediyse burada kendiliğinden görünür. Seni ", h("strong", null, email), " adresiyle eklemesi yeterli.")) : null),
+    B ? h("div", {className: "app-start__foot"}, h(B.Account, {compact: true})) : null);
 };
 
 /* Ana içerik iskeleti: başlık, kayan gövde, sağ kart */

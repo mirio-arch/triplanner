@@ -250,11 +250,16 @@ function Login(p){
 }
 
 /* Hesap: giriş bilgisi, çıkış, yedek */
-B.Account = function(){
+B.firstName = function(){
+  var m = B.session && B.session.user.user_metadata || {};
+  var n = String(m.given_name || m.full_name || m.name || "").trim().split(/\s+/)[0] || "";
+  return n.length > 24 ? "" : n;
+};
+B.Account = function(p){
   var t = T(), fileRef = React.useRef(null), msg = React.useState("");
   if(!B.session) return null;
-  var a = A(), hasTrips = a && a.S.app.order.length > 0;
-  return h("div", {className: "tpb-account"},
+  var a = A(), hasTrips = a && a.S.app.order.length > 0, compact = p && p.compact;
+  return h("div", {className: "tpb-account" + (compact ? " tpb-account--compact" : "")},
     h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Giriş: " + (B.session.user.email || "")),
     h("div", {className: "app-row", style: {flexWrap: "wrap", gap: "var(--space-2)"}},
       hasTrips ? h(t.Button, {variant: "ghost", size: "sm", icon: "copy", onClick: B.exportAll}, "Yedeği indir") : null,
