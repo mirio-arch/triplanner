@@ -858,3 +858,28 @@ a{color:var(--foreground-secondary)}
 .app-swipe__body>.tp-exp{background:var(--background-raised)}
 .app-swipe__body>.app-flexrow{background:var(--background)}
 .app-swipe .app-swipe__body>.app-pcard,.app-swipe .app-swipe__body>.app-ticket,.app-swipe .app-swipe__body>.tp-checkitem{margin:0}
+/* Profil: arkada ışık */
+.app-profilepage{position:relative;isolation:isolate}
+.app-profilepage::before{content:"";position:absolute;z-index:-1;left:calc(-1 * var(--space-3));right:calc(-1 * var(--space-3));top:calc(-1 * var(--space-4));height:340px;pointer-events:none;
+  background:radial-gradient(55% 45% at 28% 22%,rgba(45,212,191,.30),transparent 70%),radial-gradient(50% 45% at 76% 30%,rgba(139,92,246,.30),transparent 70%),radial-gradient(40% 30% at 50% 60%,rgba(251,191,36,.12),transparent 70%);filter:blur(6px);animation:app-glow-drift 16s var(--ease-ambient,ease-in-out) infinite alternate}
+@keyframes app-glow-drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(8px,-6px,0) scale(1.04)}}
+@media (prefers-reduced-motion:reduce){.app-profilepage::before{animation:none}}
+/* Profil: liste satırları */
+.app-plist{display:flex;flex-direction:column;border-radius:var(--radius-tile);background:var(--background-raised);border:1px solid var(--border-weak);overflow:hidden}
+.app-prow2{display:flex;align-items:center;gap:var(--space-3);min-height:50px;padding:0 var(--space-4);border:0;background:none;color:var(--foreground);font:500 15px var(--font-sans);text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color var(--duration-fast) linear}
+.app-prow2+.app-prow2{border-top:1px solid var(--border-weak)}
+.app-prow2:active{background:var(--background-sunken)}
+.app-prow2 .tp-icon{--tp-duo:currentColor;color:var(--foreground-weak)}
+.app-prow2.is-danger,.app-prow2.is-danger .tp-icon{color:var(--foreground-danger)}
+/* Yerler: kenarı kıvrık yuvarlak çıkartmalar, yana kayar */
+.app-stickers{list-style:none;margin:0 calc(-1 * var(--space-3));padding:var(--space-2) var(--space-3) var(--space-3);display:flex;gap:var(--space-4);overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.app-stickers::-webkit-scrollbar{display:none}
+.app-sticker{flex:none;width:86px;display:flex;flex-direction:column;align-items:center;gap:2px;scroll-snap-align:start;text-align:center}
+.app-sticker__disc{position:relative;width:80px;height:80px;margin-bottom:6px;transform:rotate(var(--rot,0deg));filter:drop-shadow(0 6px 10px rgba(13,20,51,.18))}
+.app-sticker__face{position:absolute;inset:0;border-radius:50%;box-sizing:border-box;border:4px solid #fff;display:grid;place-items:center;font-size:36px;line-height:1;
+  background:radial-gradient(circle at 32% 26%,#fff 0,var(--stk,#ddd6fe) 62%);-webkit-mask:linear-gradient(135deg,#000 74%,transparent 74%);mask:linear-gradient(135deg,#000 74%,transparent 74%)}
+.app-sticker__curl{position:absolute;inset:0;filter:drop-shadow(-1px -1px 1.5px rgba(13,20,51,.22))}
+.app-sticker__curl>span{position:absolute;inset:0;background:radial-gradient(circle 40px at 78.5px 78.5px,#cbd5e1 0,#f1f5f9 55%,#fff 96%,transparent 97%);-webkit-mask:linear-gradient(135deg,#000 74%,transparent 74%);mask:linear-gradient(135deg,#000 74%,transparent 74%)}
+.app-sticker__name{font:600 13px/1.2 var(--font-sans);color:var(--foreground);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-sticker__when{font:500 11px/1.2 var(--font-sans);color:var(--foreground-weak)}
+.app-sticker.is-next .app-sticker__when{color:var(--foreground-primary)}

@@ -314,6 +314,7 @@ function PicPicker(p){
 }
 
 /* ---------- Profil sayfası ---------- */
+var STK = ["#99f6e4", "#ddd6fe", "#fde68a", "#fecdd3", "#bae6fd", "#bbf7d0"];
 function ProfilePage(){
   var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false), fileRef = React.useRef(null), msg = React.useState("");
   var trips = S.app.order.map(function(id){ return S.app.trips[id]; }).filter(Boolean);
@@ -321,17 +322,31 @@ function ProfilePage(){
   var opts = [["", "Cihaz", "sparkle"], ["light", "Açık", "sun"], ["dark", "Koyu", "eye"]];
   function back(e){ if(e) e.preventDefault(); var to = S.profBack && S.profBack !== "#profil" ? S.profBack : "#home"; S.profBack = null; location.hash = to; }
   var picking = React.useState(false), today = A.todayISO();
-  /* gidilen ve gidilecek ülkeler (Türkiye hariç) */
-  var went = [], next = [];
-  trips.forEach(function(t){ (t.countries || []).forEach(function(c){ if(c === "TR" || !D.COUNTRY[c]) return; var arr = t.start <= today ? went : next; if(arr.indexOf(c) < 0 && !(arr === next && went.indexOf(c) > -1)) arr.push(c); }); });
-  next = next.filter(function(c){ return went.indexOf(c) < 0; });
+  /* gidilen ve gidilecek ülkeler (Türkiye hariç); her ülke için en yakın gezinin tarihi */
+  var seen = {};
+  trips.forEach(function(t){ (t.countries || []).forEach(function(c){
+    if(c === "TR" || !D.COUNTRY[c]) return;
+    var past = t.start <= today, o = seen[c];
+    /* gidilmişse en son gidilen, gidilmemişse en yakın gidilecek */
+    if(!o || (past && (!o.past || t.start > o.at)) || (!past && !o.past && t.start < o.at)) seen[c] = {c: c, at: t.start, past: past};
+  }); });
+  var places = Object.keys(seen).map(function(k){ return seen[k]; }).sort(function(a, b){ return (b.past - a.past) || (a.past ? (a.at < b.at ? 1 : -1) : (a.at < b.at ? -1 : 1)); });
+  var went = places.filter(function(x){ return x.past; }), next = places.filter(function(x){ return !x.past; });
   var countryN = went.length + next.length;
   var stats = [["Gezi", trips.length, "route"], ["Ülke", countryN, "flag"], ["Gün", days, "calendar"], ["Fotoğraf", photos, "gallery"]];
-  function chips(list){ return h("div", {className: "app-cpick__chips"}, list.map(function(c){ return h("span", {key: c, className: "app-cchip app-cchip--static"}, A.flag(c) ? h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(c)) : null, h("span", null, D.COUNTRY[c][1])); })); }
-  var places = went.length || next.length ? h("section", {className: "app-psec", "aria-labelledby": "ps-places"},
+  var MON = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  /* yerler: kenarı kıvrık yuvarlak çıkartmalar, yana kayar */
+  var placesSec = places.length ? h("section", {className: "app-psec", "aria-labelledby": "ps-places"},
     h("h2", {id: "ps-places", className: "label app-muted"}, "Yerler"),
-    went.length ? h("div", {className: "app-pplaces"}, h("span", {className: "body-sm app-muted"}, "Gittiğin"), chips(went)) : null,
-    next.length ? h("div", {className: "app-pplaces"}, h("span", {className: "body-sm app-muted"}, "Gideceğin"), chips(next)) : null) : null;
+    h("ul", {className: "app-stickers"}, places.map(function(x, i){
+      var d = D.parseISO(x.at), when = d ? MON[d.getUTCMonth()] + " " + d.getUTCFullYear() : "";
+      return h("li", {key: x.c, className: "app-sticker" + (x.past ? "" : " is-next"), style: {"--rot": [-6, 4, -3, 7, -5, 3][i % 6] + "deg", "--stk": STK[i % STK.length]}},
+        h("span", {className: "app-sticker__disc", "aria-hidden": "true"},
+          h("span", {className: "app-sticker__face"}, A.flag(x.c) || D.COUNTRY[x.c][0]),
+          h("span", {className: "app-sticker__curl"}, h("span", null))),
+        h("span", {className: "app-sticker__name"}, D.COUNTRY[x.c][1]),
+        h("span", {className: "app-sticker__when"}, when, x.past ? null : h("span", {className: "tp-sr"}, " (gidilecek)")));
+    }))) : null;
   var body = h("div", {className: "app-home app-profilepage"},
     A.isPhone ? h("a", {href: "#home", className: "app-back", onClick: back}, h(T.Icon, {name: "chevron-left", size: 20}), h("span", null, "Geri")) : null,
     h("section", {className: "app-phero", "aria-label": "Profil"},
@@ -344,7 +359,7 @@ function ProfilePage(){
     h("div", {className: "app-pstats"}, stats.map(function(x){
       return h("div", {key: x[0], className: "app-pstat"}, h(T.Icon, {name: x[2], size: 18}), h("strong", null, x[1]), h("span", {className: "body-sm app-muted"}, x[0]));
     })),
-    places,
+    placesSec,
     h("section", {className: "app-psec", "aria-labelledby": "ps-theme"},
       h("h2", {id: "ps-theme", className: "label app-muted"}, "Görünüm"),
       h("div", {className: "app-seg app-seg--wide", role: "radiogroup", "aria-labelledby": "ps-theme"}, opts.map(function(o){
@@ -352,16 +367,15 @@ function ProfilePage(){
       }))),
     B && B.session ? h("section", {className: "app-psec", "aria-labelledby": "ps-backup"},
       h("h2", {id: "ps-backup", className: "label app-muted"}, "Yedek"),
-      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Bütün gezilerin tek bir dosyada. Başka bir hesaba ya da cihaza taşımak için kullanabilirsin."),
-      h("div", {className: "app-pbtns"},
-        trips.length ? h(T.Button, {variant: "outline", icon: "copy", full: true, onClick: B.exportAll}, "Yedeği indir") : null,
-        h(T.Button, {variant: "outline", icon: "refresh", full: true, onClick: function(){ if(fileRef.current) fileRef.current.click(); }}, "Yedekten yükle")),
+      h("div", {className: "app-plist"},
+        trips.length ? h("button", {type: "button", className: "app-prow2", onClick: B.exportAll}, h(T.Icon, {name: "copy", size: 18}), h("span", null, "Yedeği indir")) : null,
+        h("button", {type: "button", className: "app-prow2", onClick: function(){ if(fileRef.current) fileRef.current.click(); }}, h(T.Icon, {name: "refresh", size: 18}), h("span", null, "Yedekten yükle"))),
       h("input", {ref: fileRef, type: "file", accept: "application/json,.json", className: "tp-sr", "aria-label": "Yedek dosyası", tabIndex: -1, onChange: function(e){
         var f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f) return;
         B.importFile(f).catch(function(x){ msg[1](x && x.message && !/JSON/.test(x.message) ? x.message : "Bu dosya okunamadı."); });
       }}),
       msg[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style: {margin: 0}}, msg[0]) : null) : null,
-    B && B.session ? h("div", {className: "app-pbtns app-pout"}, h(T.Button, {variant: "ghost", icon: "lock", full: true, onClick: B.signOut}, "Çıkış yap")) : null);
+    B && B.session ? h("div", {className: "app-plist"}, h("button", {type: "button", className: "app-prow2 is-danger", onClick: B.signOut}, h(T.Icon, {name: "lock", size: 18}), h("span", null, "Çıkış yap"))) : null);
   var head = A.isPhone ? null : h("header", {className: "app-pagehead"},
     h("div", {style: {flex: "1 1 320px", minWidth: 0}}, h("h1", {className: "page-title", style: {margin: 0}}, "Profil")));
   return h(F, null, head, A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
