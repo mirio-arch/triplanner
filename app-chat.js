@@ -31,7 +31,7 @@ A.openChat = function(ref){
 A.ActivityButton = function(p){
   var t = A.trip(), c = chatApi();
   React.useEffect(function(){ if(t && c) c.watch(t.id); }, [t && t.id, !!c]);
-  if(!t || S.page === "home") return null;
+  if(!t || A.offTrip()) return null;
   var n = A.unseen(t);
   return h("button", {type: "button", className: "app-actbtn" + (p.onShell ? " is-shell" : ""), "aria-label": (c ? "Sohbet" : "Son hareketler") + (n ? ", " + n + " yeni" : ""), title: c ? "Sohbet" : "Son hareketler",
       onClick: function(){ A.openChat(); }},

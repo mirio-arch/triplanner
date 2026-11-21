@@ -22,7 +22,7 @@ function CheckForm(p){
   }
   return h("form", {className: "app-stack", onSubmit: save},
     h(A.Select, {label: "Grup", value: f.group, options: D.GROUPS.map(function(g){ return {label: g[1], value: g[0]}; }), onChange: function(v){ set("group", v); }}),
-    h(T.TextField, {label: A.req("Madde"), value: f.title, placeholder: "Örn. Seyahat sağlık sigortası", onChange: function(v){ set("title", v); err[1](""); }, error: err[0] || undefined, autoFocus: !!c}),
+    h(T.TextField, {label: A.req("Madde"), value: f.title, placeholder: "Örn. Seyahat sağlık sigortası", onChange: function(v){ set("title", v); err[1](""); }, error: err[0] || undefined, autoFocus: !!c && !A.isPhone}),
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: f.note, onChange: function(v){ set("note", v); }}),
     h(T.TextField, {label: "Bağlantı", optional: true, value: f.link, placeholder: "https://", onChange: function(v){ set("link", v); }}),
     h(A.Field, {label: "Son gün", optional: true, type: "date", value: f.due, max: t.start, onChange: function(v){ set("due", v); }}),

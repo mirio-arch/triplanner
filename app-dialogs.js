@@ -135,7 +135,7 @@ function TransitSheet(p){
   if(step[0] === 0) body = h(T.RadioGroup, {label: "Nasıl gidiyorsun?", variant: "tiles", columns: A.isPhone ? 2 : 3, value: v.mode, onChange: function(x){ set(v.flexTouched ? {mode: x} : {mode: x, flex: A.isFlexTransit({mode: x})}); },
     items: MODE_ITEMS.map(function(m){ return {label: m[1], value: m[0], icon: m[2]}; })});
   else if(step[0] === 1) body = h("div", {className: "app-stack"},
-    h(T.TextField, {label: A.req(v.mode === "border" ? "Sınır kapısı" : "Nereden"), value: v.origin, placeholder: v.mode === "border" ? "Sarp" : "Batum", onChange: function(x){ set("origin", x); err[1](""); }, autoFocus: true}),
+    h(T.TextField, {label: A.req(v.mode === "border" ? "Sınır kapısı" : "Nereden"), value: v.origin, placeholder: v.mode === "border" ? "Sarp" : "Batum", onChange: function(x){ set("origin", x); err[1](""); }, autoFocus: !A.isPhone}),
     v.mode === "border" ? null : h(T.TextField, {label: A.req("Nereye"), value: v.dest, placeholder: "Kutaisi", onChange: function(x){ set("dest", x); err[1](""); }}),
     v.mode === "plane" ? h("div", {className: "app-two"},
       h(T.TextField, {label: "Kalkış kodu", optional: true, value: v.fromCode, placeholder: "IST", maxLength: 5, onChange: function(x){ set("fromCode", x.toUpperCase()); }}),
@@ -159,7 +159,7 @@ function TransitSheet(p){
       h(T.TextField, {label: "Koltuk, peron ya da kapı", value: v.seat, placeholder: v.mode === "plane" ? "14C" : "Peron 7", onChange: function(x){ set("seat", x); }}),
       h(TicketFile, {value: v.ticket, onChange: function(x){ set("ticket", x); }})),
     h(T.TextField, {label: "Süre", optional: true, value: v.duration, placeholder: "~2,5 saat", onChange: function(x){ set("duration", x); }}),
-    h(T.MoneyField, {label: "Bilet fiyatı", optional: true, value: v.amount, currency: v.currency, currencies: D.CURRENCIES, hint: "Gidiş-dönüş tek biletse toplamı yaz.", autoFocus: p.step === 2,
+    h(T.MoneyField, {label: "Bilet fiyatı", optional: true, value: v.amount, currency: v.currency, currencies: D.CURRENCIES, hint: "Gidiş-dönüş tek biletse toplamı yaz.", autoFocus: p.step === 2 && !A.isPhone,
       onChange: function(o){ set({amount: o.value, currency: o.currency}); }}),
     h(T.Checkbox, {label: "Harcamalara ekle", description: "Fiyat girersen Harcamalar'da Ulaşım kategorisine düşer.", checked: v.addExp, strong: true, onChange: function(x){ set("addExp", x); }}),
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: v.note, placeholder: "Peron, rezervasyon kodu, şoför numarası…", onChange: function(x){ set("note", x); }}),
@@ -244,7 +244,7 @@ function TripDialog(p){
   }
   return h(Modal, {title: t ? "Gezi ayarları" : "Yeni gezi", description: t ? t.name : "Tarihleri girince her gün için bir sayfa açılır.", width: "560px", onClose: ask},
     h("form", {className: "app-stack", onSubmit: save},
-      h(T.TextField, {label: A.req("Gezi adı"), value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t, onChange: function(x){ set("name", x); err[1](""); }}),
+      h(T.TextField, {label: A.req("Gezi adı"), value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t && !A.isPhone, onChange: function(x){ set("name", x); err[1](""); }}),
       h("div", {className: "app-two"}, h(A.Field, {label: A.req("Başlangıç"), type: "date", value: v.start, onChange: function(x){ set("start", x); err[1](""); }}), h(A.Field, {label: A.req("Bitiş"), type: "date", value: v.end, min: v.start, onChange: function(x){ set("end", x); err[1](""); }})),
       h("div", {className: "app-two"}, h(T.TextField, {label: "Simge yazısı", optional: true, value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", onChange: function(x){ set("short", x); }}),
         h(A.Select, {label: "Yerel para", value: v.currency, options: [{label: "Yok (TL)", value: ""}].concat(D.CURRENCIES.filter(function(c){ return c !== "TL"; })), onChange: function(x){ set("currency", x); }})),
@@ -254,7 +254,6 @@ function TripDialog(p){
       h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur")),
       t && window.TPB ? h(window.TPB.Members, {tripId: t.id}) : null,
       t ? h("div", {className: "app-zone"}, h("h3", {className: "label app-muted", style:{margin:0}}, "Diğer"),
-        window.TPB ? h(window.TPB.Account) : null,
         t.geo === "georgia" ? (reset[0] ? h(A.Confirm, {text: "Tüm değişiklikler silinip başlangıç planına dönülsün mü?", yes: "Evet, dön", onYes: function(){ var n = D.seedGeorgia(); n.id = t.id; n.expenses = t.expenses; n.photos = t.photos; n.rate = t.rate; n.budget = t.budget; S.app.trips[t.id] = n; A.commit(t.id); close(); A.flash("Başlangıç planına dönüldü. Harcamalar ve fotoğraflar duruyor."); }, onNo: function(){ reset[1](false); }})
           : h(T.Button, {variant: "ghost", size: "sm", icon: "refresh", onClick: function(){ reset[1](true); }}, "Başlangıç planına dön")) : null,
         del[0] ? h(A.Confirm, {text: leave ? "“" + t.name + "” listenden kalksın mı? Diğerleri için gezi olduğu gibi kalır." : "“" + t.name + "” ve içindeki her şey silinsin mi?", yes: leave ? "Geziden ayrıl" : "Geziyi sil", onYes: function(){ var id = t.id; delete S.app.trips[id]; S.app.order = S.app.order.filter(function(x){ return x !== id; }); A.sync.remove(id); D.saveLocal(S.app); close(); S.cur = S.app.order[0] || null; if(S.cur) A.go("tarihler"); else { location.hash = ""; A.render(); } }, onNo: function(){ del[1](false); }})
@@ -282,23 +281,6 @@ function Activity(){
   React.useEffect(function(){ v.seenAt = new Date().toISOString(); A.saveViews(); A.render(); }, []);
   var body = h(A.ActivityFeed, {t: t, seenAt: seen});
   return h(T.Sheet, {title: "Son hareketler", eyebrow: t.name, placement: A.isPhone ? "bottom" : "right", onClose: ask, direction: "none"}, body);
-}
-function Profile(){
-  var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false);
-  var opts = [["", "Cihaz", "sparkle"], ["light", "Açık", "sun"], ["dark", "Koyu", "eye"]];
-  var body = h("div", {className: "app-stack app-profile"},
-    h("div", {className: "app-profile__me"},
-      h("span", {className: "app-avatar app-avatar--lg", "aria-hidden": "true"}, me.photo && !img[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ img[1](true); }}) : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: 28}))),
-      h("div", {style: {minWidth: 0}}, h("div", {className: "heading app-ellipsis"}, me.name || "Bu cihaz"), h("div", {className: "body-sm app-muted app-ellipsis"}, me.email || "Veriler bu tarayıcıda ve Claude hesabında"))),
-    h("div", {className: "app-stack", style: {gap: "var(--space-2)"}},
-      h("h3", {className: "label app-muted", style: {margin: 0}}, "Görünüm"),
-      h("div", {className: "app-seg app-seg--wide", role: "radiogroup", "aria-label": "Tema"}, opts.map(function(o){
-        return h("button", {key: o[1], type: "button", role: "radio", "aria-checked": theme === o[0] ? "true" : "false", "aria-pressed": theme === o[0] ? "true" : "false", onClick: function(){ A.setTheme(o[0]); }},
-          h(T.Icon, {name: o[2], size: 16}), h("span", null, o[1]));
-      }))),
-    B ? h("div", {className: "app-stack", style: {gap: "var(--space-2)"}}, h("h3", {className: "label app-muted", style: {margin: 0}}, "Hesap"), h(B.Account)) : null);
-  return A.isPhone ? h(T.Sheet, {title: "Profil", placement: "bottom", onClose: ask, direction: "none"}, body)
-    : h(T.Dialog, {title: "Profil", width: "440px", onClose: ask}, body);
 }
 function TripMenu(){
   return h(T.Sheet, {title: "Geziler", placement: "bottom", onClose: ask, direction: "none"},
@@ -335,7 +317,7 @@ function Route(){
   var t = A.trip();
   if(d.kind === "trip-new" || d.kind === "trip-settings") return h(TripDialog, {kind: d.kind, key: d.kind});
   if(d.kind === "trip-menu") return h(TripMenu);
-  if(d.kind === "profile") return h(Profile);
+  if(d.kind === "profile"){ setTimeout(function(){ S.dialog = null; S.profBack = location.hash || "#home"; location.hash = "profil"; }, 0); return null; }
   if(d.kind === "activity" && A.trip()) return h(A.Chat);
   if(d.kind === "idea-add" && A.trip()) return h(IdeaAdd, {id: d.id, day: d.day, key: d.id});
   if(!t) return null;

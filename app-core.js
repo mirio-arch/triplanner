@@ -101,6 +101,7 @@ function startTrip(){
 function route(){
   var hsh = (location.hash || "").slice(1), m = /^([A-Za-z0-9]+)-(hazirlik|tarihler|ulasim|harcamalar|galeri)(?:-([a-z]+))?$/.exec(hsh);
   if(m && S.app.trips[m[1]]){ S.cur = m[1]; S.page = m[2]; S.sub = m[3] || ""; }
+  else if(hsh === "profil"){ S.page = "profil"; S.sub = ""; if(!S.app.trips[S.cur]) S.cur = S.app.order[0] || null; }
   else if(hsh === "home" || !S.app.order.length){ S.page = "home"; S.sub = ""; if(!S.app.trips[S.cur]) S.cur = S.app.order[0] || null; }
   else if(!hsh || !m){
     var st = startTrip();
@@ -110,11 +111,13 @@ function route(){
   if(S.page === "harcamalar" && S.sub && S.sub !== "ozet" && !D.EXP_CATS[S.sub]) S.sub = "";
   S.dialog = null;
   var pg = S.cur + "-" + S.page; if(S._lastPage !== pg){ S.panes = {}; S.mapSnap = "c"; S._lastPage = pg; }
-  var t = S.page === "home" ? null : A.trip();
+  var t = A.offTrip() ? null : A.trip();
   document.title = t ? "Triplanner · " + t.name : "Triplanner";
   A.render();
   var body = document.querySelector("[data-scroll]"); if(body) body.scrollTop = 0;
 }
+/* gezi dışı sayfalar: ana sayfa ve profil */
+A.offTrip = function(){ return S.page === "home" || S.page === "profil"; };
 A.go = function(page, sub, tripId){ var target = A.href(page, sub, tripId); if(location.hash === target) route(); else location.hash = target; };
 window.addEventListener("hashchange", route);
 A.route = route;
@@ -280,8 +283,8 @@ function Rail(){
     h("a", {href: "#home", className: "tp-trip__btn app-rail__home" + (S.page === "home" ? " is-active" : ""), "aria-label": "Ana sayfa", title: "Ana sayfa", "aria-current": S.page === "home" ? "page" : undefined}, h(T.Icon, {name: "home", size: 22})),
     S.app.order.map(function(id){
       var t = S.app.trips[id]; if(!t) return null;
-      var pg = S.page === "home" ? "tarihler" : S.page;
-      return h(T.TripAvatar, {key: id, initials: t.short, label: t.name, color: COLORS[t.color % 6], active: S.page !== "home" && id === S.cur, href: A.href(pg, "", id)});
+      var pg = A.offTrip() ? "tarihler" : S.page;
+      return h(T.TripAvatar, {key: id, initials: t.short, label: t.name, color: COLORS[t.color % 6], active: !A.offTrip() && id === S.cur, href: A.href(pg, "", id)});
     }),
     h("span", {style: {flex: 1}}),
     h(T.IconButton, {icon: "plus", label: "Yeni gezi", variant: "rail", size: "lg", round: true, onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}),
@@ -441,13 +444,14 @@ A.TripMark = function(p){ var t = p.t; return h("span", {className: "tp-trip__bt
 A.AvatarButton = function(p){
   var me = A.me(), sz = p.size || 40, err = React.useState(false);
   return h("button", {type: "button", className: "app-avatar", style: {width: sz, height: sz}, "aria-label": "Profil" + (me.name ? ": " + me.name : ""), title: "Profil",
-      onClick: function(){ S.dialog = {kind: "profile"}; A.render(); }},
+      "aria-current": S.page === "profil" ? "page" : undefined,
+      onClick: function(){ if(S.page === "profil") return; S.profBack = location.hash || "#home"; location.hash = "profil"; }},
     me.photo && !err[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ err[1](true); }})
       : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: Math.round(sz * .5)})));
 };
 function Sidebar(){
   var t = A.trip();
-  if(S.page === "home" || !t) return h("nav", {className: "tp-onshell app-side", "aria-label": "Ana sayfa"},
+  if(A.offTrip() || !t) return h("nav", {className: "tp-onshell app-side", "aria-label": "Ana sayfa"},
     h("div", {className: "app-side__trip"}, h("div", {style: {flex: 1, minWidth: 0}}, h("div", {className: "heading app-ellipsis"}, "Triplanner"))),
     A.homeSubmenu ? A.homeSubmenu() : null,
     h("div", {className: "app-side__foot"}, h(A.StatusChip)));
@@ -473,7 +477,7 @@ A.Submenu = function(p){
 };
 
 function PhoneHeader(){
-  var home = S.page === "home", t = home ? null : A.trip();
+  var home = A.offTrip(), t = home ? null : A.trip();
   return h("header", {className: "tp-onshell app-phonehead"},
     h("a", {href: "#home", className: "app-phonehead__logo", "aria-label": "Ana sayfa"}, h(T.Logo, {variant: "plain", size: "sm"})),
     home || !t ? h("div", {className: "app-phonehead__title"}, h("span", {className: "heading"}, "Triplanner"))
@@ -486,7 +490,7 @@ function PhoneHeader(){
     h(A.AvatarButton, {size: 44}));
 }
 function PhoneNav(){
-  var t = A.trip(); if(!t || S.page === "home") return null;
+  var t = A.trip(); if(!t || A.offTrip()) return null;
   var c = navCounts(t);
   return h("div", {className: "tp-onshell app-phonenav"}, h(T.BottomNav, {label: "Sayfalar", items: PAGES.map(function(p){
     return {label: A.PAGE_INFO[p].label, icon: A.PAGE_INFO[p].icon, href: A.href(p), active: S.page === p, badge: p === "hazirlik" ? (t.checklist.length - t.checklist.filter(function(x){ return x.done; }).length) || undefined : undefined};
@@ -506,9 +510,9 @@ function Root(){
   var sysDark = A.useMedia("(prefers-color-scheme: dark)");
   A.isPhone = phone;
   A.dark = S.views._theme ? S.views._theme === "dark" : sysDark;
-  var home = S.page === "home" || !A.trip(), t = home ? null : A.trip();
+  var home = A.offTrip() || !A.trip(), t = home ? null : A.trip();
   var Page = t && A.pages[S.page] ? A.pages[S.page].view : null;
-  var content = home ? (A.Home ? h(A.Home) : h(A.EmptyApp)) : (Page ? h(Page, {t: t, v: A.view()}) : null);
+  var content = S.page === "profil" && A.ProfilePage ? h(A.ProfilePage) : home ? (A.Home ? h(A.Home) : h(A.EmptyApp)) : (Page ? h(Page, {t: t, v: A.view()}) : null);
   var overlay = A.Dialogs ? h(A.Dialogs) : null;
   var toast = S.toast ? h("div", {className: "app-toastwrap"}, h(T.Toast, {key: S.toast.at, text: S.toast.text, actionLabel: S.toast.undo ? (S.toast.label || "Geri al") : undefined, onAction: S.toast.undo ? function(){ var u = S.toast.undo; S.toast = null; u(); } : undefined})) : null;
   if(phone){

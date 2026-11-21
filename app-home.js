@@ -256,12 +256,52 @@ function Home(){
   return h(F, null, head, A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
 }
 A.Home = Home;
+
+/* ---------- Profil sayfası ---------- */
+function ProfilePage(){
+  var me = A.me(), B = window.TPB, theme = S.views._theme || "", img = React.useState(false), fileRef = React.useRef(null), msg = React.useState("");
+  var trips = S.app.order.map(function(id){ return S.app.trips[id]; }).filter(Boolean);
+  var days = trips.reduce(function(n, t){ return n + t.days.length; }, 0), photos = trips.reduce(function(n, t){ return n + t.photos.length; }, 0);
+  var opts = [["", "Cihaz", "sparkle"], ["light", "Açık", "sun"], ["dark", "Koyu", "eye"]];
+  function back(e){ if(e) e.preventDefault(); var to = S.profBack && S.profBack !== "#profil" ? S.profBack : "#home"; S.profBack = null; location.hash = to; }
+  var stats = [["Gezi", trips.length, "route"], ["Gün", days, "calendar"], ["Fotoğraf", photos, "gallery"]];
+  var body = h("div", {className: "app-home app-profilepage"},
+    A.isPhone ? h("a", {href: "#home", className: "app-back", onClick: back}, h(T.Icon, {name: "chevron-left", size: 20}), h("span", null, "Geri")) : null,
+    h("section", {className: "app-phero", "aria-label": "Profil"},
+      h("span", {className: "app-avatar app-avatar--xl", "aria-hidden": "true"}, me.photo && !img[0] ? h("img", {src: me.photo, alt: "", referrerPolicy: "no-referrer", onError: function(){ img[1](true); }}) : (me.initials ? h("span", null, me.initials) : h(T.Icon, {name: "user", size: 32}))),
+      h("h1", {className: "section-title app-phero__name"}, me.name || "Bu cihaz"),
+      me.email ? h("p", {className: "body-sm app-muted app-phero__mail"}, me.email) : h("p", {className: "body-sm app-muted app-phero__mail"}, "Veriler bu tarayıcıda tutuluyor")),
+    h("div", {className: "app-pstats"}, stats.map(function(x){
+      return h("div", {key: x[0], className: "app-pstat"}, h(T.Icon, {name: x[2], size: 18}), h("strong", null, x[1]), h("span", {className: "body-sm app-muted"}, x[0]));
+    })),
+    h("section", {className: "app-psec", "aria-labelledby": "ps-theme"},
+      h("h2", {id: "ps-theme", className: "label app-muted"}, "Görünüm"),
+      h("div", {className: "app-seg app-seg--wide", role: "radiogroup", "aria-labelledby": "ps-theme"}, opts.map(function(o){
+        return h("button", {key: o[1], type: "button", role: "radio", "aria-checked": theme === o[0] ? "true" : "false", onClick: function(){ A.setTheme(o[0]); }}, h(T.Icon, {name: o[2], size: 16}), h("span", null, o[1]));
+      }))),
+    B && B.session ? h("section", {className: "app-psec", "aria-labelledby": "ps-backup"},
+      h("h2", {id: "ps-backup", className: "label app-muted"}, "Yedek"),
+      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Bütün gezilerin tek bir dosyada. Başka bir hesaba ya da cihaza taşımak için kullanabilirsin."),
+      h("div", {className: "app-pbtns"},
+        trips.length ? h(T.Button, {variant: "outline", icon: "copy", full: true, onClick: B.exportAll}, "Yedeği indir") : null,
+        h(T.Button, {variant: "outline", icon: "refresh", full: true, onClick: function(){ if(fileRef.current) fileRef.current.click(); }}, "Yedekten yükle")),
+      h("input", {ref: fileRef, type: "file", accept: "application/json,.json", className: "tp-sr", "aria-label": "Yedek dosyası", tabIndex: -1, onChange: function(e){
+        var f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f) return;
+        B.importFile(f).catch(function(x){ msg[1](x && x.message && !/JSON/.test(x.message) ? x.message : "Bu dosya okunamadı."); });
+      }}),
+      msg[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style: {margin: 0}}, msg[0]) : null) : null,
+    B && B.session ? h("div", {className: "app-pbtns app-pout"}, h(T.Button, {variant: "ghost", icon: "lock", full: true, onClick: B.signOut}, "Çıkış yap")) : null);
+  var head = A.isPhone ? null : h("header", {className: "app-pagehead"},
+    h("div", {style: {flex: "1 1 320px", minWidth: 0}}, h("h1", {className: "page-title", style: {margin: 0}}, "Profil")));
+  return h(F, null, head, A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
+}
+A.ProfilePage = ProfilePage;
 A.homeSubmenu = function(){
   var items = S.app.order.map(function(id){ var t = S.app.trips[id]; if(!t) return null;
     return h(T.NavItem, {key: id, mark: t.short, label: t.name, sub: tripState(t).text, href: A.href("tarihler", "", id)}); }).filter(Boolean);
   return h(F, null,
     h("div", {className: "app-side__nav"},
-      h(T.NavItem, {icon: "home", label: "Ana sayfa", href: "#home", active: true}),
+      h(T.NavItem, {icon: "home", label: "Ana sayfa", href: "#home", active: S.page === "home"}),
       h(T.NavItem, {icon: "calendar", label: "Tatil fırsatları", href: "#", onClick: function(e){ if(e) e.preventDefault(); var el = document.getElementById("home-deals"); if(el) el.scrollIntoView({behavior: "smooth", block: "start"}); }})),
     items.length ? h(A.Submenu, {title: "Gezilerin"}, items) : null);
 };

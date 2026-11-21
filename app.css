@@ -704,7 +704,6 @@ a{color:var(--foreground-secondary)}
 }
 .ios-standalone .app-root>.tp-sheetwrap,.ios-standalone .app-root>.tp-scrim{bottom:auto;height:var(--tp-screen-h,100%)}
 .kbd .app-root>.tp-sheetwrap,.kbd .app-root>.tp-scrim{top:var(--vvt,0px) !important;bottom:auto !important;height:var(--vvh,100%) !important}
-.kbd .tp-sheet--bottom{max-height:calc(100% - 8px)}
 .kbd .tp-sheet--bottom .tp-sheet__foot,.kbd .tp-sheet--bottom .tp-sheet__body:last-child{padding-bottom:var(--space-3)}
 
 /* Telefonda seçim kutusu: liste pencerenin içinde, kutunun altında */
@@ -749,3 +748,19 @@ a{color:var(--foreground-secondary)}
 .ios-standalone .app-chatwrap{bottom:auto;height:var(--tp-screen-h,100%)}
 .kbd .app-chatwrap{top:var(--vvt,0px) !important;bottom:auto !important;height:var(--vvh,100%) !important}
 .kbd .app-chat{padding-bottom:0}
+/* Profil sayfası */
+.app-profilepage{max-width:560px}
+.app-phone .app-profilepage{gap:var(--space-6);padding-top:var(--space-3)}
+.app-profilepage>.app-back{align-self:flex-start;margin-left:calc(-1 * var(--space-1))}
+.app-phero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--space-1)}
+.app-avatar--xl{width:88px;height:88px;font-size:30px;cursor:default;margin-bottom:var(--space-2);border-color:var(--border-weak);background:var(--background-primary-weak);color:var(--foreground-primary)}
+.app-phero__name{margin:0;overflow-wrap:anywhere}
+.app-phero__mail{margin:0;overflow-wrap:anywhere}
+.app-pstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-2)}
+.app-pstat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:var(--space-3) var(--space-2);border-radius:var(--radius-tile);background:var(--background-raised);border:1px solid var(--border-weak);box-shadow:var(--shadow-card,none)}
+.app-pstat .tp-icon{color:var(--foreground-primary);--tp-duo:currentColor;margin-bottom:2px}
+.app-pstat strong{font:700 22px/1.2 var(--font-sans);font-variant-numeric:tabular-nums;color:var(--foreground)}
+.app-psec{display:flex;flex-direction:column;gap:var(--space-2)}
+.app-psec>h2{margin:0}
+.app-pbtns{display:flex;flex-direction:column;gap:var(--space-2)}
+.app-pout{padding-top:var(--space-2);border-top:1px solid var(--border-weak)}
