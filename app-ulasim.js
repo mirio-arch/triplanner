@@ -327,21 +327,21 @@ var SMALL = 124;
 function MapPane(p){
   var t = p.t, v = p.v, boxRef = React.useRef(null);
   var size = React.useState({H: 600}), drag = React.useState(null);
-  var snap = ["s", "h", "f"].indexOf(v.mapSnap) > -1 ? v.mapSnap : "c", leaving = React.useState(false), st = React.useRef(null);
+  var snap = ["s", "h", "f"].indexOf(S.mapSnap) > -1 ? S.mapSnap : "c", leaving = React.useState(false), st = React.useRef(null);
   React.useEffect(function(){
     var box = boxRef.current && boxRef.current.parentNode; if(!box) return;
     function m(){ size[1]({H: box.clientHeight}); }
     m(); if(!window.ResizeObserver) return;
     var ro = new ResizeObserver(m); ro.observe(box); return function(){ ro.disconnect(); };
   }, [snap === "c"]);
-  function close(){ leaving[1](true); setTimeout(function(){ leaving[1](false); v.mapSnap = "c"; A.saveViews(); A.render(); }, 220); }
+  function close(){ leaving[1](true); setTimeout(function(){ leaving[1](false); S.mapSnap = "c"; A.render(); }, 220); }
   var sel0 = v.transit && t.items[v.transit] ? v.transit : null;
   if(snap === "c") return h("div", {ref: boxRef, className: "app-fabs"},
     h("button", {type: "button", className: "app-fab app-fab--round", "aria-label": "Ulaşım ekle", title: "Ulaşım ekle", onClick: function(){ addTransit(sel0 ? A.whereIs(t, sel0) : null); }}, h(T.Icon, {name: "plus", size: 22})),
-    h("button", {type: "button", className: "app-fab", onClick: function(){ v.mapSnap = "s"; A.saveViews(); A.render(); }}, h(T.Icon, {name: "map", size: 20}), h("span", null, "Harita")));
+    h("button", {type: "button", className: "app-fab", onClick: function(){ S.mapSnap = "s"; A.render(); }}, h(T.Icon, {name: "map", size: 20}), h("span", null, "Harita")));
   var H = size[0].H, heights = {s: SMALL, h: Math.round(H * .5), f: H};
   var height = drag[0] ? drag[0].cur : heights[snap];
-  function setSnap(x){ v.mapSnap = x; A.saveViews(); A.render(); }
+  function setSnap(x){ S.mapSnap = x; A.render(); }
   function down(e){
     if(e.button !== undefined && e.button !== 0) return;
     st.current = {y: e.clientY, h0: heights[snap], moved: false};

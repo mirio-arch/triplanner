@@ -559,3 +559,9 @@ a{color:var(--foreground-secondary)}
 .app-deal__art{position:absolute;inset:0;width:100%;height:100%;z-index:-1;color:rgba(255,255,255,.2);pointer-events:none;filter:drop-shadow(0 0 6px rgba(var(--tone),.45));animation:app-art-float 9s var(--ease-ambient,ease-in-out) infinite alternate}
 @keyframes app-art-float{from{transform:translate3d(0,0,0)}to{transform:translate3d(-6px,4px,0)}}
 @media (prefers-reduced-motion:reduce){.app-deal__art{animation:none}}
+/* Alt bölme: kapat düğmesi tutamak satırında, içerikle çakışmasın */
+.app-pane__close{top:2px;right:6px}
+.app-pane__close .tp-iconbtn{width:30px;height:30px;min-width:30px}
+.app-pane__edge{height:32px}
+.app-pane__peek{padding:36px var(--space-3) var(--space-3)}
+.app-pane__scroll{padding-top:38px}

@@ -109,6 +109,7 @@ function route(){
   }
   if(S.page === "harcamalar" && S.sub && S.sub !== "ozet" && !D.EXP_CATS[S.sub]) S.sub = "";
   S.dialog = null;
+  var pg = S.cur + "-" + S.page; if(S._lastPage !== pg){ S.panes = {}; S.mapSnap = "c"; S._lastPage = pg; }
   var t = S.page === "home" ? null : A.trip();
   document.title = t ? "Triplanner · " + t.name : "Triplanner";
   A.render();
@@ -389,9 +390,10 @@ A.EmptyApp = function(){
 /* Telefonda sağ kartın yeri: kapalıyken yüzen düğme; açılınca alttan gelen,
    kenarından çekilerek küçük / yarım / tam boya getirilen bölme. */
 A.PhonePane = function(p){
-  var v = A.view(), boxRef = React.useRef(null), peekRef = React.useRef(null), st = React.useRef(null);
-  v.panes = v.panes || {};
-  var snap = ["s", "h", "f"].indexOf(v.panes[p.id]) > -1 ? v.panes[p.id] : "c";
+  var boxRef = React.useRef(null), peekRef = React.useRef(null), st = React.useRef(null);
+  /* açık/kapalı hali kaydedilmez: sayfaya her girişte kapalı gelir */
+  S.panes = S.panes || {};
+  var snap = ["s", "h", "f"].indexOf(S.panes[p.id]) > -1 ? S.panes[p.id] : "c";
   var size = React.useState({H: 600, S: 140}), drag = React.useState(null), leaving = React.useState(false);
   React.useEffect(function(){
     var box = boxRef.current && boxRef.current.parentNode; if(!box) return;
@@ -400,7 +402,7 @@ A.PhonePane = function(p){
     var ro = new ResizeObserver(m); ro.observe(box); if(peekRef.current) ro.observe(peekRef.current);
     return function(){ ro.disconnect(); };
   }, [snap === "c", snap === "s"]);
-  function setSnap(x){ v.panes[p.id] = x; A.saveViews(); A.render(); }
+  function setSnap(x){ S.panes[p.id] = x; A.render(); }
   function close(){ leaving[1](true); setTimeout(function(){ leaving[1](false); setSnap("c"); }, 220); }
   if(snap === "c"){
     return h("button", {ref: boxRef, type: "button", className: "app-fab", onClick: function(){ setSnap("s"); }, "aria-label": p.fab.aria || p.fab.label},
