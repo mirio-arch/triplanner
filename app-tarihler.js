@@ -128,6 +128,7 @@ function PhoneDayBar(p){
       return h("button", {key: d.id, type: "button", role: "tab", "aria-selected": on ? "true" : "false", className: "app-daychip" + (on ? " is-on" : "") + (d.items.length ? "" : " is-empty"),
         onClick: function(){ selectDay(t, d.id); }}, dt.getUTCDate() + " ", h("small", null, D.WDS[dt.getUTCDay()]));
     })),
+    h("span", {className: "app-vdiv", "aria-hidden": "true"}),
     h("div", {className: "app-seg", role: "group", "aria-label": "Görünüm"},
       h("button", {type: "button", "aria-pressed": mode === "Kartlar" ? "true" : "false", "aria-label": "Kartlar", title: "Kartlar", onClick: function(){ setMode("Kartlar"); }}, h(T.Icon, {name: "list", size: 18})),
       h("button", {type: "button", "aria-pressed": mode === "Saatler" ? "true" : "false", "aria-label": "Saatler", title: "Saatler", onClick: function(){ setMode("Saatler"); }}, h(T.Icon, {name: "timeline", size: 18}))));

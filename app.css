@@ -222,3 +222,5 @@ a{color:var(--foreground-secondary)}
 .app-nexttag{margin-top:var(--space-2)}
 .app-hours__row.is-next .app-hours__btn{border-radius:var(--radius-block,12px);box-shadow:0 0 0 2px var(--border-primary)}
 .app-hours__row.is-next .app-hours__t{color:var(--foreground-primary);font-weight:600}
+.app-vdiv{flex:none;align-self:stretch;width:1px;margin:4px 2px;background:var(--border)}
+.app-daychips{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 20px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 20px),transparent);padding-right:16px}
