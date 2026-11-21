@@ -36,7 +36,7 @@ A.dayLabel = function(t, id, long){
   if(id === "pre") return "Yola çıkmadan";
   var d = A.dayById(t, id); if(!d) return "";
   var f = D.fmtDay(d.date);
-  return (A.todayDayId(t) === id ? "Bugün · " : "") + f.short + " " + (long ? f.wd : D.WDS[D.parseISO(d.date).getUTCDay()]);
+  return (A.todayDayId(t) === id ? "Bugün, " : "") + f.short + " " + (long ? f.wd : D.WDS[D.parseISO(d.date).getUTCDay()]);
 };
 A.dayTitle = function(t, d){ return d.title || (A.dayIndex(t, d.id) + 1) + ". gün"; };
 A.whereIs = function(t, id){
@@ -112,7 +112,7 @@ function route(){
   S.dialog = null;
   var pg = S.cur + "-" + S.page; if(S._lastPage !== pg){ S.panes = {}; S.mapSnap = "c"; S._lastPage = pg; }
   var t = A.offTrip() ? null : A.trip();
-  document.title = t ? "Triplanner · " + t.name : "Triplanner";
+  document.title = t ? "Triplanner – " + t.name : "Triplanner";
   A.render();
   var body = document.querySelector("[data-scroll]"); if(body) body.scrollTop = 0;
 }
@@ -278,7 +278,7 @@ A.navCounts = navCounts;
 
 function Rail(){
   return h("nav", {className: "tp-onshell app-rail", "aria-label": "Geziler"},
-    h(T.Logo, {variant: "plain", href: "#home", label: "Triplanner · Ana sayfa"}),
+    h(T.Logo, {variant: "plain", href: "#home", label: "Triplanner, ana sayfa"}),
     h("span", {className: "app-rail__sep", "aria-hidden": "true"}),
     h("a", {href: "#home", className: "tp-trip__btn app-rail__home" + (S.page === "home" ? " is-active" : ""), "aria-label": "Ana sayfa", title: "Ana sayfa", "aria-current": S.page === "home" ? "page" : undefined}, h(T.Icon, {name: "home", size: 22})),
     S.app.order.map(function(id){
@@ -486,7 +486,7 @@ A.CountryPicker = function(p){
             var on = sel.indexOf(c[0]) > -1;
             return h("li", {key: c[0], role: "option", tabIndex: 0, "aria-selected": on ? "true" : "false", className: "tp-option", onClick: function(){ toggle(c[0]); },
                 onKeyDown: function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(c[0]); } }},
-              h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(c[0]) || "·"),
+              h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(c[0]) || ""),
               h("span", {className: "tp-option__text"}, h("span", {className: "body"}, c[1])),
               on ? h(T.Icon, {name: "check", size: 18, className: "tp-option__check"}) : null);
           }) : h("li", {className: "body-sm app-muted", style: {padding: "var(--space-2) var(--space-3)"}}, "Bulunamadı")))),
@@ -515,7 +515,7 @@ A.PlacePicker = function(p){
   function opt(key, flagCode, title, sub, on, onPick){
     return h("li", {key: key, role: "option", tabIndex: 0, "aria-selected": on ? "true" : "false", className: "tp-option", onClick: onPick,
         onKeyDown: function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onPick(); } }},
-      h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(flagCode) || "·"),
+      h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(flagCode) || ""),
       h("span", {className: "tp-option__text"}, h("span", {className: "body"}, title), sub ? h("span", {className: "body-sm tp-muted"}, sub) : null),
       on ? h(T.Icon, {name: "check", size: 18, className: "tp-option__check"}) : null);
   }
@@ -644,15 +644,16 @@ A.Swipe = function(p){
     /* açık alandan sonrası dirençli */
     var shown = pull <= SW_ACT ? pull : SW_ACT + (pull - SW_ACT) * .75;
     var armed = shown > w * .6;
-    if(armed !== s.armed){ s.armed = armed; s.armedAt = Date.now(); A.haptic(); }
+    /* Android'de kayarken titreşir; iPhone yalnızca parmak kalkınca titreşime izin verir */
+    if(armed !== s.armed){ s.armed = armed; s.armedAt = Date.now(); if(navigator.vibrate) navigator.vibrate(10); }
     set(-Math.min(shown, w), false, armed);
   }
   function up(){
     var s = st.current; st.current = null; if(!s || s.dir !== "h") return;
     wrap.current._swiped = Date.now();
     var shown = -x.current;
-    if(s.armed && Date.now() - s.armedAt > 140) run();
-    else if(shown > SW_ACT * .5){ set(-SW_ACT, true, false); swOpen = close; }
+    if(s.armed && Date.now() - s.armedAt > 140){ A.haptic(); run(); }
+    else if(shown > SW_ACT * .5){ A.haptic(); set(-SW_ACT, true, false); swOpen = close; }
     else close();
   }
   function clickCap(e){
@@ -666,7 +667,7 @@ A.Swipe = function(p){
   return h("div", {ref: wrap, className: "app-swipe" + (p.className ? " " + p.className : ""), style: p.radius ? {"--sw-radius": p.radius} : null,
       onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: function(){ st.current = null; close(); }, onClickCapture: clickCap},
     h("button", {type: "button", className: "app-swipe__act", tabIndex: -1, "aria-hidden": "true", onClick: function(e){ e.stopPropagation(); A.haptic(); run(); }},
-      h("span", {className: "app-swipe__lbl"}, h(T.Icon, {name: p.icon || "trash", size: 20}), h("span", null, p.label || "Sil"))),
+      h("span", {className: "app-swipe__lbl"}, h("span", {className: "app-swipe__ic"}, h(T.Icon, {name: p.icon || "trash", size: 20})), h("span", {className: "tp-sr"}, p.label || "Sil"))),
     h("div", {ref: body, className: "app-swipe__body"}, p.children));
 };
 
@@ -690,22 +691,29 @@ A.DateField = function(p){
     if(!pend[0] || iso < pend[0]){ pend[1](iso); return; }
     pend[1](null); p.onChange(pend[0], iso);
   }
-  var y = mo[0].y, m = mo[0].m, first = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), today = A.todayISO();
-  var cells = CAL_WD.map(function(w){ return h("span", {key: "w" + w, className: "tp-cal__wd label", "aria-hidden": "true"}, w); });
-  for(var i = 0; i < first; i++) cells.push(h("span", {key: "b" + i}));
-  for(var d = 1; d <= days; d++){
-    (function(d){
-      var iso = isoOf(y, m, d), st = iso === s, en = e && iso === e, inr = s && e && iso > s && iso < e, off = p.max && iso > p.max;
-      cells.push(h("button", {key: d, type: "button", disabled: off || undefined,
-        className: "tp-cal__day body" + (st ? " is-start" : "") + (en ? " is-end" : "") + (st && (!e || en) ? " is-single" : "") + (inr ? " in-range" : "") + (iso === today ? " is-today" : ""),
-        "aria-label": d + " " + MONTHS[m] + " " + y + (st ? (range ? ", başlangıç" : ", seçili") : "") + (en ? ", bitiş" : ""), "aria-pressed": st || en ? "true" : "false",
-        onClick: function(){ pick(iso); }}, d));
-    })(d);
+  var today = A.todayISO();
+  function month(y, m){
+    var first = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    var cells = CAL_WD.map(function(w){ return h("span", {key: "w" + w, className: "tp-cal__wd label", "aria-hidden": "true"}, w); });
+    for(var i = 0; i < first; i++) cells.push(h("span", {key: "b" + i}));
+    for(var d = 1; d <= days; d++){
+      (function(d){
+        var iso = isoOf(y, m, d), st = iso === s, en = e && iso === e, inr = s && e && iso > s && iso < e, off = p.max && iso > p.max;
+        cells.push(h("button", {key: d, type: "button", disabled: off || undefined,
+          className: "tp-cal__day body" + (st ? " is-start" : "") + (en ? " is-end" : "") + (st && (!e || en) ? " is-single" : "") + (inr ? " in-range" : "") + (iso === today ? " is-today" : ""),
+          "aria-label": d + " " + MONTHS[m] + " " + y + (st ? (range ? ", başlangıç" : ", seçili") : "") + (en ? ", bitiş" : ""), "aria-pressed": st || en ? "true" : "false",
+          onClick: function(){ pick(iso); }}, d));
+      })(d);
+    }
+    return h("div", {key: y + "-" + m, className: "tp-cal__month"}, h("div", {className: "tp-cal__title body-strong"}, MONTHS[m] + " " + y), h("div", {className: "tp-cal__grid"}, cells));
   }
+  /* aralıkta iki ay: telefonda alt alta, geniş ekranda yan yana */
+  var months = [month(mo[0].y, mo[0].m)];
+  if(range){ var nm = mo[0].m + 1; months.push(month(mo[0].y + (nm > 11 ? 1 : 0), nm % 12)); }
   var nDays = a && b ? Math.round((D.parseISO(b) - D.parseISO(a)) / 864e5) + 1 : 0;
-  var shown = range ? (a && b ? niceDate(a, D.parseISO(a).getUTCFullYear() !== D.parseISO(b).getUTCFullYear()) + " – " + niceDate(b, true) + " · " + nDays + " gün" : "")
+  var shown = range ? (a && b ? niceDate(a, D.parseISO(a).getUTCFullYear() !== D.parseISO(b).getUTCFullYear()) + " – " + niceDate(b, true) + ", " + nDays + " gün" : "")
     : (a ? niceDate(a, true) : "");
-  var status = range ? (pend[0] ? "Bitiş gününü seç" : (nDays ? nDays + " gün · " + (nDays - 1) + " gece" : "Başlangıç gününü seç")) : "";
+  var status = range ? (pend[0] ? "Bitiş gününü seç" : (nDays ? nDays + " gün, " + (nDays - 1) + " gece" : "Başlangıç gününü seç")) : "";
   return h("div", {className: "tp-field app-date" + (open[0] ? " is-open" : "")},
     p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label) : null,
     h("button", {type: "button", className: "tp-input tp-trigger body", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id, "aria-labelledby": (p.label ? id + "-l " : "") + id + "-v",
@@ -718,12 +726,48 @@ A.DateField = function(p){
         h("div", {className: "tp-cal__nav"},
           h(T.IconButton, {icon: "chevron-left", label: "Önceki ay", size: "sm", onClick: function(){ shift(-1); }}),
           h(T.IconButton, {icon: "chevron-right", label: "Sonraki ay", size: "sm", onClick: function(){ shift(1); }})),
-        h("div", {className: "tp-cal__month"}, h("div", {className: "tp-cal__title body-strong", "aria-live": "polite"}, MONTHS[m] + " " + y), h("div", {className: "tp-cal__grid"}, cells)),
+        h("div", {className: "tp-cal__months app-cal__months", "aria-live": "polite"}, months),
         h("div", {className: "tp-cal__foot"},
           h("span", {className: "body-sm tp-muted", style: {marginRight: "auto"}}, status),
           a ? h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ pend[1](null); if(range) p.onChange("", ""); else p.onChange(""); }}, "Temizle") : null,
           h(T.Button, {variant: "primary", size: "sm", onClick: function(){ pend[1](null); open[1](false); }}, "Tamam")))),
     p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null);
+};
+
+/* Basılı tutunca açılan menü (iPhone'daki gibi): öğenin altında ya da üstünde, ekranın üstünde açılır */
+A.longPress = function(fn){
+  var tm = null, start = null;
+  function cancel(){ clearTimeout(tm); tm = null; }
+  return {
+    onPointerDown: function(e){ if(e.button > 0) return; var el = e.currentTarget; start = {x: e.clientX, y: e.clientY}; cancel();
+      tm = setTimeout(function(){ tm = null; A.haptic(); el._lp = Date.now(); fn(el.getBoundingClientRect()); }, 450); },
+    onPointerMove: function(e){ if(tm && start && (Math.abs(e.clientX - start.x) > 8 || Math.abs(e.clientY - start.y) > 8)) cancel(); },
+    onPointerUp: cancel, onPointerCancel: cancel, onPointerLeave: cancel,
+    onContextMenu: function(e){ e.preventDefault(); cancel(); var el = e.currentTarget; el._lp = Date.now(); fn(el.getBoundingClientRect()); },
+    onClickCapture: function(e){ var el = e.currentTarget; if(el._lp && Date.now() - el._lp < 600){ e.stopPropagation(); e.preventDefault(); } }
+  };
+};
+A.ContextMenu = function(p){
+  var ref = React.useRef(null);
+  React.useLayoutEffect(function(){
+    var el = ref.current, r = p.rect; if(!el || !r) return;
+    var vv = window.visualViewport, vh = vv ? vv.height + vv.offsetTop : window.innerHeight, vw = window.innerWidth, w = el.offsetWidth, ph = el.offsetHeight;
+    var left = p.align === "right" ? r.right - w : r.left; left = Math.max(8, Math.min(left, vw - w - 8));
+    var up = r.bottom + 6 + ph > vh - 8;
+    el.style.left = left + "px"; el.style.top = (up ? Math.max(8, r.top - 6 - ph) : r.bottom + 6) + "px";
+    var first = el.querySelector("[role=menuitem]"); if(first) first.focus({preventScroll: true});
+    function away(e){ if(!el.contains(e.target)) p.onClose(); }
+    function key(e){ if(e.key === "Escape") p.onClose(); }
+    setTimeout(function(){ document.addEventListener("pointerdown", away, true); }, 0);
+    document.addEventListener("keydown", key); window.addEventListener("scroll", p.onClose, true);
+    return function(){ document.removeEventListener("pointerdown", away, true); document.removeEventListener("keydown", key); window.removeEventListener("scroll", p.onClose, true); };
+  }, [p.rect]);
+  var root = document.querySelector(".app-root") || document.body;
+  return ReactDOM.createPortal(h("div", {ref: ref, role: "menu", className: "tp-pop__panel app-menu app-ctxmenu", onClick: function(e){ e.stopPropagation(); }},
+    p.items.filter(Boolean).map(function(it, i){
+      return h("button", {key: i, type: "button", role: "menuitem", className: "tp-option" + (it.danger ? " tp-option--danger" : ""), onClick: function(){ p.onClose(); it.onClick(); }},
+        it.icon ? h(T.Icon, {name: it.icon, size: 18}) : null, h("span", {className: "tp-option__text"}, h("span", {className: "body"}, it.label)));
+    })), root);
 };
 
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */
@@ -754,7 +798,7 @@ function Sidebar(){
     h("div", {className: "app-side__trip"},
       h("div", {style:{flex:1, minWidth:0}},
         h("div", {className: "heading app-ellipsis"}, t.name),
-        h("div", {className: "body-sm app-weak"}, D.fmtRange(t.start, t.end) + " · " + t.days.length + " gün")),
+        h("div", {className: "body-sm app-weak"}, D.fmtRange(t.start, t.end) + ", " + t.days.length + " gün")),
       h(A.ActivityButton, {size: 18}),
       h(T.IconButton, {icon: "settings", label: "Gezi ayarları", size: "sm", onClick: function(){ S.dialog = {kind: "trip-settings"}; A.render(); }})),
     h("div", {className: "app-side__nav"}, PAGES.map(function(p){
@@ -778,7 +822,7 @@ function PhoneHeader(){
       h(A.TripMark, {t: t}),
       h("span", {style:{minWidth:0, textAlign:"left", flex: 1}},
         h("span", {className: "body-strong app-ellipsis", style:{display:"block"}}, t.name),
-        h("span", {className: "body-sm app-weak app-ellipsis", style:{display:"block"}}, A.shortRange(t) + " · " + t.days.length + " gün"))),
+        h("span", {className: "body-sm app-weak app-ellipsis", style:{display:"block"}}, A.shortRange(t) + ", " + t.days.length + " gün"))),
     t ? h(A.ActivityButton, {onShell: true}) : null,
     h(A.AvatarButton, {size: 44}));
 }
@@ -832,7 +876,7 @@ A.StartChoices = function(){
   }
   return h("div", {className: "app-start__choices"},
     choice("new", startNew, h("span", {className: "app-start__icon"}, h(T.Icon, {name: "plus", size: 22})), "Yeni gezi", "Adını ve tarihlerini gir; her gün için bir sayfa açılır."),
-    B ? choice("seed", startSeed, h("span", {className: "app-start__avatar", "aria-hidden": "true"}, "GE"), "Gürcistan Yılbaşı", "30 Ara – 3 Oca · Batum ve Kutaisi. Günlük planlar, ulaşım ve hazırlık listesi hazır.") : null);
+    B ? choice("seed", startSeed, h("span", {className: "app-start__avatar", "aria-hidden": "true"}, "GE"), "Gürcistan Yılbaşı", "30 Ara – 3 Oca, Batum ve Kutaisi. Günlük planlar, ulaşım ve hazırlık listesi hazır.") : null);
 };
 A.EmptyApp = function(){
   var B = window.TPB;
@@ -854,7 +898,7 @@ A.EmptyApp = function(){
       h("p", {className: "body app-muted app-start__lead"}, name ? "İlk gezini planlayalım: boş bir geziyle başla ya da hazır planı kullan." : "Adını ve tarihlerini gir; her gün için bir sayfa açılır."),
       h("div", {className: "app-start__choices"},
         choice("new", startNew, h("span", {className: "app-start__icon"}, h(T.Icon, {name: "plus", size: 22})), "Yeni gezi", "Adını ve tarihlerini gir; her gün için bir sayfa açılır."),
-        B ? choice("seed", startSeed, h("span", {className: "app-start__avatar", "aria-hidden": "true"}, "GE"), "Gürcistan Yılbaşı", "30 Ara – 3 Oca · Batum ve Kutaisi. Günlük planlar, ulaşım ve hazırlık listesi hazır.") : null),
+        B ? choice("seed", startSeed, h("span", {className: "app-start__avatar", "aria-hidden": "true"}, "GE"), "Gürcistan Yılbaşı", "30 Ara – 3 Oca, Batum ve Kutaisi. Günlük planlar, ulaşım ve hazırlık listesi hazır.") : null),
       B ? h("div", {className: "app-start__note"},
         h(T.Icon, {name: "share", size: 18}),
         h("p", {className: "body-sm", style: {margin: 0}}, "Bir arkadaşın seni geziye eklediyse burada kendiliğinden görünür. Seni ", h("strong", null, email), " adresiyle eklemesi yeterli.")) : null),

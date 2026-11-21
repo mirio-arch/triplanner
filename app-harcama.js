@@ -65,7 +65,7 @@ A.uploadPhotos = function(t, files, meta){
         t.photos.push(p); return p;
       }, function(){ return null; });
     })).then(function(ps){ ps = ps.filter(Boolean); if(ps.length < files.length) A.flash("Bazı fotoğraflar yüklenemedi.");
-      if(ps.length && meta.refKind !== "expense") A.log(t, "photo", ps[0].id, (ps.length === 1 ? "bir fotoğraf" : ps.length + " fotoğraf") + " ekledi · " + A.dayLabel(t, meta.day || "pre"));
+      if(ps.length && meta.refKind !== "expense") A.log(t, "photo", ps[0].id, (ps.length === 1 ? "bir fotoğraf" : ps.length + " fotoğraf") + " ekledi, " + A.dayLabel(t, meta.day || "pre"));
       return ps; });
   });
 };
@@ -96,10 +96,10 @@ function ExpenseForm(p){
     var x = e || {id: D.uid("x"), source: f.ref ? "plan" : "manual", at: new Date().toISOString()};
     x.title = D.str(title, 120); x.amount = amount; x.currency = f.currency; x.cat = f.cat; x.day = f.day; x.time = D.str(f.time, 5); x.ref = f.ref || (item ? x.ref : ""); x.photos = f.photos;
     if(!item) x.source = f.ref ? "plan" : (x.source === "check" ? "check" : "manual");
-    if(!e){ A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi · " + D.fmtMoney(amount, f.currency)); }
+    if(!e){ A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi, " + D.fmtMoney(amount, f.currency)); }
     f.photos.forEach(function(pid){ var ph = photoOf(t, pid); if(ph){ ph.ref = x.id; ph.refKind = "expense"; ph.day = f.day; } });
     S.newExp = x.id; A.commit();
-    A.flash(e ? "Harcama güncellendi." : "“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency));
+    A.flash(e ? "Harcama güncellendi." : "“" + x.title + "” eklendi, " + D.fmtMoney(amount, f.currency));
     if(p.onDone) p.onDone(); else st[1](Object.assign(blank(t), {day: f.day, currency: f.currency, cat: f.cat}));
   }
   function remove(){
@@ -110,7 +110,7 @@ function ExpenseForm(p){
   }
   var catOpts = D.EXP_ORDER.map(function(c){ return {label: D.EXP_CATS[c], value: c, icon: D.EXP_ICON[c]}; });
   var dayOpts = [{label: "Yola çıkmadan", value: "pre"}].concat(t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true), value: d.id}; }));
-  var conv = f.currency !== "TL" && D.parseAmount(f.amount) ? (D.rateOf(t, f.currency) ? "≈ " + D.fmtMoney(Math.round(D.parseAmount(f.amount) * D.rateOf(t, f.currency)), "TL") + " · " + rateHint(t, f.currency) : "Kur girilmedi; TL karşılığı için sağdaki Kur'u doldur.") : undefined;
+  var conv = f.currency !== "TL" && D.parseAmount(f.amount) ? (D.rateOf(t, f.currency) ? "≈ " + D.fmtMoney(Math.round(D.parseAmount(f.amount) * D.rateOf(t, f.currency)), "TL") + ", " + rateHint(t, f.currency) : "Kur girilmedi; TL karşılığı için sağdaki Kur'u doldur.") : undefined;
   return h("form", {className: "app-stack", onSubmit: save},
     p.title !== false ? h("div", {className: "app-row"}, h("h2", {className: "heading", style:{margin:0, flex:1}}, e ? "Harcamayı düzenle" : "Yeni harcama"),
       p.onDone ? h(T.IconButton, {icon: "close", label: "Kapat", size: "sm", onClick: p.onDone}) : null) : null,
@@ -126,7 +126,7 @@ function ExpenseForm(p){
       : h("div", {className: "app-two"},
       h(T.Select, {label: "Gün", value: f.day, options: dayOpts, onChange: function(v){ var n = Object.assign({}, st[0]); n.day = v; n.ref = ""; st[1](n); }}),
       h(T.TextField, {label: "Saat", value: f.time, placeholder: "20:30", onChange: function(v){ set("time", v); }, maxLength: 5, inputMode: "numeric"})),
-    item || !plans.length ? null : h(A.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + " · " : "") + it.title, value: id}; })),
+    item || !plans.length ? null : h(A.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + ", " : "") + it.title, value: id}; })),
       hint: "Plan kartında tutar görünür.", onChange: function(v){ var n = Object.assign({}, st[0]); n.ref = v; if(v && t.items[v]){ if(!n.title) n.title = t.items[v].title; n.cat = D.CAT_TO_EXP[t.items[v].cat] || n.cat; } st[1](n); }}),
     e && A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", full: true, onClick: function(){ if(p.onDone) p.onDone(); A.openChat({k: "expense", id: e.id, l: D.str(e.title || D.EXP_CATS[e.cat], 80)}); }}, "Sohbette bahset") : null,
     e ? (del[0] ? h(A.Confirm, {text: "Bu harcama silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h(T.Button, {variant: "ghost", icon: "trash", full: true, onClick: function(){ del[1](true); }}, "Harcamayı sil")) : null,
@@ -165,7 +165,7 @@ function RateBox(p){
       h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Harcamaların TL toplamı bu kurlarla hesaplanır. Elle girdiğin kur otomatik kurun yerine geçer."),
       D.fx().fetched ? h("p", {className: "body-sm app-muted app-rates__src", style: {margin: 0}}, "Otomatik kurlar: ",
         h("a", {href: "https://www.exchangerate-api.com", target: "_blank", rel: "noopener noreferrer", className: "tp-link"}, "Rates By Exchange Rate API"),
-        D.fx().at ? " · " + D.fmtDay(D.fx().at.slice(0, 10)).short : "") : null),
+        D.fx().at ? ", " + D.fmtDay(D.fx().at.slice(0, 10)).short : "") : null),
     h("div", {className: "app-rates"},
       h("span", {className: "label app-muted", id: "main-cur-l"}, "Gezinin ana parası"),
       h("div", {className: "app-curseg app-curseg--wrap", role: "radiogroup", "aria-labelledby": "main-cur-l"}, curs.map(function(c){
@@ -200,7 +200,7 @@ function Aside(p){
         var it = t.items[x[0]];
         return h("div", {key: x[0], className: "app-tile"},
           h("span", {className: "app-weak"}, h(T.Icon, {name: A.modeOf(it) === "plane" ? "plane" : (A.modeOf(it) === "bus" ? "bus" : "car"), size: 20})),
-          h("div", {style:{flex:1, minWidth:0}}, h("div", {className: "body-sm-strong app-ellipsis"}, it.title), h("div", {className: "body-sm app-muted"}, A.dayLabel(t, x[1]) + (it.time ? " · " + it.time : ""))),
+          h("div", {style:{flex:1, minWidth:0}}, h("div", {className: "body-sm-strong app-ellipsis"}, it.title), h("div", {className: "body-sm app-muted"}, A.dayLabel(t, x[1]) + (it.time ? ", " + it.time : ""))),
           h(T.IconButton, {icon: "plus", label: "Fiyat ekle: " + it.title, variant: "outline", size: "sm", onClick: function(){ S.dialog = {kind: "transit", id: x[0], step: 2}; A.render(); }}));
       }), unpriced.length > 5 ? h(T.Button, {variant: "ghost", size: "sm", href: A.href("ulasim")}, "Tümü Ulaşım'da") : null) : null,
     recent.length ? h(F, null, h("hr", {className: "app-hr"}),
@@ -220,7 +220,7 @@ function rowFor(t, e){
   var src = SRC[e.source];
   var other = e.by && !A.isMine(e.by) ? (e.byName || "Biri") : "";
   return h(A.Swipe, {key: e.id, radius: "var(--radius-card)", onAction: function(){ removeExpense(t, e); }}, h(T.ExpenseRow, {title: e.title || D.EXP_CATS[e.cat], category: e.cat, amount: D.fmtMoney(e.amount, e.currency), converted: convText(t, e),
-    time: e.time || undefined, source: src ? src[0] + (other ? " · " + other : "") : (other ? other + " ekledi" : undefined), sourceIcon: src ? src[1] : (other ? "user" : undefined), photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
+    time: e.time || undefined, source: src ? src[0] + (other ? ", " + other : "") : (other ? other + " ekledi" : undefined), sourceIcon: src ? src[1] : (other ? "user" : undefined), photoSrc: ph[0] ? D.photoUrl(ph[0].asset) : undefined, photoAlt: ph[0] ? "Harcama fotoğrafı" : undefined, photos: ph.length,
     highlighted: S.newExp === e.id, actionIcon: "edit", actionLabel: "Düzenle",
     onClick: function(ev){
       if(ph.length && ev && ev.target && ev.target.closest && ev.target.closest(".tp-photo")){ A.openViewer(ph.map(function(x){ return D.photoUrl(x.asset); }), 0); return; }
@@ -239,7 +239,7 @@ function ExpenseList(p){
     var d = A.dayById(t, id);
     return h("section", {key: id, className: "app-card app-card--list", "aria-labelledby": "ex-" + id},
       h("div", {className: "app-listhead"}, h("h3", {id: "ex-" + id, className: "body-strong", style:{flex:1, minWidth:0, margin:0}}, A.dayLabel(t, id, true),
-        d ? h("span", {className: "body app-muted"}, " · " + A.dayTitle(t, d)) : h("span", {className: "body app-muted"}, " · rezervasyon ve belgeler")),
+        d ? h("span", {className: "body app-muted"}, ", " + A.dayTitle(t, d)) : h("span", {className: "body app-muted"}, ", rezervasyon ve belgeler")),
         h("span", {className: "body-sm-strong", style:{fontVariantNumeric:"tabular-nums"}}, D.fmtMoney(Math.round(sum), "TL"))),
       items.map(function(e){ return rowFor(t, e); }));
   }));
@@ -249,13 +249,13 @@ function periodTabs(v){ return h(T.Tabs, {key: v.period || "Tümü", label: "Dö
 
 function Widget(p){
   var t = p.t, st = p.st, sh = p.sh;
-  var meter = t.budget ? h(T.Meter, {label: "Bütçe · " + D.fmtMoney(t.budget, "TL"), value: Math.round(st.total), max: t.budget, parts: sh.map(function(x){ return {color: x.color, value: x.value}; }),
-      valueText: st.total <= t.budget ? "%" + Math.round(st.total / t.budget * 100) + " · " + D.fmtMoney(Math.round(t.budget - st.total), "TL") + " kaldı" : D.fmtMoney(Math.round(st.total - t.budget), "TL") + " aştı"})
+  var meter = t.budget ? h(T.Meter, {label: "Bütçe: " + D.fmtMoney(t.budget, "TL"), value: Math.round(st.total), max: t.budget, parts: sh.map(function(x){ return {color: x.color, value: x.value}; }),
+      valueText: st.total <= t.budget ? "%" + Math.round(st.total / t.budget * 100) + ", " + D.fmtMoney(Math.round(t.budget - st.total), "TL") + " kaldı" : D.fmtMoney(Math.round(st.total - t.budget), "TL") + " aştı"})
     : h(T.Button, {variant: "secondary", size: "sm", icon: "plus", onClick: function(){ S.budgetEdit = true; S.rateKey = (S.rateKey || 0) + 1; A.render(); setTimeout(function(){ var el = document.getElementById("kur-butce"); if(el) el.scrollIntoView({block: "start", behavior: "smooth"}); }, 60); }}, "Bütçe ekle");
   return h("section", {className: "tp-onshell tp-aurora-card app-widget", "aria-label": "Özet"},
     h("div", {className: "app-widget__top"},
       h("div", {style:{flex:"1 1 240px", minWidth:0}}, h(T.Stat, {size: "hero", label: "Toplam harcama", value: D.fmtNum(Math.round(st.total)), unit: "TL",
-        sub: st.list.length + " harcama" + (t.currency && D.rateOf(t, t.currency) ? " · " + t.currency + " tutarları " + rateHint(t, t.currency) + " ile" : "") + (st.missing ? " · " + st.missing + " harcamanın kuru yok" : "")})),
+        sub: st.list.length + " harcama" + (t.currency && D.rateOf(t, t.currency) ? ", " + t.currency + " tutarları " + rateHint(t, t.currency) + " ile" : "") + (st.missing ? ", " + st.missing + " harcamanın kuru yok" : "")})),
       h("div", {style:{flex:"1 1 260px", minWidth:0}}, meter)),
     sh.length ? h("ul", {className: "tp-legend", "aria-label": "Kategoriler"}, sh.map(function(x){
       return h("li", {key: x.color, className: "tp-legend__item body-sm", style:{color: "var(--foreground-on-shell-weak)"}}, h("span", {className: "tp-legend__key", style:{background: "var(--chart-" + x.color + ")"}}), D.EXP_CATS[x.color] + " ", h("span", {style:{color: "var(--foreground-on-shell)"}}, "%" + x.share));
@@ -292,15 +292,15 @@ function QuickExpense(p){
     var title = f.title.trim(), cat = guessCat(title);
     var x = {id: D.uid("x"), source: "manual", at: new Date().toISOString(), title: D.str(title || D.EXP_CATS[cat], 120), amount: amount, currency: f.currency, cat: cat, day: b.day, time: "", ref: "", photos: f.photos.slice()};
     f.photos.forEach(function(pid){ var ph = photoOf(t, pid); if(ph){ ph.ref = x.id; ph.refKind = "expense"; ph.day = b.day; } });
-    A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi · " + D.fmtMoney(amount, f.currency));
+    A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi, " + D.fmtMoney(amount, f.currency));
     S.newExp = x.id; S.quickCur = f.currency; A.commit();
     st[1]({amount: "", title: "", photos: [], currency: f.currency}); err[1]("");
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
+    A.flash("“" + x.title + "” eklendi, " + D.fmtMoney(amount, f.currency) + ", " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
   }
   var cur = t.currency || "TL", rate = D.rateOf(t, cur), st2 = stats(t);
   var curs = [cur].concat(D.curList(t).filter(function(c){ return c !== cur; })).slice(0, 4);
-  var line = [cur === "TL" ? null : rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince kategori ve gün"].filter(Boolean).join(" · ");
+  var line = [cur === "TL" ? null : rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince kategori ve gün"].filter(Boolean).join(", ");
   return h("form", {className: "app-qexp", onSubmit: add, noValidate: true},
     h("div", {className: "app-quick"},
       h("input", {className: "app-quick__in app-quick__in--amount", value: f.amount, placeholder: "0", inputMode: "decimal", enterKeyHint: "next", "aria-label": "Tutar", onChange: function(e){ set("amount", e.target.value); err[1](""); }}),
@@ -323,7 +323,7 @@ function Harcamalar(p){
   var period = v.period || "Tümü";
   var st = stats(t, function(e){ return inPeriod(e, period); });
   var aside = h(Aside, {t: t, v: v});
-  var right = h(F, null, A.todayDayId(t) ? h(T.Chip, {tone: "tertiary", icon: "calendar"}, "Bugün " + D.fmtDay(A.todayISO()).short + " · gezinin " + (A.dayIndex(t, A.todayDayId(t)) + 1) + ". günü") : null, periodTabs(v));
+  var right = h(F, null, A.todayDayId(t) ? h(T.Chip, {tone: "tertiary", icon: "calendar"}, "Bugün " + D.fmtDay(A.todayISO()).short + ", gezinin " + (A.dayIndex(t, A.todayDayId(t)) + 1) + ". günü") : null, periodTabs(v));
   var pane = A.isPhone ? {id: "harcama", label: "Harcama ekle", fab: {icon: "plus", label: "Harcama"}, peek: h(QuickExpense, {t: t}), full: h(PaneFull, {t: t})} : null;
   var phoneTabs = A.isPhone ? h(F, null,
     h("div", {className: "app-utabs", role: "tablist", "aria-label": "Görünüm"},
@@ -331,7 +331,7 @@ function Harcamalar(p){
         var on = x[1] === "ozet" ? sub === "ozet" : sub !== "ozet";
         return h("a", {key: x[0], role: "tab", "aria-selected": on ? "true" : "false", href: A.href("harcamalar", x[1]), className: "app-utab" + (on ? " is-on" : "")}, x[0], x[2] ? h("span", {className: "app-utab__n"}, x[2]) : null);
       })),
-    h("div", {className: "app-chips"}, h("a", {href: A.href("harcamalar"), className: "app-chiplink"}, h(T.Chip, {tone: !sub || sub === "ozet" ? "tertiary" : "outline"}, "Tümü · " + t.expenses.length)),
+    h("div", {className: "app-chips"}, h("a", {href: A.href("harcamalar"), className: "app-chiplink"}, h(T.Chip, {tone: !sub || sub === "ozet" ? "tertiary" : "outline"}, "Tümü, " + t.expenses.length)),
       D.EXP_ORDER.map(function(c){ return h("a", {key: c, href: A.href("harcamalar", c), className: "app-chiplink"}, h(T.Chip, {tone: sub === c ? "tertiary" : "outline", icon: D.EXP_ICON[c]}, D.EXP_CATS[c])); }))) : null;
   if(sub === "ozet"){
     var sh = shares(st);
@@ -369,7 +369,7 @@ function Harcamalar(p){
       h("h2", {className: "section-title", style:{margin:0}}, D.EXP_CATS[sub] + " harcamaları"),
       h(ExpenseList, {t: t, st: cs, emptyTitle: "Bu kategoride harcama yok", emptyText: "Harcama eklerken kategori olarak " + D.EXP_CATS[sub] + " seç."}));
   }
-  var head3 = h(A.PageHead, {title: "Harcamalar", desc: A.isPhone ? null : (st.list.length ? "Toplam " + D.fmtMoney(Math.round(st.total), "TL") + " · " + st.list.length + " harcama. " : "") + "Ulaşım’da girdiğin bilet fiyatları ve plana bağladığın harcamalar buraya kendiliğinden düşer.", right: A.isPhone ? null : right});
+  var head3 = h(A.PageHead, {title: "Harcamalar", desc: A.isPhone ? null : (st.list.length ? "Toplam " + D.fmtMoney(Math.round(st.total), "TL") + ", " + st.list.length + " harcama. " : "") + "Ulaşım’da girdiğin bilet fiyatları ve plana bağladığın harcamalar buraya kendiliğinden düşer.", right: A.isPhone ? null : right});
   return h(A.Layout, {head: head3, aside: aside, phoneAside: false, pane: pane}, phoneTabs,
     h("div", {className: "app-row"}, h("h2", {className: "section-title", style:{margin:0, flex:1}}, "Tüm harcamalar"), A.isPhone ? null : null),
     h(ExpenseList, {t: t, st: st}));
@@ -438,9 +438,9 @@ function GaleriAside(p){
     h("span", {style:{flex:1, minWidth:0, textAlign:"left"}}, h("span", {className: "label app-muted", style:{display:"block"}}, label), h("span", {className: "body-sm-strong app-ellipsis", style:{display:"block"}}, value)), h(T.Icon, {name: "chevron-right", size: 18})); }
   return h(F, null, add, add ? h("hr", {className: "app-hr"}) : null,
     h(T.Photo, {src: D.photoUrl(sel.asset), alt: sel.note || "Gezi fotoğrafı", ratio: "4 / 3"}),
-    h("div", null, h("h2", {className: "heading", style:{margin:0}}, exp ? exp.title : A.dayLabel(t, sel.day, true)), h("p", {className: "body-sm app-muted", style:{margin:0}}, A.dayLabel(t, sel.day, true) + (exp && exp.time ? " · " + exp.time : ""))),
-    plan ? link("calendar", "Plan", (plan.time ? plan.time + " · " : "") + plan.title, function(){ var w = A.whereIs(t, plan.id); if(A.dayById(t, w)){ A.view().day = w; A.saveViews(); } A.go("tarihler"); }) : null,
-    exp ? link("wallet", "Harcama · " + D.EXP_CATS[exp.cat], D.fmtMoney(exp.amount, exp.currency) + (convText(t, exp) && exp.currency !== "TL" ? " · " + convText(t, exp) : ""), function(){ S.expEdit = exp.id; A.go("harcamalar"); }) : null,
+    h("div", null, h("h2", {className: "heading", style:{margin:0}}, exp ? exp.title : A.dayLabel(t, sel.day, true)), h("p", {className: "body-sm app-muted", style:{margin:0}}, A.dayLabel(t, sel.day, true) + (exp && exp.time ? ", " + exp.time : ""))),
+    plan ? link("calendar", "Plan", (plan.time ? plan.time + ", " : "") + plan.title, function(){ var w = A.whereIs(t, plan.id); if(A.dayById(t, w)){ A.view().day = w; A.saveViews(); } A.go("tarihler"); }) : null,
+    exp ? link("wallet", "Harcama, " + D.EXP_CATS[exp.cat], D.fmtMoney(exp.amount, exp.currency) + (convText(t, exp) && exp.currency !== "TL" ? ", " + convText(t, exp) : ""), function(){ S.expEdit = exp.id; A.go("harcamalar"); }) : null,
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: sel.note, onChange: function(val){ sel.note = D.str(val, 300); A.commit(); }}),
     del[0] ? h(A.Confirm, {text: "Fotoğraf kalıcı olarak silinsin mi?", onYes: function(){
         var asset = sel.asset; t.photos.splice(t.photos.indexOf(sel), 1);

@@ -62,7 +62,7 @@ function whenText(n){
   var days = Math.round((new Date(n.start).setHours(0, 0, 0, 0) - today.getTime()) / 864e5);
   return days === 1 ? "Yarın" : days + " gün sonra";
 }
-function NextTag(p){ return h("div", {className: "app-nexttag"}, h(T.Chip, {tone: "primary", icon: "clock"}, "Sıradaki · " + whenText(p.n))); }
+function NextTag(p){ return h("div", {className: "app-nexttag"}, h(T.Chip, {tone: "primary", icon: "clock"}, "Sıradaki: " + whenText(p.n))); }
 /* Sıradaki kartın koyu, çizgili, ışıklı zemini (bilet kartıyla aynı dil) */
 A.Glow = function(){ return h("span", {className: "app-glow", "aria-hidden": "true"}); };
 
@@ -85,12 +85,13 @@ function PhonePlanCard(p){
       h("button", {type: "button", className: "tp-card__handle", "aria-label": "Sürükleyerek taşı: " + title, onClick: stop}, h(T.Icon, {name: "grip", size: 18})),
       h("span", {className: "app-pcard__text"},
         h("span", {className: "app-pcard__title body-strong"}, title),
-        nx ? h("span", {className: "app-pcard__when"}, h(T.Chip, {tone: "primary", icon: "clock"}, "Sıradaki · " + whenText(nx))) : null)),
+        nx ? h("span", {className: "app-pcard__when"}, h(T.Chip, {tone: "primary", icon: "clock"}, "Sıradaki: " + whenText(nx))) : null),
+      h("span", {className: "app-pcard__cat", title: D.CATS[it.cat], style: ds[1] ? {"--cat-fg": "var(--category-" + ds[1] + "-strong)", "--cat-bg": "var(--category-" + ds[1] + "-weak)"} : null},
+        h(T.Icon, {name: ds[0], size: 16}), h("span", {className: "tp-sr"}, D.CATS[it.cat]))),
     h(A.Expand, {open: open},
       h("div", {className: "app-pcard__pad"},
         it.note ? h("p", {className: "app-pcard__note body-sm"}, it.note) : null,
         h("div", {className: "app-pcard__meta body-sm"},
-          h(T.Chip, {icon: ds[0], category: ds[1]}, D.CATS[it.cat]),
           p.extra ? h("span", {className: "app-pcard__extra"}, h(T.Icon, {name: "cash", size: 16}), p.extra) : null,
           it.critical ? h("span", {className: "app-pcard__extra is-warn"}, h(T.Icon, {name: "warning", size: 16}), "Kesin saat") : null),
         h("div", {className: "app-ticket__acts", onClick: stop},
@@ -158,7 +159,7 @@ function DayHead(p){
     h("span", {className: "app-dayhead__nav"},
       h(T.IconButton, {icon: "chevron-left", label: "Önceki gün", variant: "outline", size: "sm", onClick: i > 0 ? function(){ selectDay(t, t.days[i - 1].id); } : undefined}),
       h(T.IconButton, {icon: "chevron-right", label: "Sonraki gün", variant: "outline", size: "sm", onClick: i < t.days.length - 1 ? function(){ selectDay(t, t.days[i + 1].id); } : undefined})),
-    h("h2", {className: A.isPhone ? "heading" : "section-title", style:{margin:0}}, f.short + " " + f.wd + " · " + A.dayTitle(t, day)),
+    h("h2", {className: A.isPhone ? "heading" : "section-title", style:{margin:0}}, f.short + " " + f.wd + ", " + A.dayTitle(t, day)),
     night ? h(T.Chip, {icon: /dönüş|uçuş/i.test(night) ? "plane" : "bed"}, (/^Dönüş/.test(day.night) ? "" : "Gece: ") + night) : null,
     h("span", {style:{flex:1}}),
     h(T.Button, {variant: "ghost", size: "sm", icon: "edit", onClick: function(){ S.dayEdit = true; A.render(); }}, "Günü düzenle"));
@@ -208,7 +209,7 @@ function IdeaStrip(p){
         h("span", {className: "app-ideachip__n"}, it.note || D.CATS[it.cat] || ""),
         h("button", {type: "button", className: "app-ideachip__add", onClick: function(){ askTime(id, target); }}, h(T.Icon, {name: "plus", size: 14}), A.dayLabel(t, target) + " planına"));
     })),
-    h("p", {className: "app-peekline"}, (t.removed.length ? t.removed.length + " çıkardığın · " : "") + t.ideas.length + " öneri · yukarı çekince arama ve tamamı"));
+    h("p", {className: "app-peekline"}, (t.removed.length ? t.removed.length + " çıkardığın, " : "") + t.ideas.length + " öneri, yukarı çekince arama ve tamamı"));
 }
 
 function SideList(p){
@@ -235,8 +236,8 @@ function SideList(p){
     h("label", {className: "app-search"}, h(T.Icon, {name: "search", size: 18}),
       h("input", {className: "body", type: "search", placeholder: "Önerilerde ve çıkardıklarında ara", value: q[0], onChange: function(e){ q[1](e.target.value); }, "aria-label": "Kenar listesinde ara"})),
     h(T.Button, {variant: "tertiary", icon: "plus", full: true, onClick: function(){ S.dialog = {kind: "plan", newIn: "ideas"}; A.render(); }}, "Öneri ekle"),
-    t.removed.length ? h(F, null, h("h3", {className: "label app-muted app-sidelist__h"}, "Çıkardıkların · " + t.removed.length), t.removed.map(function(id){ return card(id, "removed"); })) : null,
-    h("h3", {className: "label app-muted app-sidelist__h"}, "Öneriler · " + t.ideas.length),
+    t.removed.length ? h(F, null, h("h3", {className: "label app-muted app-sidelist__h"}, "Çıkardıkların (" + t.removed.length + ")"), t.removed.map(function(id){ return card(id, "removed"); })) : null,
+    h("h3", {className: "label app-muted app-sidelist__h"}, "Öneriler (" + t.ideas.length + ")"),
     t.ideas.length ? t.ideas.map(function(id){ return card(id, "ideas"); }) : h("p", {className: "body-sm app-muted"}, "Gitmek istediğin ama henüz güne koymadığın yerler burada durur."));
 }
 

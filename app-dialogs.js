@@ -43,7 +43,7 @@ function PlanDialog(p){
     var x = it || {id: D.uid("i")};
     x.time = D.str(v.time.trim(), 40); x.title = D.str(v.title.trim(), 160); x.note = D.str(v.note, 800); x.cat = v.cat; x.link = fixLink(v.link); x.critical = !!v.critical;
     if(!it){ t.items[x.id] = x; A.moveItem(t, x.id, v.where, A.dayById(t, v.where) ? "time" : 0); A.stamp(x);
-      if(A.dayById(t, v.where)) A.log(t, "plan", x.id, "“" + x.title + "” planını ekledi · " + A.dayLabel(t, v.where));
+      if(A.dayById(t, v.where)) A.log(t, "plan", x.id, "“" + x.title + "” planını ekledi, " + A.dayLabel(t, v.where));
       else A.log(t, "idea", x.id, "“" + x.title + "” önerisini kenar listesine ekledi"); }
     else if(v.where !== where) A.moveItem(t, x.id, v.where, A.dayById(t, v.where) ? "time" : 0);
     A.commit(); close();
@@ -54,7 +54,7 @@ function PlanDialog(p){
     t.expenses.forEach(function(e){ if(e.ref === p.id && e.source === "plan"){ e.ref = ""; e.source = "manual"; } });
     A.commit(); close(); A.flash("Plan silindi.", function(){ A.restore(snap); });
   }
-  var whereOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; }).concat([{label: "Kenar listesi · çıkardıkların", value: "removed"}, {label: "Kenar listesi · öneriler", value: "ideas"}]);
+  var whereOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + ", " + A.dayTitle(t, d), value: d.id}; }).concat([{label: "Kenar listesi, çıkardıkların", value: "removed"}, {label: "Kenar listesi, öneriler", value: "ideas"}]);
   var linked = it ? t.expenses.filter(function(e){ return e.ref === it.id; }) : [];
   var crit = h(T.Checkbox, {label: "Kesin saat", description: A.isPhone ? "Kaçırılmaması gereken saat." : "Kaçırılmaması gereken bir saat (uçuş, sınır, rezervasyon).", checked: v.critical, onChange: function(x){ set("critical", x); }});
   /* telefonda saat tekerlekle, ülke saati düğmeyle seçilir */
@@ -131,13 +131,13 @@ function TransitSheet(p){
     if(amount){ x.priceAmount = amount; x.priceCur = v.currency; } else { delete x.priceAmount; delete x.priceCur; }
     if(v.addExp) delete x.noExpense; else x.noExpense = true;
     if(!it){ t.items[x.id] = x; A.moveItem(t, x.id, v.day, "time"); A.stamp(x);
-      A.log(t, "transit", x.id, "“" + x.title + "” yolculuğunu ekledi · " + A.dayLabel(t, v.day) + (x.time ? " " + x.time : "")); }
+      A.log(t, "transit", x.id, "“" + x.title + "” yolculuğunu ekledi, " + A.dayLabel(t, v.day) + (x.time ? " " + x.time : "")); }
     else if(v.day !== where) A.moveItem(t, x.id, v.day, "time");
     var v2 = A.view(); v2.transit = x.id; v2.day = v.day; A.saveViews();
     A.commit(); close();
     A.flash(it ? "Yolculuk güncellendi." : "“" + x.title + "” eklendi" + (amount && v.addExp ? "; Harcamalar'a da düştü." : "."));
   }
-  var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; });
+  var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + ", " + A.dayTitle(t, d), value: d.id}; });
   var body;
   if(step[0] === 0) body = h(T.RadioGroup, {label: "Nasıl gidiyorsun?", variant: "tiles", columns: A.isPhone ? 2 : 3, value: v.mode, onChange: function(x){ set(v.flexTouched ? {mode: x} : {mode: x, flex: A.isFlexTransit({mode: x})}); },
     items: MODE_ITEMS.map(function(m){ return {label: m[1], value: m[0], icon: m[2]}; })});
@@ -174,12 +174,12 @@ function TransitSheet(p){
     h(T.Checkbox, {label: "Kesin saat", description: "Kaçırılmaması gereken saat; kartta öne çıkar.", checked: v.critical, onChange: function(x){ set("critical", x); }}));
   else {
     var amount = D.parseAmount(v.amount);
-    var rows = [["route", D.MODES[v.mode], title], ["calendar", "Gün ve saat", A.dayLabel(t, v.day, true) + (v.time ? " · " + v.time : "") + (v.end ? " → " + v.end : "")],
-      ["cash", "Bilet", amount ? D.fmtMoney(amount, v.currency) + (v.addExp ? " · Harcamalar'a eklenecek" : "") : "Fiyat girilmedi"], ["calendar", "Plan", "Günün planında saatine göre yerine oturur"]];
+    var rows = [["route", D.MODES[v.mode], title], ["calendar", "Gün ve saat", A.dayLabel(t, v.day, true) + (v.time ? ", " + v.time : "") + (v.end ? " → " + v.end : "")],
+      ["cash", "Bilet", amount ? D.fmtMoney(amount, v.currency) + (v.addExp ? ", Harcamalar'a eklenecek" : "") : "Fiyat girilmedi"], ["calendar", "Plan", "Günün planında saatine göre yerine oturur"]];
     if(v.duration) rows.splice(2, 0, ["clock", "Süre", v.duration]);
-    var tk = [v.carrier, v.code, v.seat].map(function(x){ return String(x || "").trim(); }).filter(Boolean).join(" · ");
+    var tk = [v.carrier, v.code, v.seat].map(function(x){ return String(x || "").trim(); }).filter(Boolean).join(", ");
     if(v.flex) rows.splice(1, 0, ["car", "Saati esnek", "Ulaşım'da sade satır olarak görünür"]);
-    else if(tk || v.ticket) rows.splice(1, 0, ["ticket", "Bilet", (tk || "") + (v.ticket ? (tk ? " · " : "") + "dosya ekli" : "")]);
+    else if(tk || v.ticket) rows.splice(1, 0, ["ticket", "Bilet", (tk || "") + (v.ticket ? (tk ? ", " : "") + "dosya ekli" : "")]);
     body = h("div", {className: "app-stack"}, rows.map(function(r, i){
       return h("div", {key: i, className: "app-tile"}, h("span", {className: "app-icontile"}, h(T.Icon, {name: r[0], size: 18})),
         h("div", {style:{minWidth:0}}, h("div", {className: "body-sm-strong"}, r[1]), h("div", {className: "body-sm app-muted"}, r[2])));
@@ -240,12 +240,13 @@ function TripIconField(p){
     h("span", {className: "label tp-field__label", id: "ti-l"}, "Gezi simgesi"),
     h("div", {className: "app-tripicon"},
       h("span", {className: "tp-trip__btn app-tripmark app-tripicon__pv" + (flag ? " is-flag" : ""), "aria-hidden": "true", style: {background: "var(--category-" + v.color + "-strong)"}}, flag ? A.flag(flag) : letters),
-      flags.length ? h("div", {className: "app-curseg app-curseg--wrap", role: "radiogroup", "aria-labelledby": "ti-l"},
+      flags.length ? h("div", {className: "app-curseg", role: "radiogroup", "aria-labelledby": "ti-l"},
         [""].concat(flags).map(function(c){
           return h("button", {key: c || "abc", type: "button", role: "radio", "aria-checked": flag === c ? "true" : "false", "aria-label": c ? D.COUNTRY[c][1] + " bayrağı" : "Harfler",
-            className: c ? "is-flag" : "", onClick: function(){ set("flag", c); }}, c ? A.flag(c) : "Harfler");
-        })) : h("span", {className: "body-sm app-muted"}, "Nereye'den ülke seçersen bayrak da kullanabilirsin.")),
-    flag ? null : h("input", {className: "tp-input body app-tripicon__in", value: v.short, maxLength: 3, placeholder: "Harfler · en fazla 3 (" + letters + ")", "aria-label": "Simgedeki harfler", onChange: function(e){ set("short", e.target.value); }}));
+            className: c ? "is-flag" : "", onClick: function(){ set("flag", c); }}, c ? A.flag(c) : "Aa");
+        })) : null,
+      flag ? null : h("input", {className: "tp-input body app-tripicon__in", value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", "aria-label": "Simgedeki harfler", onChange: function(e){ set("short", e.target.value); }})),
+    flags.length ? null : h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Nereye'den ülke seçersen bayrak da kullanabilirsin."));
 }
 function TripDialog(p){
   var t = p.kind === "trip-settings" ? A.trip() : null;
@@ -298,7 +299,7 @@ function IdeaAdd(p){
       primaryLabel: "Plana ekle", primaryIcon: "plus", onPrimary: save, secondaryLabel: "Vazgeç", onSecondary: ask},
     h(A.DayTimePick, {t: t, id: "ia", noPre: true, day: v.day, onDay: function(x){ set("day", x); }, time: v.time, onTime: function(x){ set("time", x); }}),
     h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Saatsiz seçersen günün sonuna eklenir."));
-  var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + " · " + A.dayTitle(t, d), value: d.id}; });
+  var dayOpts = t.days.map(function(d){ return {label: A.dayLabel(t, d.id, true) + ", " + A.dayTitle(t, d), value: d.id}; });
   var body = h("form", {className: "app-stack", onSubmit: save},
     h(T.Select, {label: "Gün", value: v.day, options: dayOpts, onChange: function(x){ set("day", x); }}),
     h(T.TextField, {label: "Saat", optional: true, value: v.time, placeholder: "14:00", inputMode: "numeric", autoFocus: true, hint: "Boş bırakırsan saatsiz plan olarak günün sonuna eklenir.", onChange: function(x){ set("time", x); }}),

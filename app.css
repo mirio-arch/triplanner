@@ -919,3 +919,42 @@ a{color:var(--foreground-secondary)}
 .app-swipe.is-active,.app-swipe.is-leaving{overflow:hidden;border-radius:var(--sw-radius,var(--radius-card));-webkit-mask-image:-webkit-radial-gradient(white,black)}
 .app-swipe__act{top:0;bottom:0;left:0;right:0;border-radius:inherit}
 .app-swipe.is-active .app-swipe__body>*{box-shadow:none}
+/* ayırıcı noktalar yok: yan yana bilgiler yalnızca boşlukla ayrılır */
+.tp-exp__bit::before{content:none !important}
+.tp-exp__meta{column-gap:var(--space-3) !important}
+/* Sohbet: arkada hafif ışık, hareket satırları ferah, balonlar basılı tutulunca menü */
+.app-chat{position:relative;isolation:isolate}
+.app-chat::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(60% 30% at 12% 14%,rgba(45,212,191,.16),transparent 70%),radial-gradient(55% 32% at 92% 46%,rgba(139,92,246,.15),transparent 70%),radial-gradient(50% 26% at 30% 92%,rgba(251,191,36,.08),transparent 70%),var(--background)}
+.app-chat__scroll{background:transparent !important}
+.app-chat__head,.app-chat__compose{position:relative;z-index:1;background:color-mix(in srgb,var(--background-raised) 88%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px)}
+.app-chat__act{margin:var(--space-2) 0}
+.app-chat__day{gap:var(--space-2)}
+.app-chat__actmain{padding:6px 12px;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.app-msg__bubble{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;outline:none;transition:transform 120ms var(--ease-standard)}
+.app-msg__bubble:active{transform:scale(.98)}
+.app-msg__bubble:focus-visible{box-shadow:0 0 0 2px var(--border-focus)}
+.app-ctxmenu{min-width:180px}
+.app-tripicon{flex-wrap:nowrap}
+.app-tripicon__in{margin-top:0;flex:1 1 auto;min-width:0;width:auto}
+.app-tripicon .app-curseg{flex:none}
+/* iki aylık takvim */
+.app-cal__months{display:flex;gap:var(--space-6);justify-content:center}
+.app-phone .app-cal__months{flex-direction:column;gap:var(--space-4)}
+.app-phone .app-cal__months .tp-cal__month+.tp-cal__month{padding-top:var(--space-3);border-top:1px solid var(--border-weak)}
+/* kaydırarak silme: zemin boyanmaz, açılan yerde yalnızca kırmızı çöp kutusu; eşikte dolar ve büyür */
+.app-swipe__act{background:none !important;color:var(--foreground-danger,#dc2626) !important}
+.app-swipe.is-active,.app-swipe.is-leaving{-webkit-mask-image:none !important;border-radius:0 !important}
+.app-swipe__ic{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--background-danger-weak,rgba(220,38,38,.12));transition:background-color 140ms linear,transform 180ms var(--ease-spring,cubic-bezier(.3,1.4,.5,1))}
+.app-swipe__ic .tp-icon{color:var(--foreground-danger,#dc2626)}
+.app-swipe.is-full .app-swipe__ic{background:var(--background-danger,#dc2626);transform:scale(1.15)}
+.app-swipe.is-full .app-swipe__ic .tp-icon{color:#fff}
+.app-swipe.is-full .app-swipe__lbl{transform:none}
+/* plan kartı: kategori sağ üstte yalnızca simge */
+.app-pcard__cat{flex:none;display:grid;place-items:center;width:30px;height:30px;margin:-5px 0 0;border-radius:50%;background:var(--cat-bg,var(--background-sunken));color:var(--cat-fg,var(--foreground-weak))}
+.app-pcard__cat .tp-icon{--tp-duo:currentColor;color:currentColor}
+.app-pcard.is-next .app-pcard__cat{background:rgba(255,255,255,.14);color:#fff}
+.app-pcard__meta:empty{display:none}
+/* ana sayfa: yeni gezi düğmesi ekranın altına yapışmasın */
+.app-homewrap>.app-fab{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.app-homewrap .app-tphone__list{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}

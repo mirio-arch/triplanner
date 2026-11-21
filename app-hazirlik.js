@@ -60,7 +60,7 @@ function setDone(t, c, on){
   A.commit();
 }
 function noteOf(c){ var due = c.due ? D.fmtDay(c.due).short : "", who = c.done && c.doneBy && !A.isMine(c.doneBy) ? (c.doneByName || "Biri") + " tamamladı" : "";
-  return [who, due ? "Son gün " + due : "", c.note].filter(Boolean).join(" · "); }
+  return [who, due ? "Son gün " + due : "", c.note].filter(Boolean).join(", "); }
 function removeItem(t, c){ var snap = A.snapshot(); t.checklist.splice(t.checklist.indexOf(c), 1); A.commit(); A.flash("“" + c.title + "” silindi.", function(){ A.restore(snap); }); }
 /* Telefonda madde satırı: düzenleme seçenekleri üç nokta menüsünde, içerik sıkışmasın */
 function CheckRow(p){
@@ -110,7 +110,7 @@ function Hazirlik(p){
       footer: h(T.Button, {variant: "ghost", size: "sm", icon: "plus", onClick: function(){ S.dialog = {kind: "check", group: g[0]}; A.render(); }}, "Bu gruba ekle")},
       items.map(function(c){
         var due = c.due ? D.fmtDay(c.due).short : "";
-        return h(T.ChecklistItem, {key: c.id, title: c.title || "Adsız madde", note: [due ? "Son gün " + due : "", c.note].filter(Boolean).join(" · "), checked: c.done,
+        return h(T.ChecklistItem, {key: c.id, title: c.title || "Adsız madde", note: [due ? "Son gün " + due : "", c.note].filter(Boolean).join(", "), checked: c.done,
           link: c.link ? "Bilgi" : undefined, href: c.link || undefined,
           onToggle: function(v){ setDone(t, c, v); },
           onEdit: function(){ S.dialog = {kind: "check", id: c.id}; A.render(); },

@@ -76,7 +76,7 @@ A.holidayDeals = function(){
 function tripState(t){
   var today = D.parseISO(A.todayISO()), s = D.parseISO(t.start), e = D.parseISO(t.end);
   if(today < s){ var n = Math.round((s - today) / 864e5); return {kind: "soon", text: n === 0 ? "Bugün başlıyor" : (n === 1 ? "Yarın başlıyor" : n + " gün kaldı"), n: n}; }
-  if(today <= e){ var i = Math.round((today - s) / 864e5) + 1; return {kind: "now", text: "Gezidesin · " + i + ". gün", n: 0}; }
+  if(today <= e){ var i = Math.round((today - s) / 864e5) + 1; return {kind: "now", text: "Gezidesin, " + i + ". gün", n: 0}; }
   return {kind: "past", text: "Bitti", n: 1e9};
 }
 A.tripState = tripState;
@@ -134,7 +134,7 @@ function TripCard(p){
     h(A.TripCover, {t: t}, h("span", {className: "app-cover__chip" + (st.kind === "now" ? " is-now" : "")}, h(T.Icon, {name: st.kind === "past" ? "check" : "clock", size: 14}), st.text)),
     h("span", {className: "app-hometrip__body"},
       h("span", {className: "heading app-ellipsis"}, t.name),
-      h("span", {className: "body-sm app-muted"}, A.shortRange(t) + " · " + t.days.length + " gün"),
+      h("span", {className: "body-sm app-muted"}, A.shortRange(t) + ", " + t.days.length + " gün"),
       total && st.kind !== "past" ? h("span", {className: "app-hometrip__prep"},
         h("span", {className: "app-hometrip__bar"}, h("span", {style: {transform: "scaleX(" + (done / total) + ")"}})),
         h("span", {className: "label app-muted"}, "Hazırlık %" + pct)) : null));
@@ -176,7 +176,7 @@ var DEAL_TONES = ["teal", "violet", "amber", "pink", "blue", "green", "indigo", 
 function DealCard(p){
   var d = p.d;
   function start(name, code){
-    var c = code && D.COUNTRY[code], pre = {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b};
+    var c = code && D.COUNTRY[code], pre = {name: name ? name + ", " + d.name : d.name + " gezisi", start: d.a, end: d.b};
     if(c){
       pre.countries = [code]; if(c[3] !== "TL") pre.currency = c[3];
       /* fırsattaki ad bir şehirse (ya da "A ve B") şehir olarak gelir */
@@ -192,7 +192,7 @@ function DealCard(p){
       h("span", {className: "app-deal__len"}, h("strong", null, d.len), h("small", null, "gün"))),
     h("span", {className: "app-deal__how"}, d.leave ? leaveText(d.leave) + " izinle" : "İzin almadan"),
     d.ideas.length ? h("div", {className: "app-deal__ideas"}, d.ideas.map(function(x){
-      return h("button", {key: x[0], type: "button", className: "app-deal__idea", title: x[1] + " · " + x[2], onClick: function(){ start(x[0], x[3]); }}, x[0]);
+      return h("button", {key: x[0], type: "button", className: "app-deal__idea", title: x[1] + ", " + x[2], onClick: function(){ start(x[0], x[3]); }}, x[0]);
     })) : null);
 }
 

@@ -308,7 +308,7 @@ function byOf(r, o){
 var ACT_KINDS = {expense:1, plan:1, transit:1, check:1, done:1, photo:1, idea:1};
 function normActivity(a){
   if(!a || typeof a !== "object" || typeof a.id !== "string" || !ACT_KINDS[a.kind]) return null;
-  return byOf(a, {id:a.id.slice(0,40), at:str(a.at,30), kind:a.kind, ref:str(a.ref,40), text:str(a.text,160)});
+  return byOf(a, {id:a.id.slice(0,40), at:str(a.at,30), kind:a.kind, ref:str(a.ref,40), text:str(a.text,160).replace(/ · /g, ", ")});
 }
 function normExpense(e){
   if(!e || typeof e !== "object" || typeof e.id !== "string") return null;

@@ -296,7 +296,7 @@ function Login(p){
         : h(t.Button, {variant: "primary", icon: "user", full: true, onClick: go, disabled: busy[0]}, busy[0] ? "Google'a yönlendiriliyor…" : "Google ile giriş yap"),
         err[0] || urlErr ? h("p", {className: "body-sm tpb-login__warn", role: "alert"}, err[0] || ("Giriş tamamlanamadı: " + urlErr)) : null,
         h("p", {className: "body-sm app-muted tpb-login__fine"}, "Sadece adın ve e-postan alınır. E-postan, gezini seninle paylaşanlar için kullanılır."),
-        h("p", {className: "body-sm app-muted tpb-login__fine"}, h("a", {href: "gizlilik.html", className: "tp-link"}, "Gizlilik"), " · ", h("a", {href: "kosullar.html", className: "tp-link"}, "Kullanım koşulları")))));
+        h("p", {className: "body-sm app-muted tpb-login__fine"}, h("a", {href: "gizlilik.html", className: "tp-link"}, "Gizlilik"), " ", h("a", {href: "kosullar.html", className: "tp-link"}, "Kullanım koşulları")))));
 }
 
 /* Hesap: giriş bilgisi, çıkış, yedek */

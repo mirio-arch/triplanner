@@ -219,7 +219,7 @@ function Actions(p){
 }
 function TicketCard(p){
   var t = p.t, e = p.e, it = e.it, r = routeOf(it), mode = modeOf(it), sel = p.selected;
-  var carrier = [it.carrier, it.code].filter(Boolean).join(" · ");
+  var carrier = [it.carrier, it.code].filter(Boolean).join(", ");
   var cd = p.next ? countdown(e) : "";
   var expanded = sel && A.isPhone, ref = React.useRef(null);
   /* kesik çizginin yerinde kartın kenarından gerçek çentik aç */
@@ -289,11 +289,11 @@ function TicketList(p){
 /* ---------- Ayrıntı (masaüstünde sağ kart) ---------- */
 function Detail(p){
   var t = p.t, id = p.id, it = t.items[id], day = A.whereIs(t, id), r = routeOf(it);
-  var carrier = [it.carrier, it.code].filter(Boolean).join(" · ");
+  var carrier = [it.carrier, it.code].filter(Boolean).join(", ");
   return h("div", {className: "app-stack"},
-    h("div", null, h("span", {className: "label app-muted"}, A.dayLabel(t, day, true) + (it.time ? " · " + it.time : "") + (it.end ? " → " + it.end : "")),
+    h("div", null, h("span", {className: "label app-muted"}, A.dayLabel(t, day, true) + (it.time ? ", " + it.time : "") + (it.end ? " → " + it.end : "")),
       h("h2", {className: "heading", style: {margin: 0}}, r[0] && r[1] ? r[0] + " → " + r[1] : it.title)),
-    carrier || it.seat ? h("p", {className: "body-sm", style: {margin: 0}}, [carrier, it.seat].filter(Boolean).join(" · ")) : null,
+    carrier || it.seat ? h("p", {className: "body-sm", style: {margin: 0}}, [carrier, it.seat].filter(Boolean).join(", ")) : null,
     it.note ? h("p", {className: "body-sm app-muted", style: {margin: 0}}, it.note) : null,
     h("div", {className: "app-row app-row--wrap"},
       it.duration ? h(T.Chip, {tone: "outline", icon: "clock"}, it.duration) : null,
@@ -389,7 +389,7 @@ function MapPane(p){
       h("button", {type: "button", className: "app-mappane__add app-mappane__x", "aria-label": "Haritayı kapat", onClick: close}, h(T.Icon, {name: "close", size: 16}))),
     full && selE ? h("button", {type: "button", className: "app-mappane__sel", onClick: function(){ setSnap("h"); setTimeout(function(){ var el = document.getElementById("tk-" + sel); if(el) el.scrollIntoView({block: "nearest", behavior: "smooth"}); }, 300); }},
       h(T.Icon, {name: MODE_ICON[modeOf(selE.it)] || "route", size: 18}),
-      h("span", {className: "body-sm app-ellipsis", style: {flex: 1, minWidth: 0, textAlign: "left"}}, h("strong", null, routeOf(selE.it)[0] && routeOf(selE.it)[1] ? routeOf(selE.it).join(" → ") : selE.it.title), " · " + dateText(t, selE) + (selE.it.time ? " " + clock(selE.it.time) : "")),
+      h("span", {className: "body-sm app-ellipsis", style: {flex: 1, minWidth: 0, textAlign: "left"}}, h("strong", null, routeOf(selE.it)[0] && routeOf(selE.it)[1] ? routeOf(selE.it).join(" → ") : selE.it.title), ", " + dateText(t, selE) + (selE.it.time ? " " + clock(selE.it.time) : "")),
       h(T.Icon, {name: "chevron-up", size: 18})) : null);
 }
 
@@ -420,7 +420,7 @@ function TicketView(p){
     h("section", {role: "dialog", "aria-modal": "true", "aria-label": "Bilet: " + it.title, className: "app-ticketview__box"},
       h("header", {className: "app-ticketview__head"},
         h("div", {style: {minWidth: 0, flex: 1}}, h("div", {className: "heading app-ellipsis"}, r[0] && r[1] ? r[0] + " → " + r[1] : it.title),
-          h("div", {className: "body-sm app-muted app-ellipsis"}, [A.dayLabel(t, A.whereIs(t, p.id), true), clock(it.time), it.carrier, it.code, it.seat].filter(Boolean).join(" · "))),
+          h("div", {className: "body-sm app-muted app-ellipsis"}, [A.dayLabel(t, A.whereIs(t, p.id), true), clock(it.time), it.carrier, it.code, it.seat].filter(Boolean).join(", "))),
         h(T.Button, {size: "sm", variant: "ghost", iconEnd: "external", href: url, target: "_blank"}, "Yeni sekmede"),
         h(T.IconButton, {icon: "close", label: "Kapat", onClick: close, autoFocus: true})),
       h("div", {className: "app-ticketview__body"},
@@ -443,7 +443,7 @@ function Submenu(t){
   var v = A.view();
   var items = t.days.filter(function(d){ return transitOf(t, d).length; }).map(function(d){
     var ids = transitOf(t, d), f = D.fmtDay(d.date);
-    var sub = ids.slice(0, 3).map(function(id){ var it = t.items[id]; return D.MODES[modeOf(it)] + (hm(it.time) ? " " + clock(it.time) : ""); }).join(" · ") + (ids.length > 3 ? " · +" + (ids.length - 3) : "");
+    var sub = ids.slice(0, 3).map(function(id){ var it = t.items[id]; return D.MODES[modeOf(it)] + (hm(it.time) ? " " + clock(it.time) : ""); }).join(", ") + (ids.length > 3 ? ", +" + (ids.length - 3) : "");
     return h(T.NavItem, {key: d.id, mark: String(A.dayIndex(t, d.id) + 1), label: f.short + " " + D.WDS[D.parseISO(d.date).getUTCDay()], sub: sub, count: ids.length,
       active: S.page === "ulasim" && v.transit && ids.indexOf(v.transit) > -1, href: "#", onClick: function(e){ if(e) e.preventDefault(); select(ids[0], {keep: true, scroll: true}); }});
   });
