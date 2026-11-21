@@ -177,7 +177,12 @@ function DealCard(p){
   var d = p.d;
   function start(name, code){
     var c = code && D.COUNTRY[code], pre = {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b};
-    if(c){ pre.countries = [code]; if(c[3] !== "TL") pre.currency = c[3]; }
+    if(c){
+      pre.countries = [code]; if(c[3] !== "TL") pre.currency = c[3];
+      /* fırsattaki ad bir şehirse (ya da "A ve B") şehir olarak gelir */
+      var cities = (name || "").split(/\s+ve\s+/).map(function(n){ return D.CITIES.filter(function(x){ return x[0] === n.trim() && x[1] === code; })[0]; }).filter(Boolean);
+      pre.dest = cities.length ? cities.map(function(x){ return {c: code, n: x[0]}; }) : [{c: code}];
+    }
     S.dialog = {kind: "trip-new", preset: pre}; A.render();
   }
   return h("article", {className: "app-deal is-" + DEAL_TONES[p.i % DEAL_TONES.length] + (DEAL_ART[d.key] ? " has-art" : "")},
@@ -251,13 +256,17 @@ function Home(){
     A.isPhone ? h("div", {className: "app-home__hello"}, h("h1", {className: "page-title", style: {margin: 0}}, hello)) : null,
     h("section", {id: "home-trips", className: "app-home__sec", "aria-labelledby": "home-trips-h"},
       h("div", {className: "app-row"}, h("h2", {id: "home-trips-h", className: "section-title", style: {margin: 0, flex: 1}}, "Gezilerin"),
-        trips.length ? h(T.Button, {size: "sm", variant: "ghost", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi") : null),
+        trips.length && !A.isPhone ? h(T.Button, {size: "sm", variant: "primary", icon: "plus", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi") : null),
       trips.length ? h("div", {className: "app-hometrips"}, trips.map(function(t){ return h(TripCard, {key: t.id, t: t}); }))
         : h(A.StartChoices)),
     deals.length ? h("section", {id: "home-deals", className: "app-home__sec", "aria-labelledby": "home-deals-h"},
       h("h2", {id: "home-deals-h", className: "section-title", style: {margin: 0}}, "Tatil fırsatları"),
       h("div", {className: "app-deals"}, deals.map(function(x, i){ return h(DealCard, {key: x.key, d: x, i: i}); }))) : null);
-  return h(F, null, head, A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
+  /* telefonda yeni gezi: diğer sayfalardaki gibi sağ altta yüzen düğme */
+  if(A.isPhone) return h("div", {className: "app-tphone app-homewrap"},
+    h("div", {className: "app-tphone__list", "data-scroll": true}, body),
+    trips.length ? h("button", {type: "button", className: "app-fab", onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, h(T.Icon, {name: "plus", size: 20}), h("span", null, "Yeni gezi")) : null);
+  return h(F, null, head, h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
 }
 A.Home = Home;
 

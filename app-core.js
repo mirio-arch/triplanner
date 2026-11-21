@@ -493,6 +493,51 @@ A.CountryPicker = function(p){
     h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Saat seçiminde ülke saati ve yerel para buna göre gelir."));
 };
 
+/* Yer seçici: tek kutuda şehir ya da ülke aranır; şehir seçilince ülkesi de bilinir (saat ve para için) */
+function fold(x){ return low(x).replace(/ş/g, "s").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/â/g, "a"); }
+var POPULAR = ["Roma", "Paris", "Barselona", "Amsterdam", "Prag", "Viyana", "Tiflis", "Saraybosna", "Londra", "Tokyo", "Marakeş", "Dubai"];
+A.PlacePicker = function(p){
+  var open = React.useState(false), q = React.useState(""), sel = p.value || [];
+  var qq = fold(q[0]).trim();
+  function has(c, n){ return sel.some(function(x){ return x.c === c && (x.n || "") === (n || ""); }); }
+  function add(c, n){
+    if(has(c, n)) return;
+    /* şehir eklenince aynı ülkenin "yalnız ülke" etiketi gereksizleşir */
+    var next = sel.filter(function(x){ return !(n && x.c === c && !x.n); }).concat([n ? {c: c, n: n} : {c: c}]);
+    p.onChange(next); q[1]("");
+  }
+  function remove(i){ p.onChange(sel.filter(function(_, j){ return j !== i; })); }
+  var cities = qq ? D.CITIES.filter(function(x){ return fold(x[0]).indexOf(qq) > -1 || (x[2] && fold(x[2]).indexOf(qq) > -1) || (D.COUNTRY[x[1]] && fold(D.COUNTRY[x[1]][1]).indexOf(qq) === 0); }).slice(0, 24)
+    : POPULAR.map(function(n){ return D.CITIES.filter(function(x){ return x[0] === n; })[0]; }).filter(Boolean);
+  var countries = qq ? D.COUNTRIES.filter(function(c){ return fold(c[1]).indexOf(qq) > -1 || fold(c[0]) === qq; }).slice(0, 8) : [];
+  function opt(key, flagCode, title, sub, on, onPick){
+    return h("li", {key: key, role: "option", tabIndex: 0, "aria-selected": on ? "true" : "false", className: "tp-option", onClick: onPick,
+        onKeyDown: function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onPick(); } }},
+      h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(flagCode) || "·"),
+      h("span", {className: "tp-option__text"}, h("span", {className: "body"}, title), sub ? h("span", {className: "body-sm tp-muted"}, sub) : null),
+      on ? h(T.Icon, {name: "check", size: 18, className: "tp-option__check"}) : null);
+  }
+  return h("div", {className: "tp-field app-cpick"},
+    h("span", {className: "label tp-field__label", id: "pp-l"}, p.label || "Nereye?"),
+    h("div", {className: "app-cpick__chips"},
+      sel.map(function(x, i){
+        var c = D.COUNTRY[x.c]; if(!c) return null;
+        return h("span", {key: x.c + (x.n || ""), className: "app-cchip"}, A.flag(x.c) ? h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(x.c)) : null, h("span", null, x.n || c[1]),
+          h("button", {type: "button", className: "app-cchip__x", "aria-label": (x.n || c[1]) + " çıkarılsın", onClick: function(){ remove(i); }}, h(T.Icon, {name: "close", size: 14})));
+      }),
+      h("button", {type: "button", className: "app-cchip app-cchip--add", "aria-expanded": open[0] ? "true" : "false", "aria-controls": "pp-panel", onClick: function(){ open[1](!open[0]); if(open[0]) q[1](""); }},
+        h(T.Icon, {name: open[0] ? "check" : "plus", size: 14}), h("span", null, open[0] ? "Bitti" : (sel.length ? "Yer ekle" : "Şehir ya da ülke seç")))),
+    h(A.Expand, {open: open[0]},
+      h("div", {id: "pp-panel", className: "app-cpick__panel"},
+        h("input", {type: "search", className: "tp-input body", placeholder: "Şehir ya da ülke ara", value: q[0], "aria-label": "Şehir ya da ülke ara", onChange: function(e){ q[1](e.target.value); }}),
+        !qq ? h("span", {className: "label app-muted"}, "Sık gidilenler") : null,
+        h("ul", {className: "app-select__list", role: "listbox", "aria-multiselectable": "true", "aria-labelledby": "pp-l"},
+          cities.map(function(x){ return opt("c" + x[0], x[1], x[0], D.COUNTRY[x[1]] ? D.COUNTRY[x[1]][1] : "", has(x[1], x[0]), function(){ add(x[1], x[0]); }); }),
+          countries.map(function(c){ return opt("k" + c[0], c[0], c[1], "Ülke", has(c[0], ""), function(){ add(c[0], ""); }); }),
+          qq && !cities.length && !countries.length ? h("li", {className: "body-sm app-muted", style: {padding: "var(--space-2) var(--space-3)"}}, "Bulunamadı. Ülkesini yazıp seçebilirsin.") : null))),
+    h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Saat seçiminde ülke saati ve yerel para buna göre gelir."));
+};
+
 /* Zorunlu alan etiketi: yıldız; isteğe bağlı olanlara ayrıca yazı eklenmez */
 A.req = function(label){ return h(F, null, label, h("span", {className: "app-req", "aria-hidden": "true"}, " *"), h("span", {className: "tp-sr"}, " (zorunlu)")); };
 /* Fotoğraf görüntüleyici: tam ekran, açık pencerenin üstünde (formu kapatmaz); kaydırarak ya da oklarla gezilir */
@@ -599,6 +644,62 @@ A.Swipe = function(p){
     h("button", {type: "button", className: "app-swipe__act", tabIndex: -1, "aria-hidden": "true", onClick: function(e){ e.stopPropagation(); run(); }},
       h("span", {className: "app-swipe__lbl"}, h(T.Icon, {name: p.icon || "trash", size: 20}), h("span", null, p.label || "Sil"))),
     h("div", {ref: body, className: "app-swipe__body"}, p.children));
+};
+
+/* Tarih seçici: tasarım sisteminin takvim görünümüyle, pencerenin içinde açılır.
+   range: başlangıç–bitiş aralığı (ilk dokunuş başlangıç, ikincisi bitiş); değilse tek gün. */
+var CAL_WD = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+function isoOf(y, m, d){ return y + "-" + ("0" + (m + 1)).slice(-2) + "-" + ("0" + d).slice(-2); }
+function niceDate(iso, yr){ var d = D.parseISO(iso); return d ? d.getUTCDate() + " " + MONTHS[d.getUTCMonth()].slice(0, 3) + (yr ? " " + d.getUTCFullYear() : "") : ""; }
+var calSeq = 0;
+A.DateField = function(p){
+  var range = !!p.range, a = p.start || p.value || "", b = range ? (p.end || "") : "";
+  var open = React.useState(false), id = React.useRef("cal" + (++calSeq)).current;
+  var base = D.parseISO(a || p.month || A.todayISO()) || new Date();
+  var mo = React.useState({y: base.getUTCFullYear(), m: base.getUTCMonth()});
+  var pend = React.useState(null); /* aralıkta ilk dokunuş: bitiş bekleniyor */
+  var s = pend[0] || a, e = pend[0] ? "" : b;
+  function shift(k){ var m = mo[0].m + k, y = mo[0].y + Math.floor(m / 12); mo[1]({y: y, m: ((m % 12) + 12) % 12}); }
+  function pick(iso){
+    if(p.max && iso > p.max) return;
+    if(!range){ p.onChange(iso); open[1](false); return; }
+    if(!pend[0] || iso < pend[0]){ pend[1](iso); return; }
+    pend[1](null); p.onChange(pend[0], iso);
+  }
+  var y = mo[0].y, m = mo[0].m, first = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7, days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), today = A.todayISO();
+  var cells = CAL_WD.map(function(w){ return h("span", {key: "w" + w, className: "tp-cal__wd label", "aria-hidden": "true"}, w); });
+  for(var i = 0; i < first; i++) cells.push(h("span", {key: "b" + i}));
+  for(var d = 1; d <= days; d++){
+    (function(d){
+      var iso = isoOf(y, m, d), st = iso === s, en = e && iso === e, inr = s && e && iso > s && iso < e, off = p.max && iso > p.max;
+      cells.push(h("button", {key: d, type: "button", disabled: off || undefined,
+        className: "tp-cal__day body" + (st ? " is-start" : "") + (en ? " is-end" : "") + (st && (!e || en) ? " is-single" : "") + (inr ? " in-range" : "") + (iso === today ? " is-today" : ""),
+        "aria-label": d + " " + MONTHS[m] + " " + y + (st ? (range ? ", başlangıç" : ", seçili") : "") + (en ? ", bitiş" : ""), "aria-pressed": st || en ? "true" : "false",
+        onClick: function(){ pick(iso); }}, d));
+    })(d);
+  }
+  var nDays = a && b ? Math.round((D.parseISO(b) - D.parseISO(a)) / 864e5) + 1 : 0;
+  var shown = range ? (a && b ? niceDate(a, D.parseISO(a).getUTCFullYear() !== D.parseISO(b).getUTCFullYear()) + " – " + niceDate(b, true) + " · " + nDays + " gün" : "")
+    : (a ? niceDate(a, true) : "");
+  var status = range ? (pend[0] ? "Bitiş gününü seç" : (nDays ? nDays + " gün · " + (nDays - 1) + " gece" : "Başlangıç gününü seç")) : "";
+  return h("div", {className: "tp-field app-date" + (open[0] ? " is-open" : "")},
+    p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label) : null,
+    h("button", {type: "button", className: "tp-input tp-trigger body", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id, "aria-labelledby": (p.label ? id + "-l " : "") + id + "-v",
+        onClick: function(){ if(open[0]) pend[1](null); open[1](!open[0]); }},
+      h(T.Icon, {name: "calendar", size: 18}),
+      h("span", {id: id + "-v", className: "tp-trigger__value" + (shown ? "" : " tp-trigger__placeholder")}, shown || p.placeholder || (range ? "Tarihleri seç" : "Tarih seç")),
+      h(T.Icon, {name: "chevron-down", size: 18, className: "tp-muted app-select__chev"})),
+    h(A.Expand, {open: open[0]},
+      h("div", {id: id, className: "tp-cal app-cal", role: "group", "aria-label": (p.label ? (typeof p.label === "string" ? p.label : "Tarih") : "Tarih") + " seç"},
+        h("div", {className: "tp-cal__nav"},
+          h(T.IconButton, {icon: "chevron-left", label: "Önceki ay", size: "sm", onClick: function(){ shift(-1); }}),
+          h(T.IconButton, {icon: "chevron-right", label: "Sonraki ay", size: "sm", onClick: function(){ shift(1); }})),
+        h("div", {className: "tp-cal__month"}, h("div", {className: "tp-cal__title body-strong", "aria-live": "polite"}, MONTHS[m] + " " + y), h("div", {className: "tp-cal__grid"}, cells)),
+        h("div", {className: "tp-cal__foot"},
+          h("span", {className: "body-sm tp-muted", style: {marginRight: "auto"}}, status),
+          a ? h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ pend[1](null); if(range) p.onChange("", ""); else p.onChange(""); }}, "Temizle") : null,
+          h(T.Button, {variant: "primary", size: "sm", onClick: function(){ pend[1](null); open[1](false); }}, "Tamam")))),
+    p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null);
 };
 
 /* Formlarda değişiklik izleme: kaydetmeden kapatırken sorulur */

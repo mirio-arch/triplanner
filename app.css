@@ -883,3 +883,13 @@ a{color:var(--foreground-secondary)}
 .app-sticker__name{font:600 13px/1.2 var(--font-sans);color:var(--foreground);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .app-sticker__when{font:500 11px/1.2 var(--font-sans);color:var(--foreground-weak)}
 .app-sticker.is-next .app-sticker__when{color:var(--foreground-primary)}
+/* Tarih seçici: pencerenin içinde, tasarım sisteminin takvimi */
+.app-cal.tp-cal{position:relative;padding:var(--space-3) 0 0;align-items:center}
+.app-cal .tp-cal__nav{top:var(--space-3);left:0;right:0}
+.app-cal .tp-cal__grid{grid-template-columns:repeat(7,minmax(36px,44px));justify-content:center}
+.app-cal .tp-cal__day{width:100%;height:42px}
+.app-cal .tp-cal__day:disabled{opacity:.3;cursor:default}
+.app-cal .tp-cal__foot{align-self:stretch}
+.app-date .tp-trigger>.tp-icon:first-child{color:var(--foreground-weak)}
+.app-date.is-open .app-select__chev{transform:rotate(180deg)}
+.app-homewrap .app-tphone__list{padding-bottom:84px}

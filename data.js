@@ -122,7 +122,7 @@ function initials(name){ var w = (name || "").trim().split(/\s+/).filter(Boolean
 function toItem(a){ return {id:a[0], time:a[1], title:a[2], note:a[3], cat:a[4], link:a[5], critical:!!a[6]}; }
 function seedGeorgia(){
   var t = {id:"gurcistan", name:"Gürcistan Yılbaşı", short:"GE", color:0, start:GEORGIA_DATES[0], end:GEORGIA_DATES[4], geo:"georgia",
-    guide:"https://claude.ai/artifact/QD7cmpCyymzA7CG5LWPEMi", days:[], items:{}, removed:[], ideas:[], checklist:[], keyinfo:[], expenses:[], photos:[], rate:{}, budget:0, currency:"GEL", countries:["GE"]};
+    guide:"https://claude.ai/artifact/QD7cmpCyymzA7CG5LWPEMi", days:[], items:{}, removed:[], ideas:[], checklist:[], keyinfo:[], expenses:[], photos:[], rate:{}, budget:0, currency:"GEL", countries:["GE"], dest:[{c:"GE", n:"Batum"}, {c:"GE", n:"Kutaisi"}]};
   GEORGIA_DATES.forEach(function(dt, i){
     var sd = SEED_DAYS["d"+i], day = {id:dayIdOf(dt), date:dt, title:sd.title, night:sd.night, items:[]};
     sd.items.forEach(function(a){ var it = toItem(a); t.items[it.id] = it; day.items.push(it.id); });
@@ -134,7 +134,7 @@ function seedGeorgia(){
   return t;
 }
 function newTrip(name, short, start, end, color){
-  var t = {id:uid("t"), name:name, short:short || initials(name), color:color, start:start, end:end, geo:"", guide:"", days:[], items:{}, removed:[], ideas:[], checklist:[], keyinfo:[], expenses:[], photos:[], rate:{}, budget:0, currency:"", countries:[]};
+  var t = {id:uid("t"), name:name, short:short || initials(name), color:color, start:start, end:end, geo:"", guide:"", days:[], items:{}, removed:[], ideas:[], checklist:[], keyinfo:[], expenses:[], photos:[], rate:{}, budget:0, currency:"", countries:[], dest:[]};
   datesBetween(start, end).forEach(function(dt){ t.days.push({id:dayIdOf(dt), date:dt, title:"", night:"", items:[]}); });
   [["belge","Kimlik veya pasaport","Geçerlilik tarihini ve vize şartını kontrol et."],["belge","Seyahat sağlık sigortası",""],
    ["konaklama","Ulaşım biletleri",""],["konaklama","Konaklama",""],["canta","İnternet / SIM",""],["canta","Yerel para",""]
@@ -225,6 +225,40 @@ var COUNTRIES = [
   ["PE","Peru","America/Lima","PEN"],["CO","Kolombiya","America/Bogota","COP"],["AU","Avustralya","Australia/Sydney","AUD"],["NZ","Yeni Zelanda","Pacific/Auckland","NZD"]
 ];
 var COUNTRY = {}; COUNTRIES.forEach(function(c){ COUNTRY[c[0]] = c; });
+/* Şehirler: ad, ülke kodu, (isteğe bağlı) başka yazılışlar */
+var CITIES = [
+  ["İstanbul","TR"],["Kapadokya","TR","nevşehir göreme ürgüp"],["Antalya","TR"],["Bodrum","TR"],["Fethiye","TR"],["Kaş","TR"],["İzmir","TR"],["Trabzon","TR"],["Mardin","TR"],["Ankara","TR"],["Çeşme","TR"],["Alaçatı","TR"],
+  ["Girne","KKTC"],["Lefkoşa","KKTC"],["Gazimağusa","KKTC"],
+  ["Tiflis","GE","tbilisi"],["Batum","GE","batumi"],["Kutaisi","GE"],["Kazbegi","GE","stepantsminda"],["Mtskheta","GE"],["Sighnaghi","GE"],["Bakü","AZ","baku"],["Erivan","AM","yerevan"],
+  ["Atina","GR","athens"],["Selanik","GR","thessaloniki"],["Santorini","GR"],["Mikonos","GR","mykonos"],["Rodos","GR","rhodes"],["Girit","GR","crete"],
+  ["Sofya","BG","sofia"],["Filibe","BG","plovdiv"],["Bükreş","RO","bucharest"],["Belgrad","RS","belgrade"],["Novi Sad","RS"],["Saraybosna","BA","sarajevo"],["Mostar","BA"],
+  ["Kotor","ME"],["Budva","ME"],["Podgorica","ME"],["Üsküp","MK","skopje"],["Ohri","MK","ohrid"],["Tiran","AL","tirana"],["Saranda","AL"],["Priştine","XK","pristina"],["Prizren","XK"],
+  ["Dubrovnik","HR"],["Split","HR"],["Zagreb","HR"],["Ljubljana","SI"],["Budapeşte","HU","budapest"],["Viyana","AT","vienna wien"],["Salzburg","AT"],["Prag","CZ","prague praha"],["Bratislava","SK"],
+  ["Krakov","PL","krakow"],["Varşova","PL","warsaw"],["Berlin","DE"],["Münih","DE","munich münchen"],["Hamburg","DE"],["Köln","DE","cologne"],["Frankfurt","DE"],
+  ["Amsterdam","NL"],["Rotterdam","NL"],["Brüksel","BE","brussels"],["Brugge","BE","bruges"],["Paris","FR"],["Nice","FR","nis"],["Lyon","FR"],["Marsilya","FR","marseille"],["Strazburg","FR","strasbourg"],
+  ["Barselona","ES","barcelona"],["Madrid","ES"],["Sevilla","ES","seville endülüs"],["Granada","ES","endülüs"],["Valensiya","ES","valencia"],["Malaga","ES","endülüs"],["Mallorca","ES","palma"],
+  ["Lizbon","PT","lisbon lisboa"],["Porto","PT"],["Madeira","PT"],["Roma","IT","rome"],["Milano","IT","milan"],["Floransa","IT","florence firenze"],["Venedik","IT","venice venezia"],["Napoli","IT","naples"],
+  ["Palermo","IT","sicilya"],["Bologna","IT"],["Como","IT"],["Zürih","CH","zurich"],["Cenevre","CH","geneva"],["Luzern","CH","lucerne"],["Interlaken","CH"],
+  ["Londra","GB","london"],["Edinburgh","GB"],["Manchester","GB"],["Dublin","IE"],["Kopenhag","DK","copenhagen"],["Stockholm","SE"],["Oslo","NO"],["Bergen","NO"],["Tromsø","NO","tromso"],
+  ["Helsinki","FI"],["Rovaniemi","FI","laponya"],["Reykjavik","IS"],["Tallinn","EE"],["Riga","LV"],["Vilnius","LT"],["Valletta","MT"],["Larnaka","CY","larnaca"],["Baf","CY","paphos"],
+  ["Moskova","RU","moscow"],["St. Petersburg","RU","petersburg"],["Dubai","AE"],["Abu Dabi","AE","abu dhabi"],["Doha","QA"],["Maskat","OM","muscat"],["Amman","JO"],["Petra","JO"],["Beyrut","LB","beirut"],
+  ["Kahire","EG","cairo"],["Hurgada","EG","hurghada"],["Şarm El-Şeyh","EG","sharm"],["Luksor","EG","luxor"],["Marakeş","MA","marrakech"],["Fes","MA","fez"],["Kazablanka","MA","casablanca"],["Şefşavan","MA","chefchaouen"],
+  ["Tunus","TN","tunis"],["Zanzibar","TZ"],["Nairobi","KE"],["Cape Town","ZA"],["Semerkant","UZ","samarkand"],["Buhara","UZ","bukhara"],["Taşkent","UZ","tashkent"],["Almatı","KZ","almaty"],["Bişkek","KG","bishkek"],
+  ["Delhi","IN"],["Mumbai","IN"],["Goa","IN"],["Kolombo","LK","colombo"],["Male","MV"],["Katmandu","NP","kathmandu"],["Bangkok","TH"],["Phuket","TH"],["Chiang Mai","TH"],["Hanoi","VN"],["Ho Chi Minh","VN","saigon"],
+  ["Bali","ID"],["Kuala Lumpur","MY"],["Singapur","SG","singapore"],["Manila","PH"],["Pekin","CN","beijing"],["Şanghay","CN","shanghai"],["Hong Kong","HK"],["Tokyo","JP"],["Kyoto","JP"],["Osaka","JP"],
+  ["Seul","KR","seoul"],["Busan","KR"],["New York","US"],["Los Angeles","US"],["San Francisco","US"],["Miami","US"],["Las Vegas","US"],["Chicago","US"],["Toronto","CA"],["Vancouver","CA"],["Montreal","CA"],
+  ["Meksiko","MX","mexico city"],["Cancun","MX"],["Havana","CU"],["Rio de Janeiro","BR"],["Buenos Aires","AR"],["Lima","PE"],["Cusco","PE"],["Bogota","CO"],["Cartagena","CO"],["Sidney","AU","sydney"],["Melbourne","AU"],["Auckland","NZ"]
+];
+/* gezinin gidilecek yerleri: [{c: ülke, n: şehir (isteğe bağlı)}] */
+function normDest(raw, countries){
+  var out = [], seen = {};
+  (Array.isArray(raw) ? raw : []).slice(0, 30).forEach(function(x){
+    if(!x || !COUNTRY[x.c]) return; var n = x.n ? str(x.n, 60) : "", k = x.c + "|" + n.toLowerCase(); if(seen[k]) return; seen[k] = true;
+    out.push(n ? {c: x.c, n: n} : {c: x.c});
+  });
+  (countries || []).forEach(function(c){ if(!out.some(function(x){ return x.c === c; })) out.push({c: c}); });
+  return out;
+}
 /* kayıtta kabul edilen para birimleri: temel dört + ülkelerin paraları */
 var ALLCUR = CURRENCIES.slice(); COUNTRIES.forEach(function(c){ if(ALLCUR.indexOf(c[3]) < 0) ALLCUR.push(c[3]); });
 function isCur(c){ return ALLCUR.indexOf(c) > -1; }
@@ -352,6 +386,9 @@ function normalizeTrip(raw, id){
     t.currency = isCur(raw.currency) && raw.currency !== "TL" ? raw.currency : (t.geo === "georgia" ? "GEL" : "");
     t.countries = (Array.isArray(raw.countries) ? raw.countries : []).filter(function(c, i, a){ return typeof c === "string" && COUNTRY[c] && a.indexOf(c) === i; }).slice(0, 12);
     if(!t.countries.length && t.geo === "georgia") t.countries = ["GE"];
+    t.dest = normDest(raw.dest, t.countries);
+    if(!raw.dest && t.geo === "georgia") t.dest = [{c: "GE", n: "Batum"}, {c: "GE", n: "Kutaisi"}];
+    t.dest.forEach(function(x){ if(t.countries.indexOf(x.c) < 0) t.countries.push(x.c); });
     syncTransportExpenses(t);
     return t;
   }catch(e){ return null; }
@@ -481,7 +518,7 @@ function Sync(opts){
 }
 
 window.TPD = {CATS:CATS, GROUPS:GROUPS, MONTHS:MONTHS, WD:WD, WDS:WDS, MAX_DAYS:MAX_DAYS, GEORGIA_DATES:GEORGIA_DATES,
-  EXP_CATS:EXP_CATS, EXP_ORDER:EXP_ORDER, EXP_ICON:EXP_ICON, CURRENCIES:CURRENCIES, COUNTRIES:COUNTRIES, COUNTRY:COUNTRY, ALLCUR:ALLCUR, isCur:isCur, curList:curList, MODES:MODES, CAT_TO_EXP:CAT_TO_EXP, CAT_TO_DS:CAT_TO_DS,
+  EXP_CATS:EXP_CATS, EXP_ORDER:EXP_ORDER, EXP_ICON:EXP_ICON, CURRENCIES:CURRENCIES, COUNTRIES:COUNTRIES, COUNTRY:COUNTRY, CITIES:CITIES, ALLCUR:ALLCUR, isCur:isCur, curList:curList, MODES:MODES, CAT_TO_EXP:CAT_TO_EXP, CAT_TO_DS:CAT_TO_DS,
   parseISO:parseISO, isoOf:isoOf, fmtDay:fmtDay, fmtRange:fmtRange, datesBetween:datesBetween, dayIdOf:dayIdOf, str:str, safeLink:safeLink, uid:uid, initials:initials,
   seedGeorgia:seedGeorgia, newTrip:newTrip, normalizeTrip:normalizeTrip, syncTransportExpenses:syncTransportExpenses, guessMode:guessMode,
   parseAmount:parseAmount, fmtNum:fmtNum, fmtMoney:fmtMoney, toTL:toTL, rateOf:rateOf, autoRate:autoRate, fx:function(){ return FX; }, setFx:setFx, photoUrl:photoUrl,
