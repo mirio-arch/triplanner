@@ -840,18 +840,20 @@ A.Submenu = function(p){
   }));
 };
 
+/* Telefon üst çubuğu: logo yok. Gezide: solda Gezilerin'e dönüş oku ve kutusuz gezi adı (dokununca gezi değiştir),
+   sağda sohbet ve profil. Ana sayfada: solda Triplanner, sağda profil. */
 function PhoneHeader(){
   var home = A.offTrip(), t = home ? null : A.trip();
+  if(home || !t) return h("header", {className: "tp-onshell app-phonehead"},
+    h("div", {className: "app-phonehead__title"}, h("span", {className: "app-phonehead__brand"}, "Triplanner")),
+    h(A.AvatarButton, {size: 40}));
   return h("header", {className: "tp-onshell app-phonehead"},
-    h("a", {href: "#home", className: "app-phonehead__logo", "aria-label": "Ana sayfa"}, h(T.Logo, {variant: "plain", size: "sm"})),
-    home || !t ? h("div", {className: "app-phonehead__title"}, h("span", {className: "heading"}, "Triplanner"))
-    : h("button", {type: "button", className: "app-phonehead__trip", onClick: function(){ S.dialog = {kind: "trip-menu"}; A.render(); }, "aria-label": "Gezi değiştir: " + t.name},
-      h(A.TripMark, {t: t}),
-      h("span", {style:{minWidth:0, textAlign:"left", flex: 1}},
-        h("span", {className: "body-strong app-ellipsis", style:{display:"block"}}, t.name),
-        h("span", {className: "body-sm app-weak app-ellipsis", style:{display:"block"}}, A.shortRange(t) + ", " + t.days.length + " gün"))),
-    t ? h(A.ActivityButton, {onShell: true}) : null,
-    h(A.AvatarButton, {size: 44}));
+    h("a", {href: "#home", className: "app-phonehead__back", "aria-label": "Gezilerin", title: "Gezilerin"}, h(T.Icon, {name: "chevron-left", size: 24})),
+    h("button", {type: "button", className: "app-phonehead__trip", onClick: function(){ S.dialog = {kind: "trip-menu"}; A.render(); }, "aria-label": "Gezi değiştir: " + t.name},
+      h("span", {className: "app-phonehead__name"}, h("span", {className: "app-ellipsis"}, t.name), h(T.Icon, {name: "chevron-down", size: 16, className: "app-phonehead__chev"})),
+      h("span", {className: "app-phonehead__sub app-ellipsis"}, A.shortRange(t) + ", " + t.days.length + " gün")),
+    h(A.ActivityButton, {onShell: true}),
+    h(A.AvatarButton, {size: 40}));
 }
 function PhoneNav(){
   var t = A.trip(); if(!t || A.offTrip()) return null;
