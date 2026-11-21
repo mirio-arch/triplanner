@@ -330,8 +330,8 @@ function TripMenu(){
 
 /* Kaydetmeden çıkış sorusu: açık pencerenin üstünde */
 function Discard(){
-  return h(T.Dialog, {title: "Kaydetmeden çıkılsın mı?", description: "Girdiğin bilgiler kaydedilmedi; çıkarsan kaybolur.", width: "400px", onClose: keep},
-    h(Foot, null, h(T.Button, {variant: "ghost", onClick: keep}, "Düzenlemeye dön"), h(T.Button, {variant: "danger", onClick: close}, "Kaydetmeden çık")));
+  return h(T.Dialog, {title: "Kaydetmeden çıkılsın mı?", description: "Girdiklerin kaybolur.", width: "380px", onClose: keep},
+    h("div", {className: "app-discard"}, h(T.Button, {variant: "outline", className: "app-btn--dangertext", onClick: close}, "Çık"), h(T.Button, {variant: "primary", onClick: keep}, "Devam et")));
 }
 A.Dialogs = function(){
   var d = S.dialog;

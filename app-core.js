@@ -633,60 +633,66 @@ A.haptic = function(){
    Tam kaydırmada kart parmağı daha yavaş izler, eşik geçilince alan büyür ve titreşir;
    silinmesi için eşikte kısa bir an durmak gerekir (hızlı fiske silmez). */
 A.Swipe = function(p){
-  var wrap = React.useRef(null), body = React.useRef(null), st = React.useRef(null), x = React.useRef(0), leaving = React.useState(false);
+  var wrap = React.useRef(null), body = React.useRef(null), st = React.useRef(null), x = React.useRef(0), pr = React.useRef(p);
+  pr.current = p;
   function set(nx, anim, full){
-    x.current = nx; var b = body.current, w = wrap.current; if(!b || !w) return;
-    b.style.transition = anim ? "transform var(--duration-base) var(--ease-standard)" : "none";
-    b.style.transform = nx ? "translate3d(" + nx + "px,0,0)" : "";
+    x.current = nx; var bd = body.current, w = wrap.current; if(!bd || !w) return;
+    bd.style.transition = anim ? "transform var(--duration-base) var(--ease-standard)" : "none";
+    bd.style.transform = nx ? "translate3d(" + nx + "px,0,0)" : "";
     w.classList.toggle("is-active", nx < 0);
     w.classList.toggle("is-full", !!full);
     w.style.setProperty("--sw", Math.max(SW_ACT, -nx) + "px");
   }
   function close(){ set(0, true, false); if(swOpen === close) swOpen = null; }
   function run(){
-    var w = wrap.current; if(!w) return;
+    var w = wrap.current; if(!w || w._gone) return; w._gone = true;
     set(-w.offsetWidth, true, true);
     w.style.height = w.offsetHeight + "px";
     requestAnimationFrame(function(){ w.classList.add("is-leaving"); w.style.height = "0px"; });
-    setTimeout(function(){ if(swOpen === close) swOpen = null; p.onAction(); }, 260);
+    setTimeout(function(){ if(swOpen === close) swOpen = null; pr.current.onAction(); }, 260);
   }
-  function down(e){
-    if(e.pointerType !== "touch" || leaving[0]) return;
-    if(e.target.closest && e.target.closest(".tp-card__handle,input,textarea,select,.app-swipe__act")) return;
-    if(swOpen && swOpen !== close) swOpen();
-    st.current = {x0: e.clientX, y0: e.clientY, base: x.current, dir: null, id: e.pointerId, armed: false, armedAt: 0};
-  }
-  function move(e){
-    var s = st.current; if(!s || e.pointerId !== s.id) return;
-    var dx = e.clientX - s.x0, dy = e.clientY - s.y0;
-    if(!s.dir){ if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.dir = Math.abs(dx) > Math.abs(dy) * 1.2 ? "h" : "v"; if(s.dir === "h"){ try{ wrap.current.setPointerCapture(e.pointerId); }catch(er){} } }
-    if(s.dir !== "h") return;
-    var w = wrap.current.offsetWidth, pull = Math.max(0, -(s.base + dx));
-    /* açık alandan sonrası dirençli */
-    var shown = pull <= SW_ACT ? pull : SW_ACT + (pull - SW_ACT) * .75;
-    var armed = shown > w * .6;
-    /* Android'de kayarken titreşir; iPhone yalnızca parmak kalkınca titreşime izin verir */
-    if(armed !== s.armed){ s.armed = armed; s.armedAt = Date.now(); if(navigator.vibrate) navigator.vibrate(10); }
-    set(-Math.min(shown, w), false, armed);
-  }
-  function up(){
-    var s = st.current; st.current = null; if(!s || s.dir !== "h") return;
-    wrap.current._swiped = Date.now();
-    var shown = -x.current;
-    if(s.armed && Date.now() - s.armedAt > 140){ A.haptic(); run(); }
-    else if(shown > SW_ACT * .5){ A.haptic(); set(-SW_ACT, true, false); swOpen = close; }
-    else close();
-  }
+  /* dokunma olayları: yatay hareket kesinleşince sayfa kaymasını durdurur (iPhone hareketi sayfaya vermesin) */
+  React.useEffect(function(){
+    var w = wrap.current; if(!w) return;
+    function start(e){
+      if(e.touches.length !== 1 || w._gone) { st.current = null; return; }
+      if(e.target.closest && e.target.closest(".tp-card__handle,input,textarea,select,.app-swipe__act")) { st.current = null; return; }
+      if(swOpen && swOpen !== close) swOpen();
+      var t = e.touches[0]; st.current = {x0: t.clientX, y0: t.clientY, base: x.current, dir: null, armed: false, armedAt: 0};
+    }
+    function move(e){
+      var s = st.current; if(!s) return;
+      var t = e.touches[0], dx = t.clientX - s.x0, dy = t.clientY - s.y0;
+      if(!s.dir){ if(Math.abs(dx) < 6 && Math.abs(dy) < 6) return; s.dir = Math.abs(dx) > Math.abs(dy) ? "h" : "v"; }
+      if(s.dir !== "h") return;
+      if(e.cancelable) e.preventDefault();
+      var ww = w.offsetWidth, pull = Math.max(0, -(s.base + dx));
+      var shown = pull <= SW_ACT ? pull : SW_ACT + (pull - SW_ACT) * .75, armed = shown > ww * .6;
+      if(armed !== s.armed){ s.armed = armed; s.armedAt = Date.now(); if(navigator.vibrate) navigator.vibrate(10); }
+      set(-Math.min(shown, ww), false, armed);
+    }
+    function end(){
+      var s = st.current; st.current = null; if(!s || s.dir !== "h") return;
+      w._swiped = Date.now();
+      var shown = -x.current;
+      if(s.armed && Date.now() - s.armedAt > 140){ A.haptic(); run(); }
+      else if(shown > SW_ACT * .5){ A.haptic(); set(-SW_ACT, true, false); swOpen = close; }
+      else close();
+    }
+    function cancel(){ var s = st.current; st.current = null; if(s && s.dir === "h") close(); }
+    w.addEventListener("touchstart", start, {passive: true});
+    w.addEventListener("touchmove", move, {passive: false});
+    w.addEventListener("touchend", end); w.addEventListener("touchcancel", cancel);
+    return function(){ w.removeEventListener("touchstart", start); w.removeEventListener("touchmove", move); w.removeEventListener("touchend", end); w.removeEventListener("touchcancel", cancel); if(swOpen === close) swOpen = null; };
+  }, [A.isPhone && !p.disabled]);
   function clickCap(e){
     var w = wrap.current;
     if(e.target.closest && e.target.closest(".app-swipe__act")) return;
     if(w && w._swiped && Date.now() - w._swiped < 400){ e.stopPropagation(); e.preventDefault(); return; }
     if(x.current < 0){ e.stopPropagation(); e.preventDefault(); close(); }
   }
-  React.useEffect(function(){ return function(){ if(swOpen === close) swOpen = null; }; }, []);
   if(!A.isPhone || p.disabled) return p.children;
-  return h("div", {ref: wrap, className: "app-swipe" + (p.className ? " " + p.className : ""), style: p.radius ? {"--sw-radius": p.radius} : null,
-      onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: function(){ st.current = null; close(); }, onClickCapture: clickCap},
+  return h("div", {ref: wrap, className: "app-swipe" + (p.className ? " " + p.className : ""), style: p.radius ? {"--sw-radius": p.radius} : null, onClickCapture: clickCap},
     h("button", {type: "button", className: "app-swipe__act", tabIndex: -1, "aria-hidden": "true", onClick: function(e){ e.stopPropagation(); A.haptic(); run(); }},
       h("span", {className: "app-swipe__lbl"}, h("span", {className: "app-swipe__ic"}, h(T.Icon, {name: p.icon || "trash", size: 20})), h("span", {className: "tp-sr"}, p.label || "Sil"))),
     h("div", {ref: body, className: "app-swipe__body"}, p.children));
