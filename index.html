@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Triplanner">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,8 +21,75 @@
 <link rel="stylesheet" href="bundle.css">
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="web.css">
+<style>
+/* Açılış ekranı: uçak izini bırakarak yerine uçar */
+#tp-splash{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:radial-gradient(60% 40% at 30% 30%,rgba(63,123,255,.28),transparent 70%),radial-gradient(55% 40% at 72% 70%,rgba(155,77,255,.26),transparent 70%),#0b1030;transition:opacity .35s ease}
+#tp-splash.is-out{opacity:0;pointer-events:none}
+#tp-splash .sp-logo{width:132px;height:132px;animation:sp-tile .5s cubic-bezier(.2,.8,.2,1) both;filter:drop-shadow(0 18px 40px rgba(76,72,240,.45))}
+#tp-splash .sp-logo svg{display:block;width:100%;height:100%}
+#tp-splash.go .tl-bar{transform-box:fill-box;transform-origin:left center;animation:sp-bar .45s .12s cubic-bezier(.2,.8,.2,1) both}
+#tp-splash.go .tl-stem{transform-box:fill-box;transform-origin:top center;animation:sp-stem .45s .25s cubic-bezier(.2,.8,.2,1) both}
+#tp-splash.go .tl-pin{transform-box:fill-box;transform-origin:center bottom;animation:sp-pop .4s 1.4s cubic-bezier(.3,1.5,.5,1) both}
+#tp-splash:not(.go) .tl-bar,#tp-splash:not(.go) .tl-stem,#tp-splash:not(.go) .tl-pin,#tp-splash:not(.go) .sp-name{opacity:0}
+#tp-splash .sp-name{font:700 22px/1 "Geist",system-ui,-apple-system,sans-serif;letter-spacing:-.01em;color:#fff;opacity:.92}
+#tp-splash.go .sp-name{animation:sp-name .5s .9s ease both}
+@keyframes sp-tile{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@keyframes sp-bar{from{opacity:0;transform:translateX(-14%) scaleX(.8)}to{opacity:1;transform:none}}
+@keyframes sp-stem{from{opacity:0;transform:translateY(-12%) scaleY(.85)}to{opacity:1;transform:none}}
+@keyframes sp-pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+@keyframes sp-name{from{opacity:0;transform:translateY(6px)}to{opacity:.92;transform:none}}
+</style>
 </head>
 <body>
+<div id="tp-splash" aria-hidden="true"><div class="sp-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+<defs>
+<linearGradient id="sp-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f7bff"/><stop offset=".55" stop-color="#4c48f0"/><stop offset="1" stop-color="#9b4dff"/></linearGradient>
+<radialGradient id="sp-core" cx=".5" cy=".55" r=".62"><stop offset="0" stop-color="#070a2c"/><stop offset=".62" stop-color="#0b1152" stop-opacity=".96"/><stop offset="1" stop-color="#0b1152" stop-opacity="0"/></radialGradient>
+<linearGradient id="sp-edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fb4ff"/><stop offset="1" stop-color="#c79bff"/></linearGradient>
+<linearGradient id="sp-bar" x1="0" y1="0" x2="1" y2=".25"><stop offset="0" stop-color="#7fe7ff"/><stop offset=".45" stop-color="#2f7dff"/><stop offset="1" stop-color="#3b3df5"/></linearGradient>
+<linearGradient id="sp-fold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f9dff"/><stop offset="1" stop-color="#a68bff"/></linearGradient>
+<linearGradient id="sp-stem" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#2a4dff"/><stop offset=".6" stop-color="#5a3df5"/><stop offset="1" stop-color="#a874ff"/></linearGradient>
+<linearGradient id="sp-trail" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".96"/><stop offset=".5" stop-color="#d9d5ff" stop-opacity=".94"/><stop offset="1" stop-color="#b9b3ff" stop-opacity=".9"/></linearGradient>
+<filter id="sp-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<mask id="sp-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024"><path d="M552 813 L482 770 C422 736 372 700 370 645 C368 590 410 543 487 512 C590 471 727 410 808 319" fill="none" stroke="#fff" stroke-width="90" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" from="1" to="0" begin="indefinite" dur="1.05s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines=".5 0 .25 1"/></path></mask></defs>
+<rect width="1024" height="1024" rx="232" fill="url(#sp-rim)"/>
+<rect width="1024" height="1024" rx="232" fill="url(#sp-core)"/>
+<rect x="5" y="5" width="1014" height="1014" rx="227" fill="none" stroke="url(#sp-edge)" stroke-width="8" opacity=".55"/>
+<g transform="translate(512 512) scale(1.0) translate(-512 -512)">
+<path class="tl-bar" d="M155 423 L134 396 Q126 386 132 374 L197 252 Q204 240 218 240 L690 240 Q728 242 727 278 Q722 320 690 342 Q640 372 583 380 Z" fill="url(#sp-bar)"/>
+<path class="tl-bar" d="M470 240 L690 240 Q728 242 727 278 Q722 320 690 342 Q640 372 583 380 C562 330 540 252 470 240 Z" fill="url(#sp-fold)" opacity=".9"/>
+<path class="tl-stem" d="M381 401 L572 384 L570 806 Q569 836 543 828 L362 724 Q331 706 334 678 Z" fill="url(#sp-stem)"/>
+<path class="tl-trail" mask="url(#sp-m)" d="M806 316 C720 395 580 452 480 492 C395 527 345 585 348 645 C351 705 405 745 470 780 L548 826 L560 800 L495 760 C440 728 395 695 393 645 C391 595 425 560 495 532 C600 490 735 425 810 322 Z" fill="url(#sp-trail)"/>
+<path class="tl-pin" fill-rule="evenodd" fill="#ffffff" d="M486 718 C474 702 440 664 440 640 A46 46 0 1 1 532 640 C532 664 498 702 486 718 Z M486 622 A18 18 0 1 0 486.01 622 Z"/>
+
+<g><animateMotion path="M552 813 L482 770 C422 736 372 700 370 645 C368 590 410 543 487 512 C590 471 727 410 808 319" begin="indefinite" dur="1.05s" fill="freeze" rotate="auto" calcMode="spline" keyTimes="0;1" keySplines=".5 0 .25 1"/><g class="sp-plane" filter="url(#sp-glow)" opacity="0"><set attributeName="opacity" to="1" begin="indefinite" fill="freeze"/><path transform="scale(1.3)" fill="#ffffff" d="M138 0 C138 -6 132 -8 126 -8 L84 -8 L50 -55 L35 -55 L55 -8 L22 -8 L9 -28 L-1 -28 L7 -5 L7 5 L-1 28 L9 28 L22 8 L55 8 L35 55 L50 55 L84 8 L126 8 C132 8 138 6 138 0 Z"/></g></g>
+
+</g>
+</svg></div><div class="sp-name">Triplanner</div></div>
+<script>
+(function(){
+  var el = document.getElementById("tp-splash"); if(!el) return;
+  var seen = false; try{ seen = sessionStorage.getItem("tp-splash") === "1"; sessionStorage.setItem("tp-splash", "1"); }catch(e){}
+  var phone = matchMedia("(max-width: 899px)").matches, still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(seen || !phone || still){ el.parentNode.removeChild(el); return; }
+  var started = false;
+  function hide(){ el.classList.add("is-out"); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 400); }
+  function go(){
+    if(started) return; started = true;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      el.classList.add("go");
+      var smil = el.querySelectorAll("animate, animateMotion, set");
+      for(var i = 0; i < smil.length; i++){ try{ smil[i].beginElementAt(0.45); }catch(e){} }
+      setTimeout(hide, 1900);
+    }); });
+  }
+  /* Uygulama dosyaları yüklenince başlar; takılırsa yine de başlar ve en geç 4,5 sn'de kalkar */
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", go); else go();
+  setTimeout(go, 1500);
+  setTimeout(hide, 4500);
+})();
+</script>
 <div id="root"></div>
 <script>
 /* iPhone ana ekran uygulaması: iOS, durum çubuğu şeffafken sayfayı ekrandan kısa ölçüyor;

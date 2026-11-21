@@ -288,7 +288,7 @@ function Login(p){
   return h("div", {"data-theme": viewTheme(), className: "app-root"},
     h("div", {className: "tp-shell tpb-login"},
       h("div", {className: "tpb-login__card"},
-        h(t.Logo, {variant: "plain"}),
+        A() && A().LogoMark ? h(A().LogoMark, {size: 72, className: "tpb-login__logo"}) : h(t.Logo, {variant: "plain"}),
         h("h1", {className: "page-title tpb-login__title"}, "Triplanner"),
         h("p", {className: "body app-muted tpb-login__text"}, "Gezilerini gün gün planla, yol arkadaşlarınla birlikte düzenle."),
         !ready ? h("p", {className: "body-sm tpb-login__warn"}, "Kurulum bitmedi: config.js dosyasına Supabase adresi ve anahtarı yazılmalı.")
