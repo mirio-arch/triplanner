@@ -259,28 +259,12 @@ A.Wheel = function(p){
       })));
 };
 
-/* Gün seçici: gün ve ay ayrı tekerlekler, yalnızca gezinin günleri; "Yola çıkmadan" ayrı */
+/* Gün seçici: tek kısa tekerlek; en üstte "Yola çıkmadan", sonra gezinin günleri */
 var MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 A.DayWheel = function(p){
-  var t = p.t, months = [];
-  t.days.forEach(function(d){ var k = d.date.slice(0, 7), m = months[months.length - 1]; if(!m || m.k !== k){ m = {k: k, y: +k.slice(0, 4), mo: +k.slice(5, 7), days: []}; months.push(m); } m.days.push(d); });
-  var pre = p.value === "pre";
-  var mi = Math.max(0, months.findIndex(function(m){ return m.days.some(function(d){ return d.id === p.value; }); }));
-  var m = months[mi] || months[0];
-  function pickMonth(k){ var nm = months.find(function(x){ return x.k === k; }); if(!nm) return;
-    var cur = A.dayById(t, p.value), n = cur ? +cur.date.slice(8) : 0;
-    var best = nm.days.find(function(d){ return +d.date.slice(8) === n; }) || nm.days[nm === months[0] ? nm.days.length - 1 : 0];
-    p.onChange(best.id); }
-  var multiYear = months.length && months[0].y !== months[months.length - 1].y;
-  return h("div", {className: "app-daywheel"},
-    h("div", {className: "app-seg app-seg--wide", role: "radiogroup", "aria-label": "Ne zaman"},
-      h("button", {type: "button", role: "radio", "aria-checked": pre ? "false" : "true", "aria-pressed": pre ? "false" : "true", onClick: function(){ if(pre) p.onChange(m.days[0].id); }}, "Gezide"),
-      h("button", {type: "button", role: "radio", "aria-checked": pre ? "true" : "false", "aria-pressed": pre ? "true" : "false", onClick: function(){ p.onChange("pre"); }}, "Yola çıkmadan")),
-    pre ? null : h("div", {className: "app-daywheel__cols"},
-      h(A.Wheel, {key: m.k, id: "dw-d", compact: true, className: "app-daywheel__day", label: "Gün", value: p.value, onChange: p.onChange,
-        options: m.days.map(function(d){ var dt = D.parseISO(d.date); return [d.id, String(dt.getUTCDate()), D.WDS[dt.getUTCDay()]]; })}),
-      h(A.Wheel, {key: "m" + months.length, id: "dw-m", compact: true, className: "app-daywheel__month", label: "Ay", value: m.k, onChange: pickMonth,
-        options: months.map(function(x){ return [x.k, MONTHS[x.mo - 1], multiYear ? String(x.y) : ""]; })})));
+  var t = p.t;
+  var opts = [["pre", "Yola çıkmadan", ""]].concat(t.days.map(function(d){ var dt = D.parseISO(d.date); return [d.id, dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()], D.WDS[dt.getUTCDay()]]; }));
+  return h(A.Wheel, {id: "dw", compact: true, className: "app-daywheel1", label: p.label || "Hangi gün", options: opts, value: p.value, onChange: p.onChange});
 };
 
 /* Gezi simgesi, tıklanmayan hali (başka bir düğmenin içinde kullanmak için) */

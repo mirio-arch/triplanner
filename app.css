@@ -585,3 +585,4 @@ a{color:var(--foreground-secondary)}
 .app-pane__close{top:5px;right:8px}
 .app-pane__peek{padding:46px var(--space-3) var(--space-4)}
 .app-pane__scroll{padding-top:48px}
+.app-daywheel1 .app-wheel__row small{font-size:13px}
