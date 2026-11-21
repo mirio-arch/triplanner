@@ -246,25 +246,31 @@ function guessCat(s){ for(var i = 0; i < GUESS.length; i++){ if(GUESS[i][0].test
 function QuickExpense(p){
   var t = p.t, b = blank(t), st = React.useState({amount: "", title: "", currency: S.quickCur || b.currency}), err = React.useState("");
   var f = st[0];
+  function set(k, val){ var n = Object.assign({}, st[0]); n[k] = val; st[1](n); }
   function add(e){
-    e.preventDefault();
+    if(e) e.preventDefault();
     var amount = D.parseAmount(f.amount); if(!amount){ err[1]("Tutarı yaz."); return; }
     var title = f.title.trim(), cat = guessCat(title);
     var x = {id: D.uid("x"), source: "manual", at: new Date().toISOString(), title: D.str(title || D.EXP_CATS[cat], 120), amount: amount, currency: f.currency, cat: cat, day: b.day, time: "", ref: "", photos: []};
     A.stamp(x); t.expenses.push(x); A.log(t, "expense", x.id, "“" + x.title + "” harcamasını ekledi · " + D.fmtMoney(amount, f.currency));
     S.newExp = x.id; S.quickCur = f.currency; A.commit();
     st[1]({amount: "", title: "", currency: f.currency}); err[1]("");
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     A.flash("“" + x.title + "” eklendi · " + D.fmtMoney(amount, f.currency) + " · " + D.EXP_CATS[cat], function(){ S.dialog = {kind: "expense", id: x.id}; A.render(); }, "Düzenle");
   }
   var cur = t.currency || "GEL", rate = t.rate[cur], st2 = stats(t);
+  var curs = [cur].concat(D.CURRENCIES.filter(function(c){ return c !== cur; }));
   var line = [rate ? "1 " + cur + " = " + D.fmtNum(rate, true) + " TL" : "Kur girilmedi", t.budget ? "bütçenin %" + Math.round(st2.total / t.budget * 100) + "'i harcandı" : null, "çekince fotoğraf ve kategori"].filter(Boolean).join(" · ");
-  return h("form", {onSubmit: add, noValidate: true},
+  return h("form", {className: "app-qexp", onSubmit: add, noValidate: true},
     h("div", {className: "app-quick"},
-      h("input", {className: "app-quick__in app-quick__in--amount", value: f.amount, placeholder: "0", inputMode: "decimal", "aria-label": "Tutar", onChange: function(e){ st[1](Object.assign({}, f, {amount: e.target.value})); err[1](""); }}),
-      h("select", {className: "app-quick__cur", value: f.currency, "aria-label": "Para birimi", onChange: function(e){ st[1](Object.assign({}, f, {currency: e.target.value})); }}, D.CURRENCIES.map(function(c){ return h("option", {key: c, value: c}, c); })),
-      h("input", {className: "app-quick__in", value: f.title, placeholder: "Ne için?", "aria-label": "Ne için", enterKeyHint: "done", onChange: function(e){ st[1](Object.assign({}, f, {title: e.target.value})); }}),
-      h("button", {type: "submit", className: "app-quick__go", "aria-label": "Harcamayı ekle"}, h(T.Icon, {name: "plus", size: 20}))),
-    err[0] ? h("p", {className: "app-peekline tp-field__error", role: "alert"}, err[0]) : h("p", {className: "app-peekline"}, line));
+      h("input", {className: "app-quick__in app-quick__in--amount", value: f.amount, placeholder: "0", inputMode: "decimal", enterKeyHint: "next", "aria-label": "Tutar", onChange: function(e){ set("amount", e.target.value); err[1](""); }}),
+      h("div", {className: "app-curseg", role: "radiogroup", "aria-label": "Para birimi"}, curs.map(function(c){
+        return h("button", {key: c, type: "button", role: "radio", "aria-checked": f.currency === c ? "true" : "false", onMouseDown: function(e){ e.preventDefault(); }, onClick: function(){ set("currency", c); }}, c);
+      }))),
+    h("textarea", {className: "app-quick__in app-quick__area", rows: 2, value: f.title, placeholder: "Ne için? Örn. Akşam: hinkali", "aria-label": "Ne için", enterKeyHint: "done", onChange: function(e){ set("title", e.target.value); }}),
+    err[0] ? h("p", {className: "app-peekline tp-field__error", role: "alert"}, err[0]) : null,
+    h(T.Button, {variant: "primary", icon: "plus", full: true, type: "submit"}, "Harcamayı ekle"),
+    h("p", {className: "app-peekline"}, line));
 }
 function PaneFull(p){
   return h(F, null, h(ExpenseForm, {key: "pane-new", t: p.t, preset: S.expPreset, title: false}), h("hr", {className: "app-hr"}), h(RateBox, {t: p.t}));

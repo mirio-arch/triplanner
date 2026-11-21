@@ -119,6 +119,25 @@ A.go = function(page, sub, tripId){ var target = A.href(page, sub, tripId); if(l
 window.addEventListener("hashchange", route);
 A.route = route;
 
+/* ================= Klavye ================= */
+/* Telefonda klavye açılınca kabuğu görünen alana sığdır: alt menü gizlenir, alt bölme klavyenin hemen üstünde kalır */
+(function(){
+  var vv = window.visualViewport; if(!vv) return;
+  var root = document.documentElement, raf = 0;
+  function fit(){
+    raf = 0;
+    var kb = window.innerHeight - vv.height, ae = document.activeElement;
+    var typing = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable) && !/^(checkbox|radio|file|button|submit)$/.test(ae.type || "");
+    if(kb > 120 && typing && window.innerWidth < 900){
+      root.classList.add("kbd");
+      root.style.setProperty("--vvh", vv.height + "px"); root.style.setProperty("--vvt", vv.offsetTop + "px");
+    } else if(root.classList.contains("kbd")){ root.classList.remove("kbd"); root.style.removeProperty("--vvh"); root.style.removeProperty("--vvt"); }
+  }
+  function soon(){ if(!raf) raf = requestAnimationFrame(fit); }
+  vv.addEventListener("resize", soon); vv.addEventListener("scroll", soon);
+  document.addEventListener("focusin", function(){ setTimeout(soon, 60); }); document.addEventListener("focusout", function(){ setTimeout(soon, 120); });
+})();
+
 /* ================= Ekran boyu ================= */
 A.useMedia = function(q){
   var mq = React.useMemo(function(){ return window.matchMedia ? window.matchMedia(q) : null; }, [q]);
@@ -418,7 +437,8 @@ A.PhonePane = function(p){
       h(T.Icon, {name: p.fab.icon || "plus", size: 20}), h("span", null, p.fab.label),
       p.fab.count ? h("span", {className: "app-fab__count"}, p.fab.count) : null);
   }
-  var H = size[0].H, S0 = Math.min(size[0].S, Math.round(H * .45)), heights = {s: S0, h: Math.max(S0 + 60, Math.round(H * .55)), f: H};
+  var kbd = document.documentElement.classList.contains("kbd");
+  var H = size[0].H, S0 = Math.min(size[0].S, kbd ? H : Math.round(H * .45)), heights = {s: S0, h: Math.max(S0 + 60, Math.round(H * .55)), f: H};
   var height = drag[0] ? drag[0].cur : heights[snap];
   var showFull = drag[0] ? height > S0 + 48 : snap !== "s";
   function down(e){ if(e.button !== undefined && e.button !== 0) return; st.current = {y: e.clientY, h0: heights[snap], moved: false}; try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(x){} }

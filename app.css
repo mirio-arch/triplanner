@@ -595,3 +595,18 @@ a{color:var(--foreground-secondary)}
 .app-grouptile:active{transform:scale(.96)}
 .app-grouptile[aria-pressed="true"]{border-color:var(--border-primary);background:var(--background-primary-weak);color:var(--foreground-primary)}
 .app-grouptile[aria-pressed="true"] .tp-icon{--tp-duo-opacity:1}
+
+/* Klavye açıkken: kabuk görünen alana sığar, alt menü gizlenir */
+.kbd .app-phone{top:var(--vvt,0px) !important;bottom:auto !important;height:var(--vvh,100%) !important}
+.kbd .app-phonenav{display:none}
+.kbd .app-fab,.kbd .app-fabs{display:none}
+/* Hızlı harcama: tutar + para birimi, altında ne için alanı */
+.app-qexp{display:flex;flex-direction:column;gap:var(--space-2)}
+.app-qexp .app-quick__in--amount{flex:1 1 auto;font-size:20px;font-weight:600}
+.app-curseg{flex:none;display:flex;gap:2px;padding:3px;border-radius:var(--radius-control);background:var(--background-sunken)}
+.app-curseg button{min-width:44px;height:38px;padding:0 6px;border:0;border-radius:calc(var(--radius-control) - 2px);background:none;color:var(--foreground-weak);font:600 13px var(--font-sans);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-curseg button[aria-checked="true"]{background:var(--background-raised);color:var(--foreground-primary);box-shadow:var(--shadow-card,0 1px 2px rgba(0,0,0,.08))}
+.app-quick__area{height:auto;min-height:64px;padding:10px 12px;resize:none;line-height:1.35}
+.app-qexp .app-peekline{margin:0}
+.app-pane__peek{overflow-y:auto;min-height:0;flex:1 1 auto}
+.kbd .app-pane{border-radius:var(--radius-section) var(--radius-section) 0 0}
