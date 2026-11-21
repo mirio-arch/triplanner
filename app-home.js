@@ -80,42 +80,78 @@ function tripState(t){
   return {kind: "past", text: "Bitti", n: 1e9};
 }
 A.tripState = tripState;
+/* ---------- Gezi kapağı: son fotoğraf ya da çizim ---------- */
+function rnd(seed){ var x = 0; for(var i = 0; i < seed.length; i++) x = (x * 31 + seed.charCodeAt(i)) >>> 0; return function(){ x = (x * 1664525 + 1013904223) >>> 0; return x / 4294967296; }; }
+function GeorgiaArt(){
+  /* Batum kıyısı, Alfabe Kulesi ve arkada Kafkaslar */
+  return h("svg", {className: "app-cover__art", viewBox: "0 0 320 200", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true"},
+    h("defs", null,
+      h("linearGradient", {id: "gsky", x1: 0, y1: 0, x2: 1, y2: 1}, h("stop", {offset: 0, stopColor: "#0f766e"}), h("stop", {offset: .55, stopColor: "#1e1b4b"}), h("stop", {offset: 1, stopColor: "#6d28d9"})),
+      h("radialGradient", {id: "gsun", cx: .78, cy: .28, r: .35}, h("stop", {offset: 0, stopColor: "#5eead4", stopOpacity: .65}), h("stop", {offset: 1, stopColor: "#5eead4", stopOpacity: 0}))),
+    h("rect", {width: 320, height: 200, fill: "url(#gsky)"}),
+    h("rect", {width: 320, height: 200, fill: "url(#gsun)"}),
+    [[30, 40], [70, 22], [120, 34], [210, 18], [260, 46], [300, 26], [160, 14]].map(function(p, i){ return h("circle", {key: i, cx: p[0], cy: p[1], r: i % 3 ? .9 : 1.4, fill: "#fff", opacity: .7}); }),
+    h("path", {d: "M0 122 L40 96 L62 108 L98 74 L120 90 L150 62 L176 86 L204 70 L236 94 L262 80 L292 100 L320 88 V200 H0Z", fill: "#312e81", opacity: .75}),
+    h("path", {d: "M98 74 L106 80 L100 81 L92 78Z M150 62 L159 70 L152 71 L143 67Z M204 70 L211 76 L205 77 L198 74Z", fill: "#e0e7ff", opacity: .55}),
+    h("path", {d: "M0 140 L50 116 L90 130 L140 108 L190 128 L240 112 L320 132 V200 H0Z", fill: "#1e1b4b", opacity: .9}),
+    /* Alfabe Kulesi */
+    h("g", {transform: "translate(226 72)"},
+      h("rect", {x: -3, y: 0, width: 6, height: 82, rx: 3, fill: "#0b1030"}),
+      Array.apply(null, Array(9)).map(function(_, i){ return h("path", {key: i, d: "M-7 " + (8 + i * 8) + " Q0 " + (3 + i * 8) + " 7 " + (8 + i * 8), stroke: "#5eead4", strokeWidth: 1.2, fill: "none", opacity: .85}); }),
+      h("circle", {cx: 0, cy: -2, r: 6, fill: "none", stroke: "#c4b5fd", strokeWidth: 1.6}), h("circle", {cx: 0, cy: -2, r: 2, fill: "#c4b5fd"})),
+    /* dönme dolap */
+    h("g", {transform: "translate(268 128)", stroke: "#a5b4fc", strokeWidth: 1, fill: "none", opacity: .8},
+      h("circle", {r: 16}), [0, 45, 90, 135].map(function(a){ return h("line", {key: a, x1: -16 * Math.cos(a * Math.PI / 180), y1: -16 * Math.sin(a * Math.PI / 180), x2: 16 * Math.cos(a * Math.PI / 180), y2: 16 * Math.sin(a * Math.PI / 180)}); }),
+      h("path", {d: "M-6 26 L0 0 L6 26"})),
+    h("path", {d: "M0 160 Q40 150 80 156 T160 154 T240 158 T320 152 V200 H0Z", fill: "#0b1030"}),
+    [168, 178, 188].map(function(y, i){ return h("path", {key: y, d: "M" + (10 + i * 14) + " " + y + " q14 -5 28 0 t28 0", stroke: "#5eead4", strokeWidth: 1, fill: "none", opacity: .45 - i * .1}); }));
+}
+var ART_COLORS = {wine: ["#9d174d", "#4c1d95"], blue: ["#1d4ed8", "#312e81"], green: ["#047857", "#1e3a8a"], amber: ["#b45309", "#7c2d12"], teal: ["#0f766e", "#312e81"], violet: ["#6d28d9", "#1e1b4b"]};
+function GenericArt(p){
+  var t = p.t, c = ART_COLORS[A.COLORS[t.color % 6]] || ART_COLORS.teal, r = rnd(t.id), gid = "gc" + t.id;
+  var peaks = [], x = 0; while(x < 320){ var w = 30 + r() * 50; peaks.push([x + w / 2, 70 + r() * 50]); x += w; }
+  var ridge = "M0 140 " + peaks.map(function(q){ return "L" + q[0].toFixed(0) + " " + q[1].toFixed(0); }).join(" ") + " L320 140 V200 H0Z";
+  return h("svg", {className: "app-cover__art", viewBox: "0 0 320 200", preserveAspectRatio: "xMidYMid slice", "aria-hidden": "true"},
+    h("defs", null, h("linearGradient", {id: gid, x1: 0, y1: 0, x2: 1, y2: 1}, h("stop", {offset: 0, stopColor: c[0]}), h("stop", {offset: 1, stopColor: c[1]}))),
+    h("rect", {width: 320, height: 200, fill: "url(#" + gid + ")"}),
+    h("circle", {cx: 60 + r() * 200, cy: 50, r: 22, fill: "#fff", opacity: .18}),
+    h("path", {d: ridge, fill: "#0b1030", opacity: .35}),
+    h("path", {d: "M0 165 Q80 150 160 160 T320 155 V200 H0Z", fill: "#0b1030", opacity: .55}),
+    h("path", {d: "M30 120 Q120 40 250 80", stroke: "#fff", strokeWidth: 1.4, strokeDasharray: "3 6", fill: "none", opacity: .6, strokeLinecap: "round"}),
+    h("path", {d: "M246 76 l10 2 -6 8z", fill: "#fff", opacity: .85}));
+}
+A.TripCover = function(p){
+  var t = p.t, ph = t.photos && t.photos.length ? t.photos[t.photos.length - 1] : null, bad = React.useState(false);
+  return h("span", {className: "app-cover"},
+    ph && !bad[0] ? h("img", {className: "app-cover__img", src: D.photoUrl(ph.asset), alt: "", onError: function(){ bad[1](true); }})
+      : (t.geo === "georgia" ? h(GeorgiaArt) : h(GenericArt, {t: t})), p.children);
+};
+
 function lastAct(t){ return (t.activity || []).find(function(a){ return !A.isMine(a.by); }) || null; }
 function TripCard(p){
-  var t = p.t, st = tripState(t), total = t.checklist.length, done = t.checklist.filter(function(c){ return c.done; }).length;
-  var spent = A.expStats ? A.expStats(t).total : 0, nx = A.nextPlan ? A.nextPlan(t) : null, nxi = nx ? t.items[nx.id] : null;
-  var tickets = A.transitEntries ? A.transitEntries(t).filter(function(e){ return !e.flex; }).length : 0;
+  var t = p.t, st = tripState(t), total = t.checklist.length, done = t.checklist.filter(function(c){ return c.done; }).length, pct = total ? Math.round(done / total * 100) : 0;
   return h("a", {href: A.href("tarihler", "", t.id), className: "app-hometrip" + (st.kind === "past" ? " is-past" : "")},
-    h("span", {className: "app-hometrip__top"},
-      h(A.TripMark, {t: t}),
-      h("span", {style: {flex: 1, minWidth: 0}}, h("span", {className: "heading", style: {display: "block"}}, t.name),
-        h("span", {className: "body-sm app-muted"}, A.shortRange(t) + " · " + t.days.length + " gün"))),
-    h("span", {className: "app-row app-row--wrap"}, h(T.Chip, {tone: st.kind === "now" ? "success" : (st.kind === "soon" ? "primary" : "outline"), icon: st.kind === "past" ? "check" : "clock"}, st.text)),
-    lastAct(t) ? h("span", {className: "app-hometrip__act body-sm"}, h(T.Icon, {name: "bell", size: 14}), h("span", {className: "app-ellipsis"}, h("strong", null, lastAct(t).byName || "Biri"), " " + lastAct(t).text + " · " + ago(lastAct(t).at))) : null,
-    st.kind !== "past" && nxi ? h("span", {className: "app-hometrip__next body-sm"}, h(T.Icon, {name: "arrow-right", size: 16}), h("span", {className: "app-ellipsis"}, "Sıradaki: " + (nxi.time ? A.clockOf(nxi.time) + " " : "") + nxi.title)) : null,
-    h("span", {className: "app-hometrip__stats"},
-      total ? h("span", null, h("strong", null, done + "/" + total), " hazırlık") : null,
-      tickets ? h("span", null, h("strong", null, tickets), " bilet") : null,
-      spent ? h("span", null, h("strong", null, D.fmtMoney(Math.round(spent), "TL")), " harcama") : null),
-    total && st.kind !== "past" ? h("span", {className: "app-hometrip__bar"}, h("span", {style: {transform: "scaleX(" + (done / total) + ")"}})) : null);
+    h(A.TripCover, {t: t}, h("span", {className: "app-cover__chip" + (st.kind === "now" ? " is-now" : "")}, h(T.Icon, {name: st.kind === "past" ? "check" : "clock", size: 14}), st.text)),
+    h("span", {className: "app-hometrip__body"},
+      h("span", {className: "heading app-ellipsis"}, t.name),
+      h("span", {className: "body-sm app-muted"}, A.shortRange(t) + " · " + t.days.length + " gün"),
+      total && st.kind !== "past" ? h("span", {className: "app-hometrip__prep"},
+        h("span", {className: "app-hometrip__bar"}, h("span", {style: {transform: "scaleX(" + (done / total) + ")"}})),
+        h("span", {className: "label app-muted"}, "Hazırlık %" + pct)) : null));
 }
+/* Tatil fırsatı: koyu, çizgili ve her dönemde başka renkte ışıklı kart */
+var DEAL_TONES = ["teal", "violet", "amber", "pink", "blue", "green", "indigo", "rose"];
 function DealCard(p){
   var d = p.d;
-  function start(name){
-    S.dialog = {kind: "trip-new", preset: {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b}}; A.render();
-  }
-  return h("article", {className: "app-deal"},
+  function start(name){ S.dialog = {kind: "trip-new", preset: {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b}}; A.render(); }
+  return h("article", {className: "app-deal is-" + DEAL_TONES[p.i % DEAL_TONES.length]},
     h("div", {className: "app-deal__head"},
-      h("div", {style: {flex: 1, minWidth: 0}}, h("h3", {className: "heading", style: {margin: 0}}, d.name), h("p", {className: "body-sm app-muted", style: {margin: 0}}, fmtSpan(d.a, d.b))),
+      h("div", {style: {flex: 1, minWidth: 0}}, h("h3", {className: "heading app-deal__name"}, d.name), h("span", {className: "app-deal__dates"}, fmtSpan(d.a, d.b))),
       h("span", {className: "app-deal__len"}, h("strong", null, d.len), h("small", null, "gün"))),
-    h("p", {className: "body-sm app-deal__how"}, d.leave ? h(F, null, h("strong", null, leaveText(d.leave) + " izinle " + d.len + " gün"), " · izin: " + fmtLeave(d.leaveDays)) : h("strong", null, "İzin almadan " + d.len + " gün")),
-    p.clash ? h("p", {className: "body-sm app-deal__clash"}, h(T.Icon, {name: "calendar", size: 14}), " Bu tarihlerde " + p.clash + " gezin var.") : null,
-    d.ideas.length ? h("ul", {className: "app-deal__ideas"}, d.ideas.map(function(x){
-      return h("li", {key: x[0]}, h("button", {type: "button", className: "app-deal__idea", onClick: function(){ start(x[0]); }},
-        h("span", {style: {flex: 1, minWidth: 0, textAlign: "left"}}, h("span", {className: "body-sm-strong", style: {display: "block"}}, x[0]), h("span", {className: "body-sm app-muted", style: {display: "block"}}, x[1])),
-        h("span", {className: "app-deal__visa label"}, x[2]), h(T.Icon, {name: "plus", size: 16})));
-    })) : null,
-    h(T.Button, {size: "sm", variant: "ghost", icon: "calendar", onClick: function(){ start(""); }}, "Bu tarihlerle gezi aç"));
+    h("span", {className: "app-deal__how"}, d.leave ? leaveText(d.leave) + " izinle" : "İzin almadan", p.clash ? h("span", {className: "app-deal__clash"}, " · gezin var") : null),
+    d.ideas.length ? h("div", {className: "app-deal__ideas"}, d.ideas.map(function(x){
+      return h("button", {key: x[0], type: "button", className: "app-deal__idea", title: x[1] + " · " + x[2], onClick: function(){ start(x[0]); }}, x[0]);
+    })) : null);
 }
 
 /* ---------- Son hareketler ---------- */
@@ -168,7 +204,7 @@ function Home(){
   var d = D.fmtDay(A.todayISO());
   var head = A.isPhone ? null : h("header", {className: "app-pagehead"},
     h("div", {style: {flex: "1 1 320px", minWidth: 0}}, h("h1", {className: "page-title", style: {margin: 0}}, name ? "Merhaba " + name : "Ana sayfa"),
-      h("p", {className: "body app-muted", style: {margin: "var(--space-1) 0 0"}}, d.label + ". Gezilerin ve önümüzdeki tatil fırsatları.")));
+      h("p", {className: "body app-muted", style: {margin: "var(--space-1) 0 0"}}, d.label)));
   var body = h("div", {className: "app-home"},
     A.isPhone ? h("div", {className: "app-home__hello"}, h("h1", {className: "page-title", style: {margin: 0}}, name ? "Merhaba " + name : "Ana sayfa"), h("p", {className: "body-sm app-muted", style: {margin: 0}}, d.label)) : null,
     h("section", {id: "home-trips", className: "app-home__sec", "aria-labelledby": "home-trips-h"},
@@ -177,13 +213,11 @@ function Home(){
       trips.length ? h("div", {className: "app-hometrips"}, trips.map(function(t){ return h(TripCard, {key: t.id, t: t}); }))
         : h(A.StartChoices)),
     deals.length ? h("section", {id: "home-deals", className: "app-home__sec", "aria-labelledby": "home-deals-h"},
-      h("div", null, h("h2", {id: "home-deals-h", className: "section-title", style: {margin: 0}}, "Tatil fırsatları"),
-        h("p", {className: "body-sm app-muted", style: {margin: "2px 0 0"}}, "Resmi tatilleri hafta sonuyla birleştirmek için en az izinli yol. Bir rotaya basınca o tarihlerle gezi açılır.")),
-      h("div", {className: "app-deals"}, deals.map(function(x){
+      h("h2", {id: "home-deals-h", className: "section-title", style: {margin: 0}}, "Tatil fırsatları"),
+      h("div", {className: "app-deals"}, deals.map(function(x, i){
         var c = trips.find(function(t){ return !(t.end < x.a || t.start > x.b); });
-        return h(DealCard, {key: x.key, d: x, clash: c ? c.name : ""});
-      })),
-      h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Bayram tarihleri Diyanet takvimine göre; arife günleri yarım gün sayıldı. Vize bilgisi Türkiye pasaportu içindir, yola çıkmadan teyit et.")) : null);
+        return h(DealCard, {key: x.key, d: x, i: i, clash: c ? c.name : ""});
+      }))) : null);
   return h(F, null, head, A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body));
 }
 A.Home = Home;

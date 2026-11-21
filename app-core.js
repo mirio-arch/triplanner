@@ -239,7 +239,7 @@ A.AvatarButton = function(p){
 function Sidebar(){
   var t = A.trip();
   if(S.page === "home" || !t) return h("nav", {className: "tp-onshell app-side", "aria-label": "Ana sayfa"},
-    h("div", {className: "app-side__trip"}, h("div", {style: {flex: 1, minWidth: 0}}, h("div", {className: "heading app-ellipsis"}, "Triplanner"), h("div", {className: "body-sm app-weak"}, "Gezilerin ve tatil fırsatları"))),
+    h("div", {className: "app-side__trip"}, h("div", {style: {flex: 1, minWidth: 0}}, h("div", {className: "heading app-ellipsis"}, "Triplanner"))),
     A.homeSubmenu ? A.homeSubmenu() : null,
     h("div", {className: "app-side__foot"}, h(A.StatusChip)));
   var c = navCounts(t);
@@ -267,7 +267,7 @@ function PhoneHeader(){
   var home = S.page === "home", t = home ? null : A.trip();
   return h("header", {className: "tp-onshell app-phonehead"},
     h("a", {href: "#home", className: "app-phonehead__logo", "aria-label": "Ana sayfa"}, h(T.Logo, {variant: "plain", size: "sm"})),
-    home || !t ? h("div", {className: "app-phonehead__title"}, h("span", {className: "body-strong"}, "Triplanner"), h("span", {className: "body-sm app-weak"}, "Gezilerin"))
+    home || !t ? h("div", {className: "app-phonehead__title"}, h("span", {className: "heading"}, "Triplanner"))
     : h("button", {type: "button", className: "app-phonehead__trip", onClick: function(){ S.dialog = {kind: "trip-menu"}; A.render(); }, "aria-label": "Gezi değiştir: " + t.name},
       h(A.TripMark, {t: t}),
       h("span", {style:{minWidth:0, textAlign:"left", flex: 1}},

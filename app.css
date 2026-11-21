@@ -493,3 +493,42 @@ a{color:var(--foreground-secondary)}
 .app-picker__row{display:flex;align-items:center;gap:var(--space-2);padding:6px;border:0;border-radius:var(--radius-control);background:none;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
 .app-picker__row:hover{background:var(--background-sunken)}
 .app-picker__plus{flex:none;color:var(--foreground-primary);--tp-duo:currentColor}
+
+/* Ana sayfa v2: görsel gezi kartları ve renkli tatil kartları */
+.app-hometrips{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.app-hometrip{padding:0;gap:0;overflow:hidden}
+.app-cover{position:relative;display:block;aspect-ratio:16/10;overflow:hidden;background:#0d1433}
+.app-cover__art,.app-cover__img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover}
+.app-hometrip:hover .app-cover__art,.app-hometrip:hover .app-cover__img{transform:scale(1.03)}
+.app-cover__art,.app-cover__img{transition:transform var(--duration-slower,600ms) var(--ease-standard)}
+.app-cover__chip{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:var(--radius-full);background:rgba(11,16,48,.55);color:#fff;font:600 12px var(--font-sans);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.app-cover__chip .tp-icon{--tp-duo:currentColor;color:#fff}
+.app-cover__chip.is-now{background:rgba(5,150,105,.75)}
+.app-hometrip__body{display:flex;flex-direction:column;gap:2px;padding:var(--space-3) var(--space-4) var(--space-4)}
+.app-hometrip__prep{display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-2)}
+.app-hometrip__prep .app-hometrip__bar{flex:1}
+.app-phone .app-hometrips{grid-template-columns:minmax(0,1fr)}
+.app-deals{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.app-phone .app-deal{width:74%}
+.app-deal{position:relative;isolation:isolate;overflow:hidden;gap:var(--space-2);padding:var(--space-4);border:0;color:#fff;--tone:45,212,191;
+  background:radial-gradient(120% 90% at 0% 0%,rgba(var(--tone),.42),transparent 58%),radial-gradient(100% 90% at 100% 100%,rgba(139,92,246,.38),transparent 62%),#0d1433;box-shadow:0 10px 26px rgba(13,20,51,.22)}
+.app-deal::before{content:"";position:absolute;inset:0;z-index:-1;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20340%20200%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-opacity%3D%22.14%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M-40%20230%20C%2050%20140.0%2C%20160%20230.0%2C%20380%2030%22/%3E%3Cpath%20d%3D%22M-27%20230%20C%2063%20136.1%2C%20173%20223.5%2C%20380%2043%22/%3E%3Cpath%20d%3D%22M-14%20230%20C%2076%20132.2%2C%20186%20217.0%2C%20380%2056%22/%3E%3Cpath%20d%3D%22M-1%20230%20C%2089%20128.3%2C%20199%20210.5%2C%20380%2069%22/%3E%3Cpath%20d%3D%22M12%20230%20C%20102%20124.4%2C%20212%20204.0%2C%20380%2082%22/%3E%3Cpath%20d%3D%22M25%20230%20C%20115%20120.5%2C%20225%20197.5%2C%20380%2095%22/%3E%3Cpath%20d%3D%22M38%20230%20C%20128%20116.6%2C%20238%20191.0%2C%20380%20108%22/%3E%3Cpath%20d%3D%22M51%20230%20C%20141%20112.7%2C%20251%20184.5%2C%20380%20121%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat;pointer-events:none}
+.app-deal__name{margin:0;color:#fff}
+.app-deal__dates{font-size:13px;color:rgba(255,255,255,.72)}
+.app-deal__len{width:auto;height:auto;padding:0;background:none;color:#fff;align-items:flex-end}
+.app-deal__len strong{font-size:34px;font-weight:600;line-height:1;text-shadow:0 0 18px rgba(var(--tone),.6)}
+.app-deal__len small{font-size:12px;color:rgba(255,255,255,.72);margin-top:0}
+.app-deal__how{font:600 13px var(--font-sans);color:rgb(var(--tone))}
+.app-deal__clash{color:rgba(255,255,255,.72);font-weight:500}
+.app-deal__ideas{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--space-1)}
+.app-deal__idea{width:auto;height:30px;padding:0 12px;border-radius:var(--radius-full);border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;font:600 13px var(--font-sans);cursor:pointer;transition:background-color var(--duration-base) var(--ease-standard),border-color var(--duration-base) var(--ease-standard)}
+.app-deal__idea:hover{background:rgba(255,255,255,.18);border-color:rgba(var(--tone),.8)}
+.app-deal.is-teal{--tone:45,212,191}
+.app-deal.is-violet{--tone:167,139,250}
+.app-deal.is-amber{--tone:251,191,36}
+.app-deal.is-pink{--tone:244,114,182}
+.app-deal.is-blue{--tone:96,165,250}
+.app-deal.is-green{--tone:74,222,128}
+.app-deal.is-indigo{--tone:129,140,248}
+.app-deal.is-rose{--tone:251,113,133}
+.app-deal__ideas{flex-direction:row}
