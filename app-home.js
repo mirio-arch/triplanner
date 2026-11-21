@@ -139,12 +139,45 @@ function TripCard(p){
         h("span", {className: "app-hometrip__bar"}, h("span", {style: {transform: "scaleX(" + (done / total) + ")"}})),
         h("span", {className: "label app-muted"}, "Hazırlık %" + pct)) : null));
 }
+/* Her tatile kendi çizgisel arka planı */
+function ln(d, o){ return h("path", Object.assign({d: d}, o || {})); }
+function burst(cx, cy, r, n){
+  var out = [];
+  for(var i = 0; i < n; i++){ var a = i / n * Math.PI * 2, x1 = cx + Math.cos(a) * r * .35, y1 = cy + Math.sin(a) * r * .35, x2 = cx + Math.cos(a) * r, y2 = cy + Math.sin(a) * r;
+    out.push(ln("M" + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1))); out.push(h("circle", {cx: x2.toFixed(1), cy: y2.toFixed(1), r: 1.4, fill: "currentColor", stroke: "none"})); }
+  return out;
+}
+function star(cx, cy, r){ var p = []; for(var i = 0; i < 10; i++){ var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; p.push((cx + Math.cos(a) * rr).toFixed(1) + " " + (cy + Math.sin(a) * rr).toFixed(1)); } return ln("M" + p.join(" L") + "Z"); }
+var DEAL_ART = {
+  yilbasi27: function(){ return [burst(250, 60, 42, 14), burst(300, 130, 26, 10), burst(195, 150, 20, 9), star(150, 40, 6), star(320, 40, 4)]; },
+  ramazan27: function(){ return [ln("M282 30 a46 46 0 1 0 22 86 a38 38 0 1 1 -22 -86z"), star(236, 56, 7), star(318, 150, 5), star(200, 120, 4),
+    ln("M180 0 V36 M172 36 h16 l6 10 v26 l-6 10 h-16 l-6 -10 v-26z M172 46 h16 M172 72 h16 M180 82 v10")]; },
+  nisan27: function(){ return [ln("M250 20 L292 60 L250 112 L208 60Z M250 20 V112 M208 60 H292"), ln("M250 112 C 240 140, 270 150, 255 180 S 240 220, 260 240"),
+    [[262, 140], [248, 168], [262, 196]].map(function(q, i){ return ln("M" + q[0] + " " + q[1] + " l8 -5 l0 10z", {key: i}); }),
+    ln("M318 92 L340 114 L318 140 L296 114Z M318 92 V140 M296 114 H340"), ln("M318 140 C 310 160, 330 170, 322 200")]; },
+  kurban27: function(){ return [ln("M190 200 V130 Q190 90 240 80 Q290 90 290 130 V200"), ln("M240 80 V70"), ln("M238 58 a6 6 0 1 0 4 10 a5 5 0 1 1 -4 -10z"), ln("M210 200 v-40 a8 8 0 0 1 16 0 v40 M254 200 v-40 a8 8 0 0 1 16 0 v40"),
+    ln("M316 200 V70 l6 -14 l6 14 V200 M314 110 h16 M314 150 h16"), ln("M312 34 a12 12 0 1 0 6 22 a10 10 0 1 1 -6 -22z")]; },
+  temmuz27: function(){ return [ln("M150 150 H340"), ln("M200 150 V60 M290 150 V60 M196 60 h8 M286 60 h8"), ln("M150 120 Q200 60 245 128 Q290 60 340 120"),
+    [215, 230, 260, 275].map(function(x, i){ return ln("M" + x + " " + (i % 3 ? 112 : 98) + " V150", {key: i}); }), ln("M150 170 q20 -6 40 0 t40 0 t40 0 t40 0 t40 0", {opacity: .7})]; },
+  agustos27: function(){ var o = []; for(var i = 0; i < 7; i++){ var a = Math.PI * (.62 + i * .1), x = 260 + Math.cos(a) * 70, y = 120 + Math.sin(a) * -70, b = Math.PI * (.38 - i * .1), x2 = 260 + Math.cos(b) * 70, y2 = 120 + Math.sin(b) * -70;
+      o.push(ln("M" + x.toFixed(0) + " " + y.toFixed(0) + " q-10 -4 -14 6 q10 4 14 -6z", {key: "l" + i})); o.push(ln("M" + x2.toFixed(0) + " " + y2.toFixed(0) + " q10 -4 14 6 q-10 4 -14 -6z", {key: "r" + i})); }
+    return [ln("M200 150 Q260 210 320 150"), o, star(260, 110, 10)]; },
+  ekim27: function(){ var flags = []; for(var i = 0; i < 7; i++){ var x = 160 + i * 28, y = 26 + Math.sin(i / 6 * Math.PI) * 22; flags.push(ln("M" + x + " " + y.toFixed(0) + " l14 0 l-7 18z", {key: i})); }
+    return [ln("M150 24 Q250 70 350 24"), flags, burst(300, 140, 30, 12), star(210, 140, 7)]; }
+};
+function flat(a){ return a.reduce(function(o, x){ return o.concat(Array.isArray(x) ? flat(x) : [x]); }, []); }
+function DealArt(p){
+  var f = DEAL_ART[p.k]; if(!f) return null;
+  return h("svg", {className: "app-deal__art", viewBox: "0 0 340 220", preserveAspectRatio: "xMaxYMid slice", "aria-hidden": "true"},
+    h("g", {fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round", strokeLinejoin: "round"}, flat(f()).map(function(el, i){ return React.cloneElement(el, {key: i}); })));
+}
 /* Tatil fırsatı: koyu, çizgili ve her dönemde başka renkte ışıklı kart */
 var DEAL_TONES = ["teal", "violet", "amber", "pink", "blue", "green", "indigo", "rose"];
 function DealCard(p){
   var d = p.d;
   function start(name){ S.dialog = {kind: "trip-new", preset: {name: name ? name + " · " + d.name : d.name + " gezisi", start: d.a, end: d.b}}; A.render(); }
-  return h("article", {className: "app-deal is-" + DEAL_TONES[p.i % DEAL_TONES.length]},
+  return h("article", {className: "app-deal is-" + DEAL_TONES[p.i % DEAL_TONES.length] + (DEAL_ART[d.key] ? " has-art" : "")},
+    h(DealArt, {k: d.key}),
     h("div", {className: "app-deal__head"},
       h("div", {style: {flex: 1, minWidth: 0}}, h("h3", {className: "heading app-deal__name"}, d.name), h("span", {className: "app-deal__dates"}, fmtSpan(d.a, d.b))),
       h("span", {className: "app-deal__len"}, h("strong", null, d.len), h("small", null, "gün"))),
