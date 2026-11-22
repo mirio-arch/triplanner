@@ -129,7 +129,7 @@ function ExpenseForm(p){
     item || !plans.length ? null : h(A.Select, {label: "Bağlı plan", optional: true, value: f.ref || "", options: [{label: "Bağlı değil", value: ""}].concat(plans.map(function(id){ var it = t.items[id]; return {label: (it.time ? it.time + ", " : "") + it.title, value: id}; })),
       hint: "Plan kartında tutar görünür.", onChange: function(v){ var n = Object.assign({}, st[0]); n.ref = v; if(v && t.items[v]){ if(!n.title) n.title = t.items[v].title; n.cat = D.CAT_TO_EXP[t.items[v].cat] || n.cat; } st[1](n); }}),
     e && A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", full: true, onClick: function(){ if(p.onDone) p.onDone(); A.openChat({k: "expense", id: e.id, l: D.str(e.title || D.EXP_CATS[e.cat], 80)}); }}, "Sohbette bahset") : null,
-    e ? (del[0] ? h(A.Confirm, {text: "Bu harcama silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h(T.Button, {variant: "ghost", icon: "trash", full: true, onClick: function(){ del[1](true); }}, "Harcamayı sil")) : null,
+    e ? h(F, null, del[0] ? h(A.Confirm, {text: "Bu harcama silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : null, h(T.Button, {variant: "ghost", icon: "trash", full: true, onClick: function(){ del[1](true); }}, "Harcamayı sil")) : null,
     h("div", {className: "app-stickyfoot"}, h(T.Button, {variant: "primary", icon: e ? "check" : "plus", full: true, type: "submit"}, e ? "Kaydet" : "Ekle")));
 }
 A.ExpenseForm = ExpenseForm;
@@ -448,8 +448,8 @@ function GaleriAside(p){
         v.photo = null; A.saveViews(); A.commit(); del[1](false);
         A.getAssets().then(function(a){ if(a) a.delete(asset).catch(function(){}); });
         A.flash("Fotoğraf silindi.");
-      }, onNo: function(){ del[1](false); }})
-      : h("div", {className: "app-row"}, h(T.Button, {size: "sm", variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"), h(T.Button, {size: "sm", variant: "ghost", icon: "close", onClick: function(){ v.photo = null; A.saveViews(); A.render(); }}, "Kapat")));
+      }, onNo: function(){ del[1](false); }}) : null,
+      h("div", {className: "app-row"}, h(T.Button, {size: "sm", variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"), h(T.Button, {size: "sm", variant: "ghost", icon: "close", onClick: function(){ v.photo = null; A.saveViews(); A.render(); }}, "Kapat")));
 }
 function Galeri(p){
   var t = p.t, v = p.v;

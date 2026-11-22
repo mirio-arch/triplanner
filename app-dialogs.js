@@ -76,7 +76,7 @@ function PlanDialog(p){
           var preset = {ref: it.id, title: it.title, cat: D.CAT_TO_EXP[it.cat] || "sights", day: A.dayById(t, where) ? where : (A.todayDayId(t) || "pre")};
           S.dialog = A.isPhone ? {kind: "expense", preset: preset} : null; if(!A.isPhone){ S.expOpen = true; S.expPreset = preset; A.go("harcamalar"); } else A.render(); }}, "Harcama ekle")
           : h(T.Button, {size: "sm", variant: "ghost", icon: "route", onClick: function(){ S.dialog = {kind: "transit", id: it.id}; A.render(); }}, "Ulaşım ayrıntıları")) : null,
-      h(Foot, {left: it ? (del[0] ? h(A.Confirm, {text: "Kalıcı olarak silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"),
+      h(Foot, {left: it ? h(F, null, del[0] ? h(A.Confirm, {text: "Kalıcı olarak silinsin mi?", onYes: remove, onNo: function(){ del[1](false); }}) : null, h("div", {className: "app-row"}, h(T.Button, {variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"),
         A.chatApi && A.chatApi() ? h(T.Button, {variant: "ghost", icon: "share", onClick: function(){ close(); A.openChat({k: it.cat === "ulasim" ? "transit" : "plan", id: it.id, l: D.str(it.title || "Plan", 80)}); }}, "Sohbette bahset") : null)) : null},
         h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, it ? "Kaydet" : "Ekle"))));
 }
@@ -281,13 +281,14 @@ function TripDialog(p){
       h(T.SwatchPicker, {label: "Renk", value: v.color, onChange: function(x){ set("color", x); }}),
       err[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style:{margin:0}}, h(T.Icon, {name: "warning", size: 16}), err[0]) : null,
       t ? h("p", {className: "body-sm app-muted", style:{margin:0}}, "Tarihleri kısaltırsan dışarıda kalan günlerin planları kenar listesine taşınır.") : null,
-      h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur")),
       t && window.TPB ? h(window.TPB.Members, {tripId: t.id}) : null,
       t ? h("div", {className: "app-zone"}, h("h3", {className: "label app-muted", style:{margin:0}}, "Diğer"),
-        t.geo === "georgia" ? (reset[0] ? h(A.Confirm, {text: "Tüm değişiklikler silinip başlangıç planına dönülsün mü?", yes: "Evet, dön", onYes: function(){ var n = D.seedGeorgia(); n.id = t.id; n.expenses = t.expenses; n.photos = t.photos; n.rate = t.rate; n.budget = t.budget; S.app.trips[t.id] = n; A.commit(t.id); close(); A.flash("Başlangıç planına dönüldü. Harcamalar ve fotoğraflar duruyor."); }, onNo: function(){ reset[1](false); }})
-          : h(T.Button, {variant: "ghost", size: "sm", icon: "refresh", onClick: function(){ reset[1](true); }}, "Başlangıç planına dön")) : null,
-        del[0] ? h(A.Confirm, {text: leave ? "“" + t.name + "” listenden kalksın mı? Diğerleri için gezi olduğu gibi kalır." : "“" + t.name + "” ve içindeki her şey silinsin mi?", yes: leave ? "Geziden ayrıl" : "Geziyi sil", onYes: function(){ var id = t.id; delete S.app.trips[id]; S.app.order = S.app.order.filter(function(x){ return x !== id; }); A.sync.remove(id); D.saveLocal(S.app); close(); S.cur = S.app.order[0] || null; if(S.cur) A.go("tarihler"); else { location.hash = ""; A.render(); } }, onNo: function(){ del[1](false); }})
-          : h(T.Button, {variant: "ghost", size: "sm", icon: "trash", onClick: function(){ del[1](true); }}, leave ? "Geziden ayrıl" : "Geziyi sil")) : null));
+        t.geo === "georgia" ? h(F, null, reset[0] ? h(A.Confirm, {title: "Başlangıç planına dönülsün mü?", text: "Plandaki tüm değişiklikler silinir. Harcamalar ve fotoğraflar kalır.", yes: "Evet, dön", onYes: function(){ var n = D.seedGeorgia(); n.id = t.id; n.expenses = t.expenses; n.photos = t.photos; n.rate = t.rate; n.budget = t.budget; S.app.trips[t.id] = n; A.commit(t.id); close(); A.flash("Başlangıç planına dönüldü. Harcamalar ve fotoğraflar duruyor."); }, onNo: function(){ reset[1](false); }}) : null,
+          h(T.Button, {variant: "ghost", size: "sm", icon: "refresh", onClick: function(){ reset[1](true); }}, "Başlangıç planına dön")) : null,
+        h(F, null, del[0] ? h(A.Confirm, {title: leave ? "Geziden ayrılınsın mı?" : "Gezi silinsin mi?", text: leave ? "“" + t.name + "” listenden kalkar. Diğerleri için gezi olduğu gibi kalır." : "“" + t.name + "” ve içindeki her şey silinir. Bu geri alınamaz.", yes: leave ? "Geziden ayrıl" : "Geziyi sil", onYes: function(){ var id = t.id; delete S.app.trips[id]; S.app.order = S.app.order.filter(function(x){ return x !== id; }); A.sync.remove(id); D.saveLocal(S.app); close(); S.cur = S.app.order[0] || null; if(S.cur) A.go("tarihler"); else { location.hash = ""; A.render(); } }, onNo: function(){ del[1](false); }}) : null,
+          h(T.Button, {variant: "ghost", size: "sm", icon: "trash", className: "app-btn--dangertext", onClick: function(){ del[1](true); }}, leave ? "Geziden ayrıl" : "Geziyi sil"))) : null),
+      /* kaydet düğmeleri en sonda: telefonda altta sabit durur, sil düğmesi onların üstünde görünür */
+      h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur")));
 }
 function IdeaAdd(p){
   var t = A.trip(), it = t.items[p.id];

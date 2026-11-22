@@ -267,11 +267,13 @@ A.Field = function(p){ /* tarih ve sayı gibi yerel girişler, design system gö
     h("input", {id: id, className: "tp-input body", type: p.type || "text", value: p.value == null ? "" : p.value, min: p.min, max: p.max, placeholder: p.placeholder, required: p.required, onChange: function(e){ p.onChange(e.target.value); }}),
     p.hint ? h("p", {className: "body-sm tp-muted"}, p.hint) : null);
 };
+/* Silme ve geri dönülmez işlemler için onay: ortada küçük pencere, iki eşit düğme (Vazgeç | Sil). Tetikleyen düğme yerinde kalır. */
 A.Confirm = function(p){
-  return h("div", {className: "app-confirm", role: "group", "aria-label": p.text},
-    h("span", {className: "body-sm"}, p.text),
-    h(T.Button, {size: "sm", variant: "danger", onClick: p.onYes}, p.yes || "Sil"),
-    h(T.Button, {size: "sm", variant: "ghost", onClick: p.onNo}, "Vazgeç"));
+  var dlg = h(T.Dialog, {title: p.title || p.text, description: p.title ? p.text : null, width: "380px", onClose: p.onNo},
+    h("div", {className: "app-discard", onKeyDown: function(e){ if(e.key === "Escape"){ e.stopPropagation(); p.onNo(); } }},
+      h(T.Button, {variant: "outline", onClick: p.onNo}, "Vazgeç"),
+      h(T.Button, {variant: "danger", onClick: function(){ if(A.haptic) A.haptic(); p.onYes(); }}, p.yes || "Sil")));
+  return window.ReactDOM ? ReactDOM.createPortal(dlg, document.querySelector(".app-root") || document.body) : dlg;
 };
 A.money = function(t, amount, cur){ return D.fmtMoney(amount, cur || "TL"); };
 A.tl = function(t, amount, cur){ var v = D.toTL(t, amount, cur); return v === null ? null : v; };
