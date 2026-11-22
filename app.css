@@ -940,8 +940,11 @@ a{color:var(--foreground-secondary)}
 .app-tripicon .app-curseg{flex:none}
 /* iki aylık takvim */
 .app-cal__months{display:flex;gap:var(--space-6);justify-content:center}
-.app-phone .app-cal__months{flex-direction:column;gap:var(--space-4)}
-.app-phone .app-cal__months .tp-cal__month+.tp-cal__month{padding-top:var(--space-3);border-top:1px solid var(--border-weak)}
+/* telefonda iki ay alt alta (takvim alt pencerede, kabuğun dışında açılıyor; o yüzden ekran genişliğine bakılır) */
+@media (max-width:899px){
+  .app-cal__months{flex-direction:column;gap:var(--space-4);width:100%}
+  .app-cal__months .tp-cal__month+.tp-cal__month{padding-top:var(--space-4);border-top:1px solid var(--border-weak)}
+}
 /* kaydırarak silme: zemin boyanmaz, açılan yerde yalnızca kırmızı çöp kutusu; eşikte dolar ve büyür */
 .app-swipe__act{background:none !important;color:var(--foreground-danger,#dc2626) !important}
 .app-swipe.is-active,.app-swipe.is-leaving{-webkit-mask-image:none !important;border-radius:0 !important}
