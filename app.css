@@ -382,14 +382,14 @@ a{color:var(--foreground-secondary)}
 
 /* Ulaşım: sıradaki bilet koyu, çizgili ve ışıklı */
 .app-ticket.is-next{color:#fff;border-color:transparent;isolation:isolate;overflow:hidden;
-  background:radial-gradient(120% 90% at 0% 0%,rgba(45,212,191,.42),transparent 55%),radial-gradient(110% 100% at 100% 100%,rgba(139,92,246,.5),transparent 60%),#0d1433;
+  background:radial-gradient(120% 90% at 0% 0%,rgba(96,165,250,.5),transparent 55%),radial-gradient(110% 100% at 100% 100%,rgba(139,92,246,.5),transparent 60%),#0d1433;
   box-shadow:0 10px 28px rgba(13,20,51,.28),0 0 0 1px rgba(255,255,255,.06) inset}
 .app-ticket.is-next::before{content:"";position:absolute;inset:0;z-index:-1;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20240%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-opacity%3D%22.16%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M-40%20260%20C%2060%20150.0%2C%20170%20250.0%2C%20440%2040.0%22/%3E%3Cpath%20d%3D%22M-26%20260%20C%2074%20144.4%2C%20184%20241.6%2C%20440%2052.6%22/%3E%3Cpath%20d%3D%22M-12%20260%20C%2088%20138.8%2C%20198%20233.2%2C%20440%2065.2%22/%3E%3Cpath%20d%3D%22M2%20260%20C%20102%20133.2%2C%20212%20224.8%2C%20440%2077.80000000000001%22/%3E%3Cpath%20d%3D%22M16%20260%20C%20116%20127.6%2C%20226%20216.4%2C%20440%2090.4%22/%3E%3Cpath%20d%3D%22M30%20260%20C%20130%20122.0%2C%20240%20208.0%2C%20440%20103.0%22/%3E%3Cpath%20d%3D%22M44%20260%20C%20144%20116.4%2C%20254%20199.6%2C%20440%20115.60000000000001%22/%3E%3Cpath%20d%3D%22M58%20260%20C%20158%20110.8%2C%20268%20191.2%2C%20440%20128.2%22/%3E%3Cpath%20d%3D%22M72%20260%20C%20172%20105.19999999999999%2C%20282%20182.8%2C%20440%20140.8%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat;opacity:.9;pointer-events:none;animation:app-lines-drift 14s var(--ease-ambient,ease-in-out) infinite alternate}
-.app-ticket.is-next::after{content:"";position:absolute;z-index:-1;width:220px;height:220px;right:-60px;top:-90px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.35),transparent 70%);filter:blur(6px);pointer-events:none}
-.app-ticket.is-next.is-selected{box-shadow:0 10px 28px rgba(13,20,51,.28),0 0 0 2px rgba(94,234,212,.75)}
+.app-ticket.is-next::after{content:"";position:absolute;z-index:-1;width:220px;height:220px;right:-60px;top:-90px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,.4),transparent 70%);filter:blur(6px);pointer-events:none}
+.app-ticket.is-next.is-selected{box-shadow:0 10px 28px rgba(13,20,51,.28),0 0 0 2px rgba(129,140,248,.85)}
 .app-ticket.is-next .label,.app-ticket.is-next .app-muted,.app-ticket.is-next .app-ticket__time small,.app-ticket.is-next .app-ticket__dur{color:rgba(255,255,255,.72)}
 .app-ticket.is-next .app-ticket__big,.app-ticket.is-next .app-ticket__time,.app-ticket.is-next .app-ticket__title{color:#fff}
-.app-ticket.is-next .app-ticket__mode{background:rgba(255,255,255,.14);color:#fff;box-shadow:0 0 18px rgba(94,234,212,.45)}
+.app-ticket.is-next .app-ticket__mode{background:rgba(255,255,255,.14);color:#fff;box-shadow:0 0 18px rgba(96,165,250,.5)}
 .app-ticket.is-next .app-ticket__mode .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor}
 .app-ticket.is-next .app-ticket__line::before{border-top-color:rgba(255,255,255,.3)}
 .app-ticket.is-next .app-ticket__cut{border-top-color:rgba(255,255,255,.18)}
@@ -510,7 +510,7 @@ a{color:var(--foreground-secondary)}
 .app-phone .app-hometrips{grid-template-columns:minmax(0,1fr)}
 .app-deals{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 .app-phone .app-deal{width:74%}
-.app-deal{position:relative;isolation:isolate;overflow:hidden;gap:var(--space-2);padding:var(--space-4);border:0;color:#fff;--tone:45,212,191;
+.app-deal{position:relative;isolation:isolate;overflow:hidden;gap:var(--space-2);padding:var(--space-4);border:0;color:#fff;--tone:129,140,248;
   background:radial-gradient(120% 90% at 0% 0%,rgba(var(--tone),.42),transparent 58%),radial-gradient(100% 90% at 100% 100%,rgba(139,92,246,.38),transparent 62%),#0d1433;box-shadow:0 10px 26px rgba(13,20,51,.22)}
 .app-deal::before{content:"";position:absolute;inset:0;z-index:-1;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20340%20200%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-opacity%3D%22.14%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M-40%20230%20C%2050%20140.0%2C%20160%20230.0%2C%20380%2030%22/%3E%3Cpath%20d%3D%22M-27%20230%20C%2063%20136.1%2C%20173%20223.5%2C%20380%2043%22/%3E%3Cpath%20d%3D%22M-14%20230%20C%2076%20132.2%2C%20186%20217.0%2C%20380%2056%22/%3E%3Cpath%20d%3D%22M-1%20230%20C%2089%20128.3%2C%20199%20210.5%2C%20380%2069%22/%3E%3Cpath%20d%3D%22M12%20230%20C%20102%20124.4%2C%20212%20204.0%2C%20380%2082%22/%3E%3Cpath%20d%3D%22M25%20230%20C%20115%20120.5%2C%20225%20197.5%2C%20380%2095%22/%3E%3Cpath%20d%3D%22M38%20230%20C%20128%20116.6%2C%20238%20191.0%2C%20380%20108%22/%3E%3Cpath%20d%3D%22M51%20230%20C%20141%20112.7%2C%20251%20184.5%2C%20380%20121%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat;pointer-events:none}
 .app-deal__name{margin:0;color:#fff}
@@ -535,9 +535,9 @@ a{color:var(--foreground-secondary)}
 /* Alt menü: seçili olan renkli, diğerleri renksiz; yuvarlak zemin yok */
 .app-phonenav .tp-bottomnav__item{color:var(--foreground-on-shell-weak,rgba(255,255,255,.6));transition:color var(--duration-base) var(--ease-standard)}
 .app-phonenav .tp-bottomnav__item .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:.55;--icon-accent:currentColor;color:currentColor}
-.app-phonenav .tp-bottomnav__item.is-active{color:var(--camgobegi-300,#5eead4);font-weight:600}
-.app-phonenav .tp-bottomnav__badge{background:var(--camgobegi-300,#5eead4);color:#0b1030;font-weight:700;min-width:16px;height:16px;font-size:10px;top:-1px;right:8px;box-shadow:none}
-.app-phonenav .tp-bottomnav__item.is-active .tp-bottomnav__badge{background:var(--camgobegi-300,#5eead4);color:#0b1030}
+.app-phonenav .tp-bottomnav__item.is-active{color:var(--lavanta-300,#a5b4fc);font-weight:600}
+.app-phonenav .tp-bottomnav__badge{background:var(--lavanta-300,#a5b4fc);color:#0b1030;font-weight:700;min-width:16px;height:16px;font-size:10px;top:-1px;right:8px;box-shadow:none}
+.app-phonenav .tp-bottomnav__item.is-active .tp-bottomnav__badge{background:var(--lavanta-300,#a5b4fc);color:#0b1030}
 .app-phonenav .tp-bottomnav__item.is-active .tp-icon{--tp-duo-opacity:1}
 .app-phonenav .tp-bottomnav__item.is-active .tp-bottomnav__icon,.app-phonenav .tp-bottomnav__icon{background:none;animation:none}
 .app-phonenav .tp-bottomnav__item:active .tp-bottomnav__icon{transform:scale(.92)}
@@ -618,9 +618,9 @@ a{color:var(--foreground-secondary)}
 
 /* Sıradaki plan: bilet kartıyla aynı koyu, çizgili, ışıklı zemin */
 .app-glow{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none;
-  background:radial-gradient(120% 90% at 0% 0%,rgba(45,212,191,.42),transparent 55%),radial-gradient(110% 100% at 100% 100%,rgba(139,92,246,.5),transparent 60%),#0d1433}
+  background:radial-gradient(120% 90% at 0% 0%,rgba(96,165,250,.5),transparent 55%),radial-gradient(110% 100% at 100% 100%,rgba(139,92,246,.5),transparent 60%),#0d1433}
 .app-glow::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20160%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-opacity%3D%22.16%22%20stroke-width%3D%221%22%3E%3Cpath%20d%3D%22M-20%20150%20C%2090%2060%2C%20200%20170%2C%20420%2010%22/%3E%3Cpath%20d%3D%22M-20%20162%20C%2096%2070%2C%20214%20172%2C%20420%2026%22/%3E%3Cpath%20d%3D%22M-20%20174%20C%20102%2080%2C%20228%20174%2C%20420%2042%22/%3E%3Cpath%20d%3D%22M-20%20186%20C%20108%2090%2C%20242%20176%2C%20420%2058%22/%3E%3Cpath%20d%3D%22M-20%20198%20C%20114%20100%2C%20256%20178%2C%20420%2074%22/%3E%3Cpath%20d%3D%22M-20%20210%20C%20120%20110%2C%20270%20180%2C%20420%2090%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat;opacity:.9;animation:app-lines-drift 14s var(--ease-ambient,ease-in-out) infinite alternate}
-.app-glow::after{content:"";position:absolute;width:200px;height:200px;right:-60px;top:-100px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.35),transparent 70%);filter:blur(6px)}
+.app-glow::after{content:"";position:absolute;width:200px;height:200px;right:-60px;top:-100px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,.4),transparent 70%);filter:blur(6px)}
 @media (prefers-reduced-motion:reduce){.app-glow::before{animation:none}}
 
 /* Ortak: ekranın üstünde açılan ⋯ menüsü */
@@ -671,7 +671,7 @@ a{color:var(--foreground-secondary)}
 .app-pcard.is-next .tp-icon,.app-plans .tp-card.is-selected .tp-icon{--tp-duo:currentColor;--icon-accent:currentColor}
 /* Ana sayfa: selamlama kartın üst kenarına yapışmasın */
 .app-phone .app-home__hello{padding:var(--space-3) var(--space-1) 0}
-.app-pcard.is-next.is-open{box-shadow:0 10px 28px rgba(13,20,51,.28),0 0 0 2px rgba(94,234,212,.75)}
+.app-pcard.is-next.is-open{box-shadow:0 10px 28px rgba(13,20,51,.28),0 0 0 2px rgba(129,140,248,.85)}
 
 /* Telefonda Plan: saatler kartın solunda, nokta ve çizgiyle akan bir sütunda */
 .app-plans.is-flow{gap:0}
@@ -688,9 +688,9 @@ a{color:var(--foreground-secondary)}
   transition:border-color var(--duration-base) var(--ease-standard),background-color var(--duration-base) var(--ease-standard),box-shadow var(--duration-base) var(--ease-standard)}
 .app-prow.is-open .app-prow__dot{border-color:var(--border-primary)}
 .app-prow.is-critical .app-prow__t{color:var(--foreground-warning)}
-.app-prow.is-next .app-prow__t{color:var(--camgobegi-700,#0f766e)}
-[data-theme="dark"] .app-prow.is-next .app-prow__t{color:var(--camgobegi-300,#5eead4)}
-.app-prow.is-next .app-prow__dot{border-color:var(--camgobegi-300,#5eead4);background:var(--camgobegi-300,#5eead4);box-shadow:0 0 0 4px rgba(94,234,212,.22),0 0 12px rgba(94,234,212,.55)}
+.app-prow.is-next .app-prow__t{color:var(--lavanta-600,#4f46e5)}
+[data-theme="dark"] .app-prow.is-next .app-prow__t{color:var(--lavanta-300,#a5b4fc)}
+.app-prow.is-next .app-prow__dot{border-color:var(--lavanta-400,#818cf8);background:var(--lavanta-400,#818cf8);box-shadow:0 0 0 4px rgba(129,140,248,.26),0 0 12px rgba(129,140,248,.6)}
 .app-prow.app-ghost .app-prow__dot,.app-prow.app-ghost .app-prow__time{opacity:0}
 
 /* Pencereler telefonda ekrana sabit: iPhone ana ekran uygulamasında tam boy, klavye açıkken görünen alana sığar */
@@ -861,7 +861,7 @@ a{color:var(--foreground-secondary)}
 /* Profil: arkada ışık */
 .app-profilepage{position:relative;isolation:isolate}
 .app-profilepage::before{content:"";position:absolute;z-index:-1;left:calc(-1 * var(--space-3));right:calc(-1 * var(--space-3));top:calc(-1 * var(--space-4));height:340px;pointer-events:none;
-  background:radial-gradient(55% 45% at 28% 22%,rgba(45,212,191,.30),transparent 70%),radial-gradient(50% 45% at 76% 30%,rgba(139,92,246,.30),transparent 70%),radial-gradient(40% 30% at 50% 60%,rgba(251,191,36,.12),transparent 70%);filter:blur(6px);animation:app-glow-drift 16s var(--ease-ambient,ease-in-out) infinite alternate}
+  background:radial-gradient(55% 45% at 28% 22%,rgba(96,165,250,.34),transparent 70%),radial-gradient(50% 45% at 76% 30%,rgba(139,92,246,.30),transparent 70%),radial-gradient(40% 30% at 50% 60%,rgba(251,191,36,.12),transparent 70%);filter:blur(6px);animation:app-glow-drift 16s var(--ease-ambient,ease-in-out) infinite alternate}
 @keyframes app-glow-drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(8px,-6px,0) scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.app-profilepage::before{animation:none}}
 /* Profil: liste satırları */
@@ -925,7 +925,7 @@ a{color:var(--foreground-secondary)}
 /* Sohbet: arkada hafif ışık, hareket satırları ferah, balonlar basılı tutulunca menü */
 .app-chat{position:relative;isolation:isolate}
 .app-chat::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(60% 30% at 12% 14%,rgba(45,212,191,.16),transparent 70%),radial-gradient(55% 32% at 92% 46%,rgba(139,92,246,.15),transparent 70%),radial-gradient(50% 26% at 30% 92%,rgba(251,191,36,.08),transparent 70%),var(--background)}
+  background:radial-gradient(60% 30% at 12% 14%,rgba(96,165,250,.18),transparent 70%),radial-gradient(55% 32% at 92% 46%,rgba(139,92,246,.15),transparent 70%),radial-gradient(50% 26% at 30% 92%,rgba(251,191,36,.08),transparent 70%),var(--background)}
 .app-chat__scroll{background:transparent !important}
 .app-chat__head,.app-chat__compose{position:relative;z-index:1;background:color-mix(in srgb,var(--background-raised) 88%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px)}
 .app-chat__act{margin:var(--space-2) 0}
@@ -960,7 +960,7 @@ a{color:var(--foreground-secondary)}
 .app-homewrap .app-tphone__list{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 
 /* ============ Açık tema: ışıklı kartlar koyu lacivert yerine biraz daha açık ve canlı (yazılar beyaz kalır) ============ */
-[data-theme="light"]{--lt-mid:radial-gradient(120% 90% at 0% 0%,rgba(45,212,191,.55),transparent 58%),radial-gradient(110% 100% at 100% 100%,rgba(167,139,250,.55),transparent 62%),linear-gradient(150deg,#1e4f8c 0%,#3b3aa8 55%,#5b2bb5 100%)}
+[data-theme="light"]{--lt-mid:radial-gradient(120% 90% at 0% 0%,rgba(96,165,250,.55),transparent 58%),radial-gradient(110% 100% at 100% 100%,rgba(167,139,250,.55),transparent 62%),linear-gradient(150deg,#1e4f8c 0%,#3b3aa8 55%,#5b2bb5 100%)}
 [data-theme="light"] .app-ticket.is-next,[data-theme="light"] .app-glow{background:var(--lt-mid)}
 [data-theme="light"] .app-ticket.is-next,[data-theme="light"] .app-pcard.is-next,[data-theme="light"] .app-plans .tp-card.is-selected{box-shadow:0 10px 24px rgba(59,58,168,.25)}
 [data-theme="light"] .app-deal{background:radial-gradient(120% 90% at 0% 0%,rgba(var(--tone),.55),transparent 58%),radial-gradient(100% 90% at 100% 100%,rgba(167,139,250,.45),transparent 62%),linear-gradient(150deg,#22407e,#3b3aa8 60%,#4c2a9e);box-shadow:0 10px 24px rgba(59,58,168,.22)}
@@ -998,7 +998,7 @@ a{color:var(--foreground-secondary)}
   .kbd .app-chatwrap{top:0 !important;height:calc(var(--vvt,0px) + var(--vvh,100%)) !important;padding-top:var(--vvt,0px);box-sizing:border-box}
 }
 /* uygulama logosu */
-.app-logo{display:inline-block;flex:none;line-height:0}
+.app-logo{display:inline-block;flex:none;line-height:0;border-radius:22.6%}
 .app-logo svg{display:block;width:100%;height:100%}
 .app-rail__logo{display:grid;place-items:center;border-radius:12px}
 .app-rail__logo:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px}
