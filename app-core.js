@@ -849,7 +849,7 @@ A.Submenu = function(p){
 function PhoneHeader(){
   var home = A.offTrip(), t = home ? null : A.trip();
   if(home || !t) return h("header", {className: "tp-onshell app-phonehead"},
-    h("div", {className: "app-phonehead__title"}, h("span", {className: "app-phonehead__brand"}, "Triplanner")),
+    h("div", {className: "app-phonehead__title app-phonehead__title--brand"}, h(A.LogoMark, {size: 32}), h("span", {className: "app-phonehead__brand"}, "Triplanner")),
     h(A.AvatarButton, {size: 40}));
   return h("header", {className: "tp-onshell app-phonehead"},
     h("a", {href: "#home", className: "app-phonehead__back", "aria-label": "Gezilerin", title: "Gezilerin"}, h(T.Icon, {name: "chevron-left", size: 24})),
