@@ -1078,3 +1078,8 @@ a{color:var(--foreground-secondary)}
 .app-galitem__cover .tp-icon{--tp-duo:currentColor;color:#fff}
 /* yeni gezi başlığı: ana sayfadaki selamla aynı boy */
 .app-phone .app-newtrip .page-title{font-size:24px;line-height:32px;letter-spacing:-.01em}
+/* dokunmatik ekranda dokunulan öğe "üzerinde" sayılıp renkli kalmasın (takvim günleri, liste satırları) */
+@media (hover:none){
+  .tp-cal__day:hover:not(.in-range){background:transparent}
+  .tp-option:hover:not(.is-on){background:transparent}
+}
