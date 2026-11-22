@@ -271,8 +271,10 @@ function TripDialog(p){
   }
   var wrap = p.page ? function(form){
     var body = h("div", {className: "app-home app-newtrip"},
-      h("a", {href: "#home", className: "app-back", onClick: goBack}, h(T.Icon, {name: "chevron-left", size: 20}), h("span", null, "Geri")),
-      h("header", {className: "app-newtrip__head"}, h("h1", {className: "page-title", style: {margin: 0}}, "Yeni gezi"),
+      h("header", {className: "app-newtrip__head"},
+        h("div", {className: "app-newtrip__title"},
+          h("a", {href: "#home", className: "app-newtrip__back", "aria-label": "Geri", title: "Geri", onClick: goBack}, h(T.Icon, {name: "chevron-left", size: 26})),
+          h("h1", {className: "page-title", style: {margin: 0}}, "Yeni gezi")),
         h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Tarihleri girince her gün için bir sayfa açılır.")),
       form,
       leaving[0] ? h(A.Confirm, {title: "Kaydetmeden çıkılsın mı?", text: "Girdiklerin kaybolur.", yes: "Çık", onYes: leaveNow, onNo: function(){ leaving[1](false); }}) : null);

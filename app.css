@@ -533,7 +533,7 @@ a{color:var(--foreground-secondary)}
 .app-deal.is-rose{--tone:251,113,133}
 .app-deal__ideas{flex-direction:row}
 /* Alt menü: seçili olan renkli, diğerleri renksiz; yuvarlak zemin yok */
-.app-phonenav .tp-bottomnav__item{color:var(--foreground-on-shell-weak,rgba(255,255,255,.6));transition:color var(--duration-base) var(--ease-standard)}
+.app-phonenav .tp-bottomnav__item{color:rgba(221,214,254,.6);transition:color var(--duration-base) var(--ease-standard)}
 .app-phonenav .tp-bottomnav__item .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:.55;--icon-accent:currentColor;color:currentColor}
 .app-phonenav .tp-bottomnav__item.is-active{color:var(--lavanta-300,#a5b4fc);font-weight:600}
 .app-phonenav .tp-bottomnav__badge{background:var(--lavanta-300,#a5b4fc);color:#0b1030;font-weight:700;min-width:16px;height:16px;font-size:10px;top:-1px;right:8px;box-shadow:none}
@@ -1060,8 +1060,13 @@ a{color:var(--foreground-secondary)}
 .app-hometrips--two .app-cover__chip .tp-icon{width:12px;height:12px}
 /* yeni gezi sayfası */
 .app-newtrip{gap:var(--space-5)}
-.app-newtrip>.app-back{align-self:flex-start;margin-left:calc(-1 * var(--space-1))}
-.app-newtrip__head{display:flex;flex-direction:column;gap:4px}
+.app-newtrip__head{display:flex;flex-direction:column;gap:4px;padding-top:var(--space-1)}
+.app-newtrip__title{display:flex;align-items:center;gap:2px;margin-left:calc(-1 * var(--space-2))}
+.app-newtrip__back{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;color:var(--foreground);-webkit-tap-highlight-color:transparent}
+.app-newtrip__back:active{background:var(--background-sunken)}
+.app-newtrip__back:focus-visible{outline:2px solid var(--border-focus);outline-offset:1px}
+.app-newtrip__back .tp-icon{--tp-duo:currentColor}
+.app-newtrip__head>p{padding-left:calc(40px - var(--space-2) + 2px)}
 .app-pagefoot{position:sticky;bottom:0;z-index:3;margin:var(--space-2) calc(-1 * var(--space-3)) calc(-1 * var(--space-6));padding:var(--space-4) var(--space-3) max(var(--space-4),env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--background) 28%)}
 .app-desk .app-pagefoot{position:static;margin:var(--space-2) 0 0;padding:0;background:none}
 .kbd .app-pagefoot{position:static;margin-bottom:0;padding-bottom:var(--space-3)}
