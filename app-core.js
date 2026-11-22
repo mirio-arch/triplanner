@@ -747,7 +747,9 @@ A.DateField = function(p){
   function shift(k){ var m = mo[0].m + k, y = mo[0].y + Math.floor(m / 12); mo[1]({y: y, m: ((m % 12) + 12) % 12}); }
   function pick(iso){
     if(p.max && iso > p.max) return;
-    if(!range){ p.onChange(iso); open[1](false); return; }
+    /* seçili güne tekrar dokunmak seçimi kaldırır */
+    if(!range){ if(iso === a){ p.onChange(""); return; } p.onChange(iso); open[1](false); return; }
+    if(pend[0] && iso === pend[0]){ pend[1](null); p.onChange("", ""); return; }
     if(!pend[0] || iso < pend[0]){ pend[1](iso); return; }
     pend[1](null); p.onChange(pend[0], iso);
   }
