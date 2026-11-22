@@ -935,9 +935,10 @@ a{color:var(--foreground-secondary)}
 .app-msg__bubble:active{transform:scale(.98)}
 .app-msg__bubble:focus-visible{box-shadow:0 0 0 2px var(--border-focus)}
 .app-ctxmenu{min-width:180px}
-.app-tripicon{flex-wrap:nowrap}
-.app-tripicon__in{margin-top:0;flex:1 1 auto;min-width:0;width:auto}
-.app-tripicon .app-curseg{flex:none}
+.app-tripicon{flex-wrap:nowrap;min-width:0}
+.app-tripicon__in{margin-top:0;flex:1 0 96px;min-width:96px;width:auto}
+.app-tripicon .app-curseg{flex:0 1 auto;min-width:0;max-width:46%}
+.app-tripicon .app-curseg:only-of-type:last-child{max-width:none}
 /* iki aylık takvim */
 .app-cal__months{display:flex;gap:var(--space-6);justify-content:center}
 /* telefonda iki ay alt alta (takvim alt pencerede, kabuğun dışında açılıyor; o yüzden ekran genişliğine bakılır) */
@@ -1012,3 +1013,30 @@ a{color:var(--foreground-secondary)}
 .tp-swatch .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 /* onay kutularındaki tik de tek renk (mavi zeminde ikinci çizgi kayboluyordu) */
 .tp-check__box .tp-icon,.tp-option__check{--tp-duo:currentColor;--tp-duo-opacity:1}
+
+/* bölmeli seçimler (bayraklar, saat dilimleri) çok seçenekte sağa taşmaz: kendi içinde yana kayar */
+.app-curseg{max-width:100%;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
+.app-curseg::-webkit-scrollbar{display:none}
+.app-curseg button{flex:none}
+.app-curseg--wrap{overflow-x:visible}
+
+/* Nereye? seçimi: telefonda kendi alt penceresi */
+.app-pp__trigger{gap:var(--space-2);justify-content:flex-start;text-align:left;cursor:pointer}
+.app-pp__trigger .tp-trigger__value{flex:1;min-width:0}
+.tp-sheet--bottom:has(.app-pp){height:calc(100% - max(env(safe-area-inset-top,0px),12px) - 36px)}
+.kbd .tp-sheet--bottom:has(.app-pp){height:calc(100% - 8px)}
+.tp-sheet__body:has(.app-pp){padding-top:0}
+.app-pp{display:flex;flex-direction:column;gap:var(--space-3)}
+.app-pp__top{position:sticky;top:0;z-index:2;display:flex;flex-direction:column;gap:var(--space-3);margin:0 calc(-1 * var(--space-4));padding:var(--space-2) var(--space-4) var(--space-3);background:var(--background-raised);border-bottom:1px solid var(--border-weak)}
+.app-pp__list{list-style:none;margin:0 calc(-1 * var(--space-2));padding:0;display:flex;flex-direction:column;gap:2px}
+.app-pp__opt{min-height:52px;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:var(--radius-control);transition:background-color var(--duration-fast,.15s) ease}
+.app-pp__opt.is-on{background:var(--background-primary-weak);color:var(--foreground)}
+.app-pp__flag{font-size:20px;width:28px;text-align:center;flex:none}
+.app-pp__mark{flex:none;margin-left:auto;width:24px;height:24px;box-sizing:border-box;border-radius:50%;border:2px solid var(--border-strong);display:grid;place-items:center;color:var(--foreground-on-primary);transition:background-color .15s ease,border-color .15s ease}
+.app-pp__mark .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:1;opacity:0;transform:scale(.5);transition:opacity .15s ease,transform .2s cubic-bezier(.3,1.4,.5,1)}
+.app-pp__opt.is-on .app-pp__mark{background:var(--background-primary);border-color:var(--background-primary)}
+.app-pp__opt.is-on .app-pp__mark .tp-icon{opacity:1;transform:none}
+.app-pp__none{padding:var(--space-2) var(--space-3)}
+.app-cpick__panel .app-pp__list{max-height:320px;overflow-y:auto}
+/* telefon sayfaları yana kaymaz (profildeki hareketli ışık kenardan taşıyordu); yatay listeler kendi içinde kayar */
+.app-phonebody{overflow-x:hidden;overscroll-behavior-x:none}

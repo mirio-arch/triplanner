@@ -245,7 +245,7 @@ function TripIconField(p){
           return h("button", {key: c || "abc", type: "button", role: "radio", "aria-checked": flag === c ? "true" : "false", "aria-label": c ? D.COUNTRY[c][1] + " bayrağı" : "Harfler",
             className: c ? "is-flag" : "", onClick: function(){ set("flag", c); }}, c ? A.flag(c) : "Aa");
         })) : null,
-      flag ? null : h("input", {className: "tp-input body app-tripicon__in", value: v.short, maxLength: 3, placeholder: "En fazla 3 harf", "aria-label": "Simgedeki harfler", onChange: function(e){ set("short", e.target.value); }})),
+      flag ? null : h("input", {className: "tp-input body app-tripicon__in", value: v.short, maxLength: 3, placeholder: flags.length ? "3 harf" : "En fazla 3 harf", "aria-label": "Simgedeki harfler (en fazla 3)", onChange: function(e){ set("short", e.target.value); }})),
     flags.length ? null : h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Nereye'den ülke seçersen bayrak da kullanabilirsin."));
 }
 function TripDialog(p){

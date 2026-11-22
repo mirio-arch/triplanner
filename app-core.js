@@ -518,47 +518,68 @@ A.CountryPicker = function(p){
 function fold(x){ return low(x).replace(/ş/g, "s").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/â/g, "a"); }
 var POPULAR = ["Roma", "Paris", "Barselona", "Amsterdam", "Prag", "Viyana", "Tiflis", "Saraybosna", "Londra", "Tokyo", "Marakeş", "Dubai"];
 /* arama kutusu seçilince pencerede üste kaysın: klavye açıkken sonuçlar görünsün */
-function toTop(e){ var el = e.currentTarget; setTimeout(function(){ if(document.activeElement === el && el.scrollIntoView) el.scrollIntoView({block: "start", behavior: "smooth"}); }, 350); }
+/* Nereye? seçici: seçilenler bayraklı etiket. Telefonda kendi alt penceresinde açılır (arama üstte, liste pencerenin tamamında,
+   altta Tamam); masaüstünde formun içinde. Satıra dokunmak seçer, tekrar dokunmak çıkarır; seçili satırın sağında dolu onay işareti var. */
 A.PlacePicker = function(p){
   var open = React.useState(false), q = React.useState(""), sel = p.value || [];
   var qq = fold(q[0]).trim();
   function has(c, n){ return sel.some(function(x){ return x.c === c && (x.n || "") === (n || ""); }); }
-  function add(c, n){
-    if(has(c, n)) return;
-    /* şehir eklenince aynı ülkenin "yalnız ülke" etiketi gereksizleşir */
-    var next = sel.filter(function(x){ return !(n && x.c === c && !x.n); }).concat([n ? {c: c, n: n} : {c: c}]);
-    p.onChange(next); q[1]("");
+  function toggle(c, n){
+    if(A.haptic) A.haptic();
+    if(has(c, n)){ p.onChange(sel.filter(function(x){ return !(x.c === c && (x.n || "") === (n || "")); })); return; }
+    /* seçilen ne ise öyle kalır: ülkeyi seçip sonra şehrini eklemek ülkeyi kaldırmaz */
+    p.onChange(sel.concat([n ? {c: c, n: n} : {c: c}]));
   }
   function remove(i){ p.onChange(sel.filter(function(_, j){ return j !== i; })); }
-  var cities = qq ? D.CITIES.filter(function(x){ return fold(x[0]).indexOf(qq) > -1 || (x[2] && fold(x[2]).indexOf(qq) > -1) || (D.COUNTRY[x[1]] && fold(D.COUNTRY[x[1]][1]).indexOf(qq) === 0); }).slice(0, 24)
+  function close(){ open[1](false); q[1](""); }
+  /* ülke adı yazılınca önce ülke gelir, sonra şehirleri */
+  var countries = qq ? D.COUNTRIES.filter(function(c){ return fold(c[1]).indexOf(qq) === 0 || fold(c[0]) === qq; })
+      .concat(D.COUNTRIES.filter(function(c){ return fold(c[1]).indexOf(qq) > 0; })).slice(0, 6) : [];
+  var cities = qq ? D.CITIES.filter(function(x){ return fold(x[0]).indexOf(qq) > -1 || (x[2] && fold(x[2]).indexOf(qq) > -1) || (D.COUNTRY[x[1]] && fold(D.COUNTRY[x[1]][1]).indexOf(qq) === 0); }).slice(0, 30)
     : POPULAR.map(function(n){ return D.CITIES.filter(function(x){ return x[0] === n; })[0]; }).filter(Boolean);
-  var countries = qq ? D.COUNTRIES.filter(function(c){ return fold(c[1]).indexOf(qq) > -1 || fold(c[0]) === qq; }).slice(0, 8) : [];
-  function opt(key, flagCode, title, sub, on, onPick){
-    return h("li", {key: key, role: "option", tabIndex: 0, "aria-selected": on ? "true" : "false", className: "tp-option", onClick: onPick,
+  function row(key, code, title, sub, on, onPick){
+    return h("li", {key: key, role: "option", tabIndex: 0, "aria-selected": on ? "true" : "false", className: "tp-option app-pp__opt" + (on ? " is-on" : ""), onClick: onPick,
         onKeyDown: function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onPick(); } }},
-      h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(flagCode) || ""),
+      h("span", {className: "app-cchip__flag app-pp__flag", "aria-hidden": "true"}, A.flag(code) || ""),
       h("span", {className: "tp-option__text"}, h("span", {className: "body"}, title), sub ? h("span", {className: "body-sm tp-muted"}, sub) : null),
-      on ? h(T.Icon, {name: "check", size: 18, className: "tp-option__check"}) : null);
+      h("span", {className: "app-pp__mark", "aria-hidden": "true"}, h(T.Icon, {name: "check", size: 14, strokeWidth: 3})));
   }
-  return h("div", {className: "tp-field app-cpick"},
-    h("span", {className: "label tp-field__label", id: "pp-l"}, p.label || "Nereye?"),
-    h("div", {className: "app-cpick__chips"},
-      sel.map(function(x, i){
-        var c = D.COUNTRY[x.c]; if(!c) return null;
-        return h("span", {key: x.c + (x.n || ""), className: "app-cchip"}, A.flag(x.c) ? h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(x.c)) : null, h("span", null, x.n || c[1]),
-          h("button", {type: "button", className: "app-cchip__x", "aria-label": (x.n || c[1]) + " çıkarılsın", onClick: function(){ remove(i); }}, h(T.Icon, {name: "close", size: 14})));
-      }),
-      h("button", {type: "button", className: "app-cchip app-cchip--add", "aria-expanded": open[0] ? "true" : "false", "aria-controls": "pp-panel", onClick: function(){ open[1](!open[0]); if(open[0]) q[1](""); }},
+  var chips = sel.map(function(x, i){
+    var c = D.COUNTRY[x.c]; if(!c) return null;
+    return h("span", {key: x.c + (x.n || ""), className: "app-cchip"}, A.flag(x.c) ? h("span", {className: "app-cchip__flag", "aria-hidden": "true"}, A.flag(x.c)) : null, h("span", null, x.n || c[1]),
+      h("button", {type: "button", className: "app-cchip__x", "aria-label": (x.n || c[1]) + " çıkarılsın", onClick: function(){ remove(i); }}, h(T.Icon, {name: "close", size: 14})));
+  });
+  var search = h("input", {type: "search", className: "tp-input body", placeholder: "Şehir ya da ülke ara", value: q[0], "aria-label": "Şehir ya da ülke ara", enterKeyHint: "search", autoComplete: "off",
+    onChange: function(e){ q[1](e.target.value); }});
+  var list = h(F, null,
+    !qq ? h("span", {className: "label app-muted"}, "Sık gidilenler") : null,
+    h("ul", {className: "app-pp__list", role: "listbox", "aria-multiselectable": "true", "aria-label": "Şehirler ve ülkeler"},
+      countries.map(function(c){ return row("k" + c[0], c[0], c[1], "Ülke", has(c[0], ""), function(){ toggle(c[0], ""); }); }),
+      cities.map(function(x){ return row("c" + x[0], x[1], x[0], D.COUNTRY[x[1]] ? D.COUNTRY[x[1]][1] : "", has(x[1], x[0]), function(){ toggle(x[1], x[0]); }); }),
+      qq && !cities.length && !countries.length ? h("li", {className: "body-sm app-muted app-pp__none"}, "Bulunamadı. Ülkesini yazıp seçebilirsin.") : null));
+  var hint = h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Saat seçiminde ülke saati ve yerel para buna göre gelir.");
+  var label = h("span", {className: "label tp-field__label", id: "pp-l"}, p.label || "Nereye?");
+  if(A.isPhone){
+    var sheet = open[0] && window.ReactDOM ? ReactDOM.createPortal(
+      h(T.Sheet, {placement: "bottom", direction: "none", title: "Nereye gidiyorsun?", onClose: close, primaryLabel: sel.length ? "Tamam (" + sel.length + ")" : "Tamam", onPrimary: close},
+        /* Escape yalnız bu pencereyi kapatır, altındaki gezi penceresini değil */
+        h("div", {className: "app-pp", onKeyDown: function(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); } }},
+          h("div", {className: "app-pp__top"}, search, sel.length ? h("div", {className: "app-cpick__chips"}, chips) : null),
+          list)),
+      document.querySelector(".app-root") || document.body) : null;
+    return h("div", {className: "tp-field app-cpick"}, label,
+      sel.length ? h("div", {className: "app-cpick__chips"}, chips) : null,
+      h("button", {type: "button", className: "tp-input tp-trigger body app-pp__trigger", "aria-haspopup": "dialog", "aria-labelledby": "pp-l", onClick: function(){ open[1](true); }},
+        h(T.Icon, {name: "search", size: 18, className: "tp-muted"}),
+        h("span", {className: "tp-trigger__value tp-trigger__placeholder"}, sel.length ? "Başka yer ekle" : "Şehir ya da ülke seç")),
+      hint, sheet);
+  }
+  return h("div", {className: "tp-field app-cpick"}, label,
+    h("div", {className: "app-cpick__chips"}, chips,
+      h("button", {type: "button", className: "app-cchip app-cchip--add", "aria-expanded": open[0] ? "true" : "false", "aria-controls": "pp-panel", onClick: function(){ if(open[0]) close(); else open[1](true); }},
         h(T.Icon, {name: open[0] ? "check" : "plus", size: 14}), h("span", null, open[0] ? "Bitti" : (sel.length ? "Yer ekle" : "Şehir ya da ülke seç")))),
-    h(A.Expand, {open: open[0]},
-      h("div", {id: "pp-panel", className: "app-cpick__panel"},
-        h("input", {type: "search", className: "tp-input body", placeholder: "Şehir ya da ülke ara", value: q[0], "aria-label": "Şehir ya da ülke ara", onChange: function(e){ q[1](e.target.value); }, onFocus: toTop}),
-        !qq ? h("span", {className: "label app-muted"}, "Sık gidilenler") : null,
-        h("ul", {className: "app-select__list", role: "listbox", "aria-multiselectable": "true", "aria-labelledby": "pp-l"},
-          cities.map(function(x){ return opt("c" + x[0], x[1], x[0], D.COUNTRY[x[1]] ? D.COUNTRY[x[1]][1] : "", has(x[1], x[0]), function(){ add(x[1], x[0]); }); }),
-          countries.map(function(c){ return opt("k" + c[0], c[0], c[1], "Ülke", has(c[0], ""), function(){ add(c[0], ""); }); }),
-          qq && !cities.length && !countries.length ? h("li", {className: "body-sm app-muted", style: {padding: "var(--space-2) var(--space-3)"}}, "Bulunamadı. Ülkesini yazıp seçebilirsin.") : null))),
-    h("p", {className: "body-sm tp-muted", style: {margin: 0}}, "Saat seçiminde ülke saati ve yerel para buna göre gelir."));
+    h(A.Expand, {open: open[0]}, h("div", {id: "pp-panel", className: "app-cpick__panel"}, search, list)),
+    hint);
 };
 
 /* Zorunlu alan etiketi: yıldız; isteğe bağlı olanlara ayrıca yazı eklenmez */
