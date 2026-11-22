@@ -330,7 +330,7 @@ a{color:var(--foreground-secondary)}
 .app-home{display:flex;flex-direction:column;gap:var(--space-8);max-width:1040px}
 .app-phone .app-home{gap:var(--space-6);padding:var(--space-4) var(--space-3) var(--space-6)}
 .app-home__hello{display:flex;flex-direction:column;gap:2px;padding:0 var(--space-1)}
-.app-home__sec{display:flex;flex-direction:column;gap:var(--space-3)}
+.app-home__sec{display:flex;flex-direction:column;gap:var(--space-4)}
 .app-hometrips{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--space-3)}
 .app-hometrip{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-section);background:var(--background-raised);border:1px solid var(--border-weak);box-shadow:var(--shadow-card,none);color:var(--foreground);text-decoration:none;transition:border-color var(--duration-base) var(--ease-standard),transform var(--duration-fast) var(--ease-standard)}
 .app-hometrip:hover{border-color:var(--border-primary)}
