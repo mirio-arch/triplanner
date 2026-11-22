@@ -533,8 +533,10 @@ var POPULAR = ["Roma", "Paris", "Barselona", "Amsterdam", "Prag", "Viyana", "Tif
 /* Nereye? seçici: seçilenler bayraklı etiket. Telefonda kendi alt penceresinde açılır (arama üstte, liste pencerenin tamamında,
    altta Tamam); masaüstünde formun içinde. Satıra dokunmak seçer, tekrar dokunmak çıkarır; seçili satırın sağında dolu onay işareti var. */
 A.PlacePicker = function(p){
-  var open = React.useState(false), q = React.useState(""), sel = p.value || [];
+  var open = React.useState(false), q = React.useState(""), sel = p.value || [], rowRef = React.useRef(null), lastN = React.useRef(sel.length);
   var qq = fold(q[0]).trim();
+  /* pencerede yeni eklenen etiket görünsün: satır sona kayar */
+  React.useEffect(function(){ var el = rowRef.current; if(el && sel.length > lastN.current) el.scrollTo({left: el.scrollWidth, behavior: "smooth"}); lastN.current = sel.length; }, [sel.length]);
   function has(c, n){ return sel.some(function(x){ return x.c === c && (x.n || "") === (n || ""); }); }
   function toggle(c, n){
     if(A.haptic) A.haptic();
@@ -576,11 +578,14 @@ A.PlacePicker = function(p){
       h(T.Sheet, {placement: "bottom", direction: "none", title: "Nereye gidiyorsun?", onClose: close, primaryLabel: sel.length ? "Tamam (" + sel.length + ")" : "Tamam", onPrimary: close},
         /* Escape yalnız bu pencereyi kapatır, altındaki gezi penceresini değil */
         h("div", {className: "app-pp", onKeyDown: function(e){ if(e.key === "Escape"){ e.stopPropagation(); close(); } }},
-          h("div", {className: "app-pp__top"}, search, sel.length ? h("div", {className: "app-cpick__chips"}, chips) : null),
+          h("div", {className: "app-pp__top"}, search, sel.length ? h("div", {className: "app-cpick__chips app-cpick__chips--row", ref: rowRef}, chips) : null),
           list)),
       document.querySelector(".app-root") || document.body) : null;
+    /* formda en fazla 4 etiket; fazlası "+N" olur, dokununca seçim penceresi açılır */
+    var MAXC = 4, more = sel.length - MAXC;
     return h("div", {className: "tp-field app-cpick"}, label,
-      sel.length ? h("div", {className: "app-cpick__chips"}, chips) : null,
+      sel.length ? h("div", {className: "app-cpick__chips"}, more > 0 ? chips.slice(0, MAXC) : chips,
+        more > 0 ? h("button", {type: "button", className: "app-cchip app-cchip--more", "aria-label": more + " yer daha, hepsini gör", onClick: function(){ open[1](true); }}, "+" + more) : null) : null,
       h("button", {type: "button", className: "tp-input tp-trigger body app-pp__trigger", "aria-haspopup": "dialog", "aria-labelledby": "pp-l", onClick: function(){ open[1](true); }},
         h(T.Icon, {name: "search", size: 18, className: "tp-muted"}),
         h("span", {className: "tp-trigger__value tp-trigger__placeholder"}, sel.length ? "Başka yer ekle" : "Şehir ya da ülke seç")),

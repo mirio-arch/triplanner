@@ -1083,3 +1083,8 @@ a{color:var(--foreground-secondary)}
   .tp-cal__day:hover:not(.in-range){background:transparent}
   .tp-option:hover:not(.is-on){background:transparent}
 }
+/* Nereye?: fazla etiket "+N"; seçim penceresinde etiketler tek satır, yana kayar */
+.app-cchip--more{padding:0 12px;border:0;background:var(--background-sunken);color:var(--foreground);font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app-cpick__chips--row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y;margin:0 calc(-1 * var(--space-4));padding:0 var(--space-4)}
+.app-cpick__chips--row::-webkit-scrollbar{display:none}
+.app-cpick__chips--row .app-cchip{flex:none}
