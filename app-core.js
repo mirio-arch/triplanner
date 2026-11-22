@@ -762,24 +762,40 @@ A.DateField = function(p){
   var shown = range ? (a && b ? niceDate(a, D.parseISO(a).getUTCFullYear() !== D.parseISO(b).getUTCFullYear()) + " – " + niceDate(b, true) + ", " + nDays + " gün" : "")
     : (a ? niceDate(a, true) : "");
   var status = range ? (pend[0] ? "Bitiş gününü seç" : (nDays ? nDays + " gün, " + (nDays - 1) + " gece" : "Başlangıç gününü seç")) : "";
-  return h("div", {className: "tp-field app-date" + (open[0] ? " is-open" : "")},
-    p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label) : null,
-    h("button", {type: "button", className: "tp-input tp-trigger body", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id, "aria-labelledby": (p.label ? id + "-l " : "") + id + "-v",
-        onClick: function(){ if(open[0]) pend[1](null); open[1](!open[0]); }},
-      h(T.Icon, {name: "calendar", size: 18}),
-      h("span", {id: id + "-v", className: "tp-trigger__value" + (shown ? "" : " tp-trigger__placeholder")}, shown || p.placeholder || (range ? "Tarihleri seç" : "Tarih seç")),
-      h(T.Icon, {name: "chevron-down", size: 18, className: "tp-muted app-select__chev"})),
-    h(A.Expand, {open: open[0]},
-      h("div", {id: id, className: "tp-cal app-cal", role: "group", "aria-label": (p.label ? (typeof p.label === "string" ? p.label : "Tarih") : "Tarih") + " seç"},
-        h("div", {className: "tp-cal__nav"},
-          h(T.IconButton, {icon: "chevron-left", label: "Önceki ay", size: "sm", onClick: function(){ shift(-1); }}),
-          h(T.IconButton, {icon: "chevron-right", label: "Sonraki ay", size: "sm", onClick: function(){ shift(1); }})),
-        h("div", {className: "tp-cal__months app-cal__months", "aria-live": "polite"}, months),
-        h("div", {className: "tp-cal__foot"},
-          h("span", {className: "body-sm tp-muted", style: {marginRight: "auto"}}, status),
-          a ? h(T.Button, {variant: "ghost", size: "sm", onClick: function(){ pend[1](null); if(range) p.onChange("", ""); else p.onChange(""); }}, "Temizle") : null,
-          h(T.Button, {variant: "primary", size: "sm", onClick: function(){ pend[1](null); open[1](false); }}, "Tamam")))),
-    p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null);
+  function done(){ pend[1](null); open[1](false); }
+  function clear(){ pend[1](null); if(range) p.onChange("", ""); else { p.onChange(""); open[1](false); } }
+  var calId = id, calLabel = (p.label ? (typeof p.label === "string" ? p.label : "Tarih") : "Tarih") + " seç";
+  function cal(withFoot){
+    return h("div", {id: calId, className: "tp-cal app-cal", role: "group", "aria-label": calLabel},
+      h("div", {className: "tp-cal__nav"},
+        h(T.IconButton, {icon: "chevron-left", label: "Önceki ay", size: "sm", onClick: function(){ shift(-1); }}),
+        h(T.IconButton, {icon: "chevron-right", label: "Sonraki ay", size: "sm", onClick: function(){ shift(1); }})),
+      h("div", {className: "tp-cal__months app-cal__months", "aria-live": "polite"}, months),
+      withFoot ? h("div", {className: "tp-cal__foot"},
+        h("span", {className: "body-sm tp-muted", style: {marginRight: "auto"}}, status),
+        a ? h(T.Button, {variant: "ghost", size: "sm", onClick: clear}, "Temizle") : null,
+        h(T.Button, {variant: "primary", size: "sm", onClick: done}, "Tamam")) : null);
+  }
+  var trigger = h("button", {type: "button", className: "tp-input tp-trigger body", "aria-expanded": open[0] ? "true" : "false", "aria-controls": id, "aria-haspopup": A.isPhone ? "dialog" : undefined, "aria-labelledby": (p.label ? id + "-l " : "") + id + "-v",
+      onClick: function(){ if(open[0]) pend[1](null); open[1](!open[0]); }},
+    h(T.Icon, {name: "calendar", size: 18}),
+    h("span", {id: id + "-v", className: "tp-trigger__value" + (shown ? "" : " tp-trigger__placeholder")}, shown || p.placeholder || (range ? "Tarihleri seç" : "Tarih seç")),
+    h(T.Icon, {name: A.isPhone ? "chevron-right" : "chevron-down", size: 18, className: "tp-muted app-select__chev"}));
+  var foot = p.error || p.hint ? h("p", {className: "body-sm " + (p.error ? "tp-field__error" : "tp-muted")}, p.error || p.hint) : null;
+  var lab = p.label ? h("span", {id: id + "-l", className: "label tp-field__label"}, p.label) : null;
+  /* telefonda takvim kendi alt penceresinde açılır; formun içinde yer kaplamaz */
+  if(A.isPhone){
+    var title = p.sheetTitle || (typeof p.label === "string" ? p.label : (range ? "Tarihler" : "Tarih seç"));
+    var sheet = open[0] && window.ReactDOM ? ReactDOM.createPortal(
+      h(T.Sheet, {placement: "bottom", direction: "none", title: title, description: range ? status : null, onClose: done,
+          primaryLabel: range ? "Tamam" : null, onPrimary: done, secondaryLabel: a ? "Temizle" : null, onSecondary: clear},
+        /* Escape yalnız bu pencereyi kapatır */
+        h("div", {className: "app-datesheet", onKeyDown: function(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); done(); } }}, cal(false))),
+      document.querySelector(".app-root") || document.body) : null;
+    return h("div", {className: "tp-field app-date"}, lab, trigger, foot, sheet);
+  }
+  return h("div", {className: "tp-field app-date" + (open[0] ? " is-open" : "")}, lab, trigger,
+    h(A.Expand, {open: open[0]}, cal(true)), foot);
 };
 
 /* Basılı tutunca açılan menü (iPhone'daki gibi): öğenin altında ya da üstünde, ekranın üstünde açılır */

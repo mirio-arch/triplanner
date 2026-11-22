@@ -1040,3 +1040,7 @@ a{color:var(--foreground-secondary)}
 .app-cpick__panel .app-pp__list{max-height:320px;overflow-y:auto}
 /* telefon sayfaları yana kaymaz (profildeki hareketli ışık kenardan taşıyordu); yatay listeler kendi içinde kayar */
 .app-phonebody{overflow-x:hidden;overscroll-behavior-x:none}
+/* tarih seçimi: telefonda kendi alt penceresi */
+.app-datesheet .app-cal.tp-cal{padding-top:var(--space-1)}
+.app-datesheet .app-cal .tp-cal__nav{top:var(--space-1)}
+.tp-sheet__body:has(.app-datesheet){padding-top:var(--space-2)}
