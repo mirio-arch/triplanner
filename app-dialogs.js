@@ -250,10 +250,14 @@ function TripIconField(p){
 }
 function TripDialog(p){
   var t = p.kind === "trip-settings" ? A.trip() : null;
-  var pre = !t && S.dialog && S.dialog.preset || {};
+  var pre = !t && (p.page ? S.newPre : S.dialog && S.dialog.preset) || {};
   var f = useForm(t ? {name: t.name, start: t.start, end: t.end, short: t.short, color: A.COLORS[t.color % 6], currency: t.currency || "", countries: (t.countries || []).slice(), dest: (t.dest || []).slice(), flag: t.flag || ""} : {name: pre.name || "", start: pre.start || "", end: pre.end || "", short: "", color: A.COLORS[S.app.order.length % 6], currency: pre.currency || "", countries: (pre.countries || []).slice(), dest: (pre.dest || (pre.countries || []).map(function(c){ return {c: c}; })).slice(), flag: ""});
   var v = f[0], set = f[1], err = React.useState(""), del = React.useState(false), reset = React.useState(false);
   var leave = !!(t && window.TPB && !window.TPB.isOwner(t.id));
+  /* sayfa olarak açıldığında: değişiklik varsa geri dönerken sorulur */
+  var init = React.useRef(JSON.stringify(f[0])), leaving = React.useState(false);
+  function leaveNow(){ S.newPre = null; leaving[1](false); var to = S.newBack && S.newBack !== "#yeni-gezi" ? S.newBack : "#home"; S.newBack = null; location.hash = to; }
+  function goBack(e){ if(e) e.preventDefault(); if(JSON.stringify(v) !== init.current) leaving[1](true); else leaveNow(); }
   function save(e){
     e.preventDefault();
     if(!v.name.trim()){ err[1]("Gezinin adını yaz."); return; }
@@ -262,10 +266,21 @@ function TripDialog(p){
     if(t){ t.name = D.str(v.name.trim(), 60); t.short = D.str(v.short.trim(), 3) || D.initials(t.name); t.color = ci; t.currency = v.currency; t.countries = v.countries.slice(); t.dest = v.dest.slice(); t.flag = v.flag && v.countries.indexOf(v.flag) > -1 ? v.flag : ""; applyDates(t, v.start, v.end); A.commit(t.id); close(); A.flash("Gezi kaydedildi."); }
     else {
       var n = D.newTrip(D.str(v.name.trim(), 60), D.str(v.short.trim(), 3), v.start, v.end, ci); n.currency = v.currency; n.countries = v.countries.slice(); n.dest = v.dest.slice(); n.flag = v.flag && v.countries.indexOf(v.flag) > -1 ? v.flag : "";
-      S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); close(); A.go("hazirlik", "", n.id);
+      S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); S.newPre = null; S.newBack = null; close(); A.go("hazirlik", "", n.id);
     }
   }
-  return h(Modal, {title: t ? "Gezi ayarları" : "Yeni gezi", description: t ? t.name : "Tarihleri girince her gün için bir sayfa açılır.", width: "560px", onClose: ask},
+  var wrap = p.page ? function(form){
+    var body = h("div", {className: "app-home app-newtrip"},
+      h("a", {href: "#home", className: "app-back", onClick: goBack}, h(T.Icon, {name: "chevron-left", size: 20}), h("span", null, "Geri")),
+      h("header", {className: "app-newtrip__head"}, h("h1", {className: "page-title", style: {margin: 0}}, "Yeni gezi"),
+        h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Tarihleri girince her gün için bir sayfa açılır.")),
+      form,
+      leaving[0] ? h(A.Confirm, {title: "Kaydetmeden çıkılsın mı?", text: "Girdiklerin kaybolur.", yes: "Çık", onYes: leaveNow, onNo: function(){ leaving[1](false); }}) : null);
+    return A.isPhone ? body : h("div", {className: "tp-shellbody app-body", "data-scroll": true}, body);
+  } : function(form){
+    return h(Modal, {title: t ? "Gezi ayarları" : "Yeni gezi", description: t ? t.name : "Tarihleri girince her gün için bir sayfa açılır.", width: "560px", onClose: ask}, form);
+  };
+  return wrap(
     h("form", {className: "app-stack", onSubmit: save},
       h(T.TextField, {label: A.req("Gezi adı"), value: v.name, placeholder: "Örn. Kapadokya bahar", maxLength: 60, autoFocus: !t && !A.isPhone, onChange: function(x){ set("name", x); err[1](""); }}),
       h(A.DateField, {label: A.req("Tarihler"), range: true, start: v.start, end: v.end, onChange: function(a, b){ set({start: a, end: b}); err[1](""); }}),
@@ -286,10 +301,12 @@ function TripDialog(p){
         t.geo === "georgia" ? h(F, null, reset[0] ? h(A.Confirm, {title: "Başlangıç planına dönülsün mü?", text: "Plandaki tüm değişiklikler silinir. Harcamalar ve fotoğraflar kalır.", yes: "Evet, dön", onYes: function(){ var n = D.seedGeorgia(); n.id = t.id; n.expenses = t.expenses; n.photos = t.photos; n.rate = t.rate; n.budget = t.budget; S.app.trips[t.id] = n; A.commit(t.id); close(); A.flash("Başlangıç planına dönüldü. Harcamalar ve fotoğraflar duruyor."); }, onNo: function(){ reset[1](false); }}) : null,
           h(T.Button, {variant: "ghost", size: "sm", icon: "refresh", onClick: function(){ reset[1](true); }}, "Başlangıç planına dön")) : null,
         h(F, null, del[0] ? h(A.Confirm, {title: leave ? "Geziden ayrılınsın mı?" : "Gezi silinsin mi?", text: leave ? "“" + t.name + "” listenden kalkar. Diğerleri için gezi olduğu gibi kalır." : "“" + t.name + "” ve içindeki her şey silinir. Bu geri alınamaz.", yes: leave ? "Geziden ayrıl" : "Geziyi sil", onYes: function(){ var id = t.id; delete S.app.trips[id]; S.app.order = S.app.order.filter(function(x){ return x !== id; }); A.sync.remove(id); D.saveLocal(S.app); close(); S.cur = S.app.order[0] || null; if(S.cur) A.go("tarihler"); else { location.hash = ""; A.render(); } }, onNo: function(){ del[1](false); }}) : null,
-          h(T.Button, {variant: "ghost", size: "sm", icon: "trash", className: "app-btn--dangertext", onClick: function(){ del[1](true); }}, leave ? "Geziden ayrıl" : "Geziyi sil"))) : null),
+          h(T.Button, {variant: "ghost", size: "sm", icon: "trash", className: "app-btn--dangertext", onClick: function(){ del[1](true); }}, leave ? "Geziden ayrıl" : "Geziyi sil"))) : null,
       /* kaydet düğmeleri en sonda: telefonda altta sabit durur, sil düğmesi onların üstünde görünür */
-      h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur")));
+      p.page ? h("div", {className: "app-pagefoot"}, h(T.Button, {variant: "primary", type: "submit", full: true}, "Geziyi oluştur"))
+        : h(Foot, null, h(T.Button, {variant: "ghost", onClick: ask}, "Vazgeç"), h(T.Button, {variant: "primary", type: "submit"}, t ? "Kaydet" : "Geziyi oluştur"))));
 }
+A.NewTripPage = function(){ return h(TripDialog, {kind: "trip-new", page: true, key: "newtrip"}); };
 function IdeaAdd(p){
   var t = A.trip(), it = t.items[p.id];
   var f = useForm({day: A.dayById(t, p.day) ? p.day : A.view().day, time: it && /\d/.test(it.time || "") ? it.time : ""});
@@ -326,7 +343,7 @@ function TripMenu(){
         h(T.IconButton, {icon: "settings", label: "Gezi ayarları: " + t.name, size: "lg", onClick: function(){
           if(id !== S.cur){ try{ history.replaceState(null, "", A.href(S.page, "", id)); }catch(e){} A.route(); }
           S.dialog = {kind: "trip-settings"}; A.render(); }}));
-    }), h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}, "Yeni gezi")));
+    }), h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ A.newTrip(); }}, "Yeni gezi")));
 }
 
 /* Kaydetmeden çıkış sorusu: açık pencerenin üstünde */

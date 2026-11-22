@@ -102,6 +102,7 @@ function route(){
   var hsh = (location.hash || "").slice(1), m = /^([A-Za-z0-9]+)-(hazirlik|tarihler|ulasim|harcamalar|galeri)(?:-([a-z]+))?$/.exec(hsh);
   if(m && S.app.trips[m[1]]){ S.cur = m[1]; S.page = m[2]; S.sub = m[3] || ""; }
   else if(hsh === "profil"){ S.page = "profil"; S.sub = ""; if(!S.app.trips[S.cur]) S.cur = S.app.order[0] || null; }
+  else if(hsh === "yeni-gezi"){ S.page = "yeni"; S.sub = ""; if(!S.app.trips[S.cur]) S.cur = S.app.order[0] || null; }
   else if(hsh === "home" || !S.app.order.length){ S.page = "home"; S.sub = ""; if(!S.app.trips[S.cur]) S.cur = S.app.order[0] || null; }
   else if(!hsh || !m){
     var st = startTrip();
@@ -117,7 +118,16 @@ function route(){
   var body = document.querySelector("[data-scroll]"); if(body) body.scrollTop = 0;
 }
 /* gezi dışı sayfalar: ana sayfa ve profil */
-A.offTrip = function(){ return S.page === "home" || S.page === "profil"; };
+A.offTrip = function(){ return S.page === "home" || S.page === "profil" || S.page === "yeni"; };
+/* Yeni gezi: telefonda kendi sayfası, masaüstünde pencere. pre: tatil fırsatından gelen hazır bilgiler */
+A.newTrip = function(pre){
+  if(A.isPhone){
+    S.newPre = pre || null; S.dialog = null;
+    if(location.hash !== "#yeni-gezi"){ S.newBack = location.hash && location.hash !== "#" ? location.hash : "#home"; location.hash = "yeni-gezi"; } else A.render();
+    return;
+  }
+  S.dialog = {kind: "trip-new", preset: pre}; A.render();
+};
 A.go = function(page, sub, tripId){ var target = A.href(page, sub, tripId); if(location.hash === target) route(); else location.hash = target; };
 window.addEventListener("hashchange", route);
 A.route = route;
@@ -310,7 +320,7 @@ function Rail(){
       return h(T.TripAvatar, {key: id, initials: A.markOf(t), label: t.name, color: COLORS[t.color % 6], active: !A.offTrip() && id === S.cur, href: A.href(pg, "", id)});
     }),
     h("span", {style: {flex: 1}}),
-    h(T.IconButton, {icon: "plus", label: "Yeni gezi", variant: "rail", size: "lg", round: true, onClick: function(){ S.dialog = {kind: "trip-new"}; A.render(); }}),
+    h(T.IconButton, {icon: "plus", label: "Yeni gezi", variant: "rail", size: "lg", round: true, onClick: function(){ A.newTrip(); }}),
     h(A.AvatarButton, {size: 44}));
 }
 /* Profil fotoğrafı (Google) ya da baş harfler; dokununca profil */
@@ -922,7 +932,7 @@ function Root(){
   A.dark = S.views._theme ? S.views._theme === "dark" : sysDark;
   var home = A.offTrip() || !A.trip(), t = home ? null : A.trip();
   var Page = t && A.pages[S.page] ? A.pages[S.page].view : null;
-  var content = S.page === "profil" && A.ProfilePage ? h(A.ProfilePage) : home ? (A.Home ? h(A.Home) : h(A.EmptyApp)) : (Page ? h(Page, {t: t, v: A.view()}) : null);
+  var content = S.page === "profil" && A.ProfilePage ? h(A.ProfilePage) : S.page === "yeni" && A.NewTripPage ? h(A.NewTripPage) : home ? (A.Home ? h(A.Home) : h(A.EmptyApp)) : (Page ? h(Page, {t: t, v: A.view()}) : null);
   var overlay = h(F, null, A.Dialogs ? h(A.Dialogs) : null, S.viewer ? h(Viewer, {key: "viewer"}) : null);
   var toast = S.toast ? h("div", {className: "app-toastwrap"}, h(T.Toast, {key: S.toast.at, text: S.toast.text, actionLabel: S.toast.undo ? (S.toast.label || "Geri al") : undefined, onAction: S.toast.undo ? function(){ var u = S.toast.undo; S.toast = null; u(); } : undefined})) : null;
   if(phone){
@@ -939,7 +949,7 @@ A.Root = Root;
 
 A.StartChoices = function(){
   var B = window.TPB;
-  function startNew(){ S.dialog = {kind: "trip-new"}; A.render(); }
+  function startNew(){ A.newTrip(); }
   function startSeed(){ var n = D.seedGeorgia(); n.id = D.uid("t"); S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); A.go("tarihler", "", n.id); }
   function choice(key, onClick, lead, title, text){
     return h("button", {key: key, type: "button", className: "app-start__choice", onClick: onClick},
@@ -954,7 +964,7 @@ A.EmptyApp = function(){
   var B = window.TPB;
   if(B && !B.loaded) return h("div", {className: "app-empty"}, h("p", {className: "body app-muted"}, "Geziler yükleniyor…"));
   var name = B && B.firstName ? B.firstName() : "", email = B && B.session ? B.session.user.email : "";
-  function startNew(){ S.dialog = {kind: "trip-new"}; A.render(); }
+  function startNew(){ A.newTrip(); }
   function startSeed(){
     var n = D.seedGeorgia(); n.id = D.uid("t"); S.app.trips[n.id] = n; S.app.order.push(n.id); A.sync.markCreated(n.id); A.commit(n.id); A.go("tarihler", "", n.id);
   }
