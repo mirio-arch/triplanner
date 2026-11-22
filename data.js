@@ -391,6 +391,8 @@ function normalizeTrip(raw, id){
     t.dest.forEach(function(x){ if(t.countries.indexOf(x.c) < 0) t.countries.push(x.c); });
     /* gezi simgesi: harfler (short) ya da gidilen ülkelerden birinin bayrağı */
     t.flag = typeof raw.flag === "string" && t.countries.indexOf(raw.flag) > -1 && /^[A-Z]{2}$/.test(raw.flag) ? raw.flag : "";
+    /* kapak: galeriden seçilen fotoğraf */
+    t.cover = typeof raw.cover === "string" && t.photos.some(function(x){ return x.id === raw.cover; }) ? raw.cover : "";
     syncTransportExpenses(t);
     return t;
   }catch(e){ return null; }

@@ -443,7 +443,7 @@ function GaleriAside(p){
     exp ? link("wallet", "Harcama, " + D.EXP_CATS[exp.cat], D.fmtMoney(exp.amount, exp.currency) + (convText(t, exp) && exp.currency !== "TL" ? ", " + convText(t, exp) : ""), function(){ S.expEdit = exp.id; A.go("harcamalar"); }) : null,
     h(T.TextField, {label: "Not", optional: true, multiline: true, rows: 2, value: sel.note, onChange: function(val){ sel.note = D.str(val, 300); A.commit(); }}),
     del[0] ? h(A.Confirm, {text: "Fotoğraf kalıcı olarak silinsin mi?", onYes: function(){
-        var asset = sel.asset; t.photos.splice(t.photos.indexOf(sel), 1);
+        var asset = sel.asset; t.photos.splice(t.photos.indexOf(sel), 1); if(t.cover === sel.id) t.cover = "";
         t.expenses.forEach(function(e){ e.photos = e.photos.filter(function(x){ return x !== sel.id; }); });
         v.photo = null; A.saveViews(); A.commit(); del[1](false);
         A.getAssets().then(function(a){ if(a) a.delete(asset).catch(function(){}); });
@@ -452,8 +452,9 @@ function GaleriAside(p){
       h("div", {className: "app-row"}, h(T.Button, {size: "sm", variant: "ghost", icon: "trash", onClick: function(){ del[1](true); }}, "Sil"), h(T.Button, {size: "sm", variant: "ghost", icon: "close", onClick: function(){ v.photo = null; A.saveViews(); A.render(); }}, "Kapat")));
 }
 function Galeri(p){
-  var t = p.t, v = p.v;
+  var t = p.t, v = p.v, ctx = React.useState(null);
   var days = ["pre"].concat(t.days.map(function(d){ return d.id; })).reverse().filter(function(id){ return t.photos.some(function(ph){ return ph.day === id; }); });
+  function setCover(id){ t.cover = id; A.commit(); A.flash(id ? "Kapak fotoğrafı ayarlandı." : "Kapak fotoğrafı kaldırıldı."); }
   var priceOf = {}; t.expenses.forEach(function(e){ e.photos.forEach(function(pid){ priceOf[pid] = D.fmtMoney(e.amount, e.currency); }); });
   var head = h(A.PageHead, {title: "Galeri", desc: A.isPhone ? null : "Gezide çektiklerin, gününe göre. Harcamaya eklediğin fotoğraflar da burada.", right: t.photos.length ? h(T.Chip, {tone: "outline", icon: "gallery"}, t.photos.length + " fotoğraf") : null,
     phoneRight: null});
@@ -462,10 +463,19 @@ function Galeri(p){
     return h("section", {key: id, id: "gal-" + id, className: "app-stack", "aria-labelledby": "galh-" + id},
       h("div", {className: "app-row"}, h("h2", {id: "galh-" + id, className: "heading", style:{margin:0, flex:1}}, A.dayLabel(t, id, true)), h("span", {className: "body-sm app-muted"}, ps.length + " fotoğraf")),
       h("div", {className: "app-gallery"}, ps.map(function(ph){
-        return h(T.Photo, {key: ph.id, src: D.photoUrl(ph.asset), alt: ph.note || "Gezi fotoğrafı", button: true, selected: v.photo === ph.id, price: priceOf[ph.id], label: "Fotoğrafı aç",
-          onClick: function(){ v.photo = ph.id; A.saveViews(); if(A.isPhone){ S.dialog = {kind: "photo"}; } A.render(); }});
+        function open(){ v.photo = ph.id; A.saveViews(); if(A.isPhone){ S.dialog = {kind: "photo"}; } A.render(); }
+        var isCover = t.cover === ph.id;
+        /* basılı tutunca: kapak fotoğrafı yap / kapaktan kaldır */
+        return h("span", Object.assign({key: ph.id, className: "app-galitem" + (isCover ? " is-cover" : "")}, A.longPress(function(rect){
+            ctx[1]({rect: rect, items: [
+              isCover ? {label: "Kapaktan kaldır", icon: "close", onClick: function(){ setCover(""); }} : {label: "Kapak fotoğrafı yap", icon: "gallery", onClick: function(){ setCover(ph.id); }},
+              {label: "Aç", icon: "eye", onClick: open}]});
+          })),
+          h(T.Photo, {src: D.photoUrl(ph.asset), alt: ph.note || "Gezi fotoğrafı", button: true, selected: v.photo === ph.id, price: priceOf[ph.id], label: "Fotoğrafı aç" + (isCover ? " (kapak)" : ""), onClick: open}),
+          isCover ? h("span", {className: "app-galitem__cover", "aria-hidden": "true"}, h(T.Icon, {name: "gallery", size: 12}), "Kapak") : null);
       })));
   }) : h("div", {className: "app-card"}, h(T.EmptyState, {illustration: "celebrate", size: A.isPhone ? "sm" : undefined, title: "Galeri boş", text: A.isPhone ? "Sağ alttaki Fotoğraf düğmesiyle ekle. Harcamaya eklediğin fotoğraflar da burada dizilir." : "Harcamaya, bilete ya da doğrudan buraya eklediğin fotoğraflar güne göre dizilir."}));
+  if(ctx[0]) body = h(F, null, body, h(A.ContextMenu, {rect: ctx[0].rect, items: ctx[0].items, onClose: function(){ ctx[1](null); }}));
   if(A.isPhone && !(S.panes && S.panes.galeri && S.panes.galeri !== "c")) S.galDay = null;
   return h(A.Layout, {head: head, aside: h(GaleriAside, {t: t, v: v}), asideLabel: "Seçili fotoğraf", phoneAside: false,
     pane: A.isPhone ? {id: "galeri", label: "Fotoğraf ekle", fab: {icon: "image-add", label: "Fotoğraf"}, peek: h(PhotoPeek, {t: t}), full: h(PhotoPeek, {t: t, tip: true})} : null}, body);

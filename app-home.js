@@ -121,10 +121,9 @@ function GenericArt(p){
     h("path", {d: "M246 76 l10 2 -6 8z", fill: "#fff", opacity: .85}));
 }
 A.TripCover = function(p){
-  /* kapak: galeriye eklenen son fotoğraf; harcamaya eklenen fiş/fotoğraflar kapak olmaz */
-  var t = p.t, bad = React.useState(false), used = {};
-  (t.expenses || []).forEach(function(e){ (e.photos || []).forEach(function(id){ used[id] = true; }); });
-  var own = (t.photos || []).filter(function(x){ return !used[x.id]; }), ph = own.length ? own[own.length - 1] : null;
+  /* kapak: Galeri'de fotoğrafa basılı tutup "Kapak fotoğrafı yap" ile seçilen; seçilmediyse gezinin çizimi */
+  var t = p.t, bad = React.useState(false);
+  var ph = t.cover ? (t.photos || []).filter(function(x){ return x.id === t.cover; })[0] : null;
   return h("span", {className: "app-cover"},
     ph && !bad[0] ? h("img", {className: "app-cover__img", src: D.photoUrl(ph.asset), alt: "", onError: function(){ bad[1](true); }})
       : (t.geo === "georgia" ? h(GeorgiaArt) : h(GenericArt, {t: t})), p.children);

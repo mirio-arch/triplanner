@@ -1070,3 +1070,11 @@ a{color:var(--foreground-secondary)}
 .app-pagefoot{position:sticky;bottom:0;z-index:3;margin:var(--space-2) calc(-1 * var(--space-3)) calc(-1 * var(--space-6));padding:var(--space-4) var(--space-3) max(var(--space-4),env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--background) 28%)}
 .app-desk .app-pagefoot{position:static;margin:var(--space-2) 0 0;padding:0;background:none}
 .kbd .app-pagefoot{position:static;margin-bottom:0;padding-bottom:var(--space-3)}
+/* galeri: basılı tutunca menü; kapak fotoğrafı etiketi */
+.app-galitem{position:relative;display:block;min-width:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.app-galitem .tp-photo{width:100%}
+.app-galitem img{-webkit-touch-callout:none}
+.app-galitem__cover{position:absolute;left:6px;top:6px;display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:var(--radius-full);background:rgba(11,16,48,.62);color:#fff;font:600 11px var(--font-sans);pointer-events:none}
+.app-galitem__cover .tp-icon{--tp-duo:currentColor;color:#fff}
+/* yeni gezi başlığı: ana sayfadaki selamla aynı boy */
+.app-phone .app-newtrip .page-title{font-size:24px;line-height:32px;letter-spacing:-.01em}
