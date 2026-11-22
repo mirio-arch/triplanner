@@ -18,7 +18,37 @@ function uid(){ return B.session ? B.session.user.id : null; }
 function myEmail(){ return B.session ? String(B.session.user.email || "").toLowerCase() : ""; }
 
 /* ---------- Oturum ---------- */
-var LS_TRIPS = "triplanner-v3", LS_PENDING = "triplanner-pending", LS_UID = "triplanner-uid", LS_SIGNED = "triplanner-signed";
+var LS_TRIPS = "triplanner-v3", LS_PENDING = "triplanner-pending", LS_UID = "triplanner-uid", LS_SIGNED = "triplanner-signed", LS_INVITE = "triplanner-invite";
+
+/* ---------- Davet linki: #davet-<anahtar> ---------- */
+function takeInvite(){
+  var m = /^#davet-([A-Za-z0-9]{20,64})$/.exec(location.hash || "");
+  if(!m) return false;
+  try{ localStorage.setItem(LS_INVITE, m[1]); }catch(e){}
+  try{ history.replaceState(null, "", location.pathname + location.search + "#home"); }catch(e){}
+  return true;
+}
+takeInvite();
+B.pendingInvite = function(){ try{ return localStorage.getItem(LS_INVITE) || ""; }catch(e){ return ""; } };
+function joinPending(){
+  var tok = B.pendingInvite(); if(!tok || !sb || !B.session) return;
+  try{ localStorage.removeItem(LS_INVITE); }catch(e){}
+  sb.rpc("join_trip", {tok: tok}).then(function(r){
+    var a = A();
+    if(r.error || !r.data){ if(a && a.flash) a.flash(r.error && r.error.code === "PGRST202" ? "Davetler henüz açık değil." : "Bu davet linki geçersiz ya da süresi dolmuş."); return; }
+    B.joinedTrip = r.data;
+    if(dbInst) dbInst.refresh(); else openJoined();
+  }, function(){ var a = A(); if(a && a.flash) a.flash("Davet açılamadı. Bağlantını kontrol et."); });
+}
+/* katılınan gezi yüklenince açılır */
+function openJoined(){
+  var id = B.joinedTrip, a = A(); if(!id || !a) return;
+  setTimeout(function(){
+    var t = a.S.app.trips[id]; if(!t) return;
+    B.joinedTrip = null; a.go("tarihler", "", id); if(a.flash) a.flash("“" + t.name + "” gezisine katıldın.");
+  }, 0);
+}
+window.addEventListener("hashchange", function(){ if(takeInvite()) joinPending(); });
 function clearLocal(){ [LS_TRIPS, LS_PENDING, LS_UID, LS_SIGNED].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} }); }
 function adoptSession(s){
   var had = !!B.session;
@@ -50,7 +80,7 @@ B.signOut = function(){
 B.start = function(onIn){
   if(!sb){ emit(); return; }
   var started = false;
-  function go(){ if(B.session && !started){ started = true; onIn(); } }
+  function go(){ if(B.session && !started){ started = true; joinPending(); onIn(); } }
   sb.auth.onAuthStateChange(function(ev, s){
     /* Supabase bu geri çağrıda başka istek beklenmesini istemez; işi bir sonraki tura bırak */
     setTimeout(function(){ adoptSession(s); go(); }, 0);
@@ -90,6 +120,7 @@ function makeDb(){
       subs.forEach(function(s){ s({metadata: {fromCache: false}, docs: docs}); });
       if(first){ var a = A(); if(a && a.route) a.route(); }
       rerender();
+      if(B.joinedTrip) openJoined();
       if(again){ again = false; fetchAll(); }
     }, function(){ inflight = false; });
   }
@@ -125,6 +156,7 @@ function makeDb(){
     };
   }
   return {
+    refresh: fetchAll,
     doc: function(path){
       if(path === "meta/app") return {
         onSnapshot: function(cb){ setTimeout(function(){ cb({exists: true, data: function(){ return {initialized: true}; }}); }, 0); return function(){}; },
@@ -291,6 +323,7 @@ function Login(p){
         A() && A().LogoMark ? h(A().LogoMark, {size: 72, className: "tpb-login__logo"}) : h(t.Logo, {variant: "plain"}),
         h("h1", {className: "page-title tpb-login__title"}, "Triplanner"),
         h("p", {className: "body app-muted tpb-login__text"}, "Gezilerini gün gün planla, yol arkadaşlarınla birlikte düzenle."),
+        B.pendingInvite() ? h("p", {className: "body-sm tpb-login__invite"}, "Bir geziye davet edildin. Google ile giriş yapınca gezi açılır.") : null,
         !ready ? h("p", {className: "body-sm tpb-login__warn"}, "Kurulum bitmedi: config.js dosyasına Supabase adresi ve anahtarı yazılmalı.")
         : p.checking ? h("p", {className: "body app-muted"}, "Oturum kontrol ediliyor…")
         : h(t.Button, {variant: "primary", icon: "user", full: true, onClick: go, disabled: busy[0]}, busy[0] ? "Google'a yönlendiriliyor…" : "Google ile giriş yap"),
@@ -322,15 +355,61 @@ B.Account = function(p){
     msg[0] ? h("p", {className: "body-sm tpb-login__warn", role: "alert", style: {margin: 0}}, msg[0]) : null);
 };
 
-/* Gezi ayarlarında paylaşım */
+function inviteUrl(tok){ return location.origin + location.pathname + "#davet-" + tok; }
+function randomToken(){
+  var abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", out = "", buf = new Uint8Array(24);
+  (window.crypto || window.msCrypto).getRandomValues(buf);
+  for(var i = 0; i < buf.length; i++) out += abc[buf[i] % abc.length];
+  return out;
+}
+B.invite = {
+  /* geçerli bir link varsa onu, yoksa yenisini verir (14 gün geçerli) */
+  link: function(tripId){
+    return sb.from("trip_invites").select("token").eq("trip_id", tripId).gt("expires_at", new Date().toISOString()).order("created_at", {ascending: false}).limit(1).then(function(r){
+      if(r.error) throw r.error;
+      if(r.data && r.data.length) return inviteUrl(r.data[0].token);
+      var tok = randomToken();
+      return sb.from("trip_invites").insert({token: tok, trip_id: tripId}).then(function(r2){ if(r2.error) throw r2.error; return inviteUrl(tok); });
+    });
+  },
+  revoke: function(tripId){ return sb.from("trip_invites").delete().eq("trip_id", tripId).then(function(r){ if(r.error) throw r.error; }); }
+};
+
+/* Gezi ayarlarında ve Kişiler penceresinde paylaşım */
 B.Members = function(p){
   var t = T(), id = p.tripId;
   var list = React.useState(null), email = React.useState(""), err = React.useState(""), busy = React.useState(false);
+  var url = React.useState(""), lerr = React.useState(""), mail = React.useState(false);
   var owner = B.ownerOf(id), mine = B.isOwner(id), onServer = !!owner;
+  var app = A(), trip = app && app.S.app.trips[id], name = trip ? trip.name : "Gezi";
+  function flash(x){ var a = A(); if(a && a.flash) a.flash(x); }
   function load(){
     sb.from("trip_members").select("email").eq("trip_id", id).order("added_at").then(function(r){ if(!r.error) list[1](r.data.map(function(x){ return x.email; })); });
   }
-  React.useEffect(function(){ if(sb && onServer) load(); }, [id, onServer]);
+  function prep(){
+    lerr[1]("");
+    B.invite.link(id).then(function(u){ url[1](u); }, function(e){
+      lerr[1](e && (e.code === "42P01" || /trip_invites/.test(e.message || "")) ? "Davet linki için Supabase'de invite.sql bir kez çalıştırılmalı." : "Link hazırlanamadı. Bağlantını kontrol et.");
+    });
+  }
+  React.useEffect(function(){ if(sb && onServer){ load(); if(mine) prep(); } }, [id, onServer, mine]);
+  /* paylaş menüsü dokunuşun içinde açılmalı (iPhone); link bu yüzden önceden hazırlanır */
+  function msg(){ return "“" + name + "” gezisine katıl! Linke dokun, Google hesabınla giriş yap; gezi açılır."; }
+  function copy(){
+    var s = msg() + " " + url[0];
+    function ok(){ flash("Davet linki kopyalandı."); }
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(ok, fallback); else fallback();
+    function fallback(){ var ta = document.createElement("textarea"); ta.value = s; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); ok(); }catch(e){} document.body.removeChild(ta); }
+  }
+  function share(){
+    if(!url[0]) return;
+    if(navigator.share) navigator.share({title: "Triplanner daveti", text: msg(), url: url[0]}).catch(function(){});
+    else copy();
+  }
+  function renew(){
+    url[1]("");
+    B.invite.revoke(id).then(function(){ prep(); flash("Yeni link hazır. Eski link artık çalışmaz."); }, function(){ prep(); });
+  }
   function add(e){
     e.preventDefault(); e.stopPropagation();
     var v = email[0].trim().toLowerCase();
@@ -345,18 +424,29 @@ B.Members = function(p){
   }
   function remove(v){ sb.from("trip_members").delete().eq("trip_id", id).eq("email", v).then(function(r){ if(!r.error) load(); }); }
   var people = list[0] || [];
+  function row(key, label, tag, onRemove){
+    return h("li", {key: key, className: "tpb-members__row"},
+      h(t.Icon, {name: "user", size: 18}), h("span", {className: "body-sm app-ellipsis", style: {flex: 1, minWidth: 0}}, label),
+      tag ? h("span", {className: "label app-muted"}, tag) : null,
+      onRemove ? h(t.IconButton, {icon: "close", label: label + " geziden çıkarılsın", size: "sm", onClick: onRemove}) : null);
+  }
   return h("div", {className: "app-zone tpb-members"},
-    h("h3", {className: "label app-muted", style: {margin: 0}}, "Paylaşım"),
-    !onServer ? h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Gezi kaydedilince burada paylaşabilirsin.")
-    : !mine ? h("p", {className: "body-sm", style: {margin: 0}}, "Bu geziyi " + (owner.email || "başka biri") + " seninle paylaştı. Planları ve harcamaları birlikte düzenliyorsunuz.")
-    : h("p", {className: "body-sm app-muted", style: {margin: 0}}, "E-postasını eklediğin kişiler Google hesabıyla giriş yapınca bu geziyi görür ve düzenler."),
-    onServer && people.length ? h("ul", {className: "tpb-members__list"}, people.map(function(v){
-      return h("li", {key: v, className: "tpb-members__row"},
-        h(t.Icon, {name: "user", size: 18}), h("span", {className: "body-sm app-ellipsis", style: {flex: 1, minWidth: 0}}, v),
-        mine ? h(t.IconButton, {icon: "close", label: v + " paylaşımdan çıkarılsın", size: "sm", onClick: function(){ remove(v); }}) : null);
-    })) : null,
-    onServer && mine ? h("div", {className: "tpb-members__add", onKeyDown: function(e){ if(e.key === "Enter"){ add(e); } }},
-      h("div", {style: {flex: 1, minWidth: 0}}, h(t.TextField, {label: "E-posta", value: email[0], placeholder: "arkadas@gmail.com", inputMode: "email", onChange: function(v){ email[1](v); err[1](""); }, error: err[0] || undefined})),
-      h(t.Button, {variant: "secondary", icon: "plus", onClick: add, disabled: busy[0]}, "Ekle")) : null);
+    p.bare ? null : h("h3", {className: "label app-muted", style: {margin: 0}}, "Kişiler"),
+    !onServer ? h("p", {className: "body-sm app-muted", style: {margin: 0}}, "Gezi kaydedilince buradan kişi ekleyebilirsin.")
+    : !mine ? h("p", {className: "body-sm", style: {margin: 0}}, "Bu geziyi " + (owner.email || "başka biri") + " seninle paylaştı. Planları ve harcamaları birlikte düzenliyorsunuz.") : null,
+    onServer && mine ? h("div", {className: "tpb-invite"},
+      h(t.Button, {variant: "primary", icon: "share", full: true, onClick: share, disabled: !url[0]}, url[0] ? "Davet linkini gönder" : (lerr[0] ? "Davet linki yok" : "Link hazırlanıyor…")),
+      lerr[0] ? h("p", {className: "body-sm tp-field__error", role: "alert", style: {margin: 0}}, lerr[0])
+        : h("p", {className: "body-sm app-muted", style: {margin: 0}}, "WhatsApp ya da mesajla gönder. Linke dokunan, Google ile girince geziye katılır. Link 14 gün geçerli."),
+      url[0] ? h("div", {className: "tpb-invite__acts"},
+        h(t.Button, {variant: "ghost", size: "sm", icon: "copy", onClick: copy}, "Linki kopyala"),
+        h(t.Button, {variant: "ghost", size: "sm", icon: "refresh", onClick: renew}, "Linki yenile")) : null) : null,
+    onServer ? h("ul", {className: "tpb-members__list", "aria-label": "Gezidekiler"},
+      row("owner", mine ? "Sen" : (owner.email || "Sahibi"), "Sahibi", null),
+      people.map(function(v){ return row(v, v === myEmail() ? "Sen (" + v + ")" : v, null, mine ? function(){ remove(v); } : null); })) : null,
+    onServer && mine ? (mail[0] ? h("div", {className: "tpb-members__add", onKeyDown: function(e){ if(e.key === "Enter"){ add(e); } }},
+        h("div", {style: {flex: 1, minWidth: 0}}, h(t.TextField, {label: "E-posta", value: email[0], placeholder: "arkadas@gmail.com", inputMode: "email", autoFocus: true, onChange: function(v){ email[1](v); err[1](""); }, error: err[0] || undefined})),
+        h(t.Button, {variant: "secondary", icon: "plus", onClick: add, disabled: busy[0]}, "Ekle"))
+      : h(t.Button, {variant: "ghost", size: "sm", icon: "plus", onClick: function(){ mail[1](true); }}, "E-postayla ekle")) : null);
 };
 })();

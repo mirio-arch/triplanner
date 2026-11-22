@@ -24,3 +24,8 @@ html,body{overscroll-behavior:none}
 .ios-standalone body,.ios-standalone #root{height:var(--tp-screen-h,100%)}
 .ios-standalone .app-phone{bottom:auto;height:var(--tp-screen-h,100%)}
 .tpb-login__logo{border-radius:22.6%;box-shadow:0 14px 34px -6px rgba(76,72,240,.5)}
+/* kişiler: davet linki */
+.tpb-invite{display:flex;flex-direction:column;gap:var(--space-2);width:100%}
+.tpb-invite__acts{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.tpb-members{gap:var(--space-3)}
+.tpb-login__invite{margin:0;padding:var(--space-2) var(--space-3);border-radius:var(--radius-control);background:var(--background-primary-weak);color:var(--foreground)}

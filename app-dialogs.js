@@ -345,7 +345,9 @@ function TripMenu(){
         h(T.IconButton, {icon: "settings", label: "Gezi ayarları: " + t.name, size: "lg", onClick: function(){
           if(id !== S.cur){ try{ history.replaceState(null, "", A.href(S.page, "", id)); }catch(e){} A.route(); }
           S.dialog = {kind: "trip-settings"}; A.render(); }}));
-    }), h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ A.newTrip(); }}, "Yeni gezi")));
+    }),
+      window.TPB && S.cur && S.app.trips[S.cur] ? h(T.Button, {variant: "outline", icon: "user", full: true, onClick: function(){ S.dialog = {kind: "people"}; A.render(); }}, "“" + S.app.trips[S.cur].name + "” gezisine kişi ekle") : null,
+      h(T.Button, {variant: "primary", icon: "plus", full: true, onClick: function(){ A.newTrip(); }}, "Yeni gezi")));
 }
 
 /* Kaydetmeden çıkış sorusu: açık pencerenin üstünde */
@@ -367,6 +369,7 @@ function Route(){
   var t = A.trip();
   if(d.kind === "trip-new" || d.kind === "trip-settings") return h(TripDialog, {kind: d.kind, key: d.kind});
   if(d.kind === "trip-menu") return h(TripMenu);
+  if(d.kind === "people" && t && window.TPB) return h(Modal, {title: "Kişiler", description: t.name, width: "480px", onClose: close}, h(window.TPB.Members, {tripId: t.id, bare: true}));
   if(d.kind === "profile"){ setTimeout(function(){ S.dialog = null; S.profBack = location.hash || "#home"; location.hash = "profil"; }, 0); return null; }
   if(d.kind === "activity" && A.trip()) return h(A.Chat);
   if(d.kind === "idea-add" && A.trip()) return h(IdeaAdd, {id: d.id, day: d.day, key: d.id});
