@@ -15,9 +15,9 @@
   --foreground-inverse: var(--neutral-50);
   --foreground-inverse-weak: var(--neutral-400);
   --background-shell: var(--lacivert-950);
-  --aurora-1: rgba(96, 165, 250, 0.5);
-  --aurora-2: rgba(139, 92, 246, 0.45);
-  --aurora-card-1: rgba(96, 165, 250, 0.6);
+  --aurora-1: rgba(94, 224, 245, 0.42);
+  --aurora-2: rgba(168, 85, 247, 0.48);
+  --aurora-card-1: rgba(94, 224, 245, 0.5);
   --aurora-card-2: rgba(139, 92, 246, 0.7);
   --foreground-on-shell: var(--neutral-0);
   --foreground-on-shell-weak: var(--violet-200);
@@ -270,9 +270,9 @@
   --foreground-inverse: var(--gece-50);
   --foreground-inverse-weak: var(--gece-400);
   --background-shell: var(--lacivert-950);
-  --aurora-1: rgba(96, 165, 250, 0.5);
-  --aurora-2: rgba(139, 92, 246, 0.45);
-  --aurora-card-1: rgba(96, 165, 250, 0.6);
+  --aurora-1: rgba(94, 224, 245, 0.42);
+  --aurora-2: rgba(168, 85, 247, 0.48);
+  --aurora-card-1: rgba(94, 224, 245, 0.5);
   --aurora-card-2: rgba(139, 92, 246, 0.7);
   --foreground-on-shell: var(--neutral-0);
   --foreground-on-shell-weak: var(--violet-200);
