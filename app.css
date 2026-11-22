@@ -1005,3 +1005,7 @@ a{color:var(--foreground-secondary)}
 /* ana sayfa üst çubuğu: logo + ad */
 .app-phonehead__title--brand{flex-direction:row;align-items:center;gap:10px}
 .app-phonehead__title--brand .app-logo{box-shadow:0 6px 16px -6px rgba(76,72,240,.6)}
+/* renk seçiminde tik: iki tonlu ikonun ikinci çizgisi renkli kalınca kayboluyordu, tamamı tek renk */
+.tp-swatch .tp-icon{--tp-duo:currentColor;--tp-duo-opacity:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+/* onay kutularındaki tik de tek renk (mavi zeminde ikinci çizgi kayboluyordu) */
+.tp-check__box .tp-icon,.tp-option__check{--tp-duo:currentColor;--tp-duo-opacity:1}
